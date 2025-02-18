@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import { View, Text, Image, StyleSheet, SafeAreaView } from 'react-native';
 import Button from '@/components/Button';
+import SocialButton from '@/components/SocialButton';
 import { useRouter } from 'expo-router';
 import { ThemeContext } from '@/contexts/ThemeContext';
 import { colors } from '@/lib/colors';
@@ -26,9 +27,9 @@ export default function Index() {
                 <Text style={[styles.subtitle, theme === 'light' ? styles.subtitle_light : styles.subtitle_dark]}>Let's dive in into your account</Text>
 
                 <View style={styles.buttonContainer}>
-                    <Button icon="google" label="Continue with Google" onPress={() => { }} theme={theme} />
-                    <Button icon="apple" label="Continue with Apple" onPress={() => { }} theme={theme} />
-                    <Button icon="linkedin" label="Continue with LinkedIn" onPress={() => { }} theme={theme} />
+                    <SocialButton icon="google" label="Continue with Google" onPress={() => { }} theme={theme} />
+                    <SocialButton icon="apple" label="Continue with Apple" onPress={() => { }} theme={theme} />
+                    <SocialButton icon="linkedin" label="Continue with LinkedIn" onPress={() => { }} theme={theme} />
                 </View>
 
                 <View style={styles.buttonContainer}>

@@ -60,7 +60,7 @@ export default function Button({ label, icon, onPress, variant = 'secondary', th
             ? interpolateColor(
                 pressProgress.value,
                 [0, 1],
-                theme === 'dark' ? [colors.dark_theme.secondary_background, colors.dark_theme.tertiary_background] : [colors.light_theme.secondary_background, colors.light_theme.tertiary_background]
+                theme === 'dark' ? [colors.dark_theme.button_secondary_bg, colors.dark_theme.secondary_background] : [colors.light_theme.button_secondary_bg, colors.light_theme.secondary_background]
             )
             : undefined,
     }));
@@ -82,7 +82,6 @@ export default function Button({ label, icon, onPress, variant = 'secondary', th
     // Combine styles with static ones.
     const buttonStyles = [
         styles.button,
-        variant === 'primary' ? styles.primaryButton : styles.secondaryButton,
         animatedBackgroundStyle,
     ];
 
@@ -119,22 +118,12 @@ const styles = StyleSheet.create({
         height: 58,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingHorizontal: 12,
+        // paddingHorizontal: 12,
     },
     // A full-size pressable container.
     pressable: {
         width: '100%',
         height: '100%',
-    },
-    primaryButton: {
-        // Static styles for primary buttons.
-        borderRadius: 40,
-    },
-    secondaryButton: {
-        // Static styles for secondary buttons.
-        borderRadius: 40,
-        borderWidth: 1,
-        borderColor: colors.dark_theme.tertiary_background,
     },
     button: {
         width: '100%',
@@ -143,6 +132,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 16,
+        borderRadius: 40,
     },
     buttonIcon: {
         marginRight: 8,

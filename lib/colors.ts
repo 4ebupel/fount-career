@@ -35,15 +35,15 @@ export const colors = {
         tertiary_background: '#E0E0E0',
         overlay_background: 'rgba(0, 0, 0, 0.05)',
 
-        text_primary: '#181A20',
+        text_primary: '#212121',
         text_secondary: '#606060',
         text_tertiary: '#616161',
-        text_accent: '#4B0082',
+        text_accent: '#2C0166',
         text_disabled: '#C0C0C0',
 
         button_primary_bg: '#4B0082',
+        button_secondary_bg: '#FFF4EF',
         button_primary_text: '#FFFFFF',
-        button_secondary_bg: '#FFFFFF',
         button_secondary_text: '#4B0082',
         button_disabled_bg: '#7A5FA5',
         button_disabled_text: '#9E9E9E',

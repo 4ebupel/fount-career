@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, Text, Image, StyleSheet, SafeAreaView } from 'react-native';
 import Button from '@/components/Button';
 import { useRouter } from 'expo-router';
+import { ThemeContext } from '@/contexts/ThemeContext';
+import { colors } from '@/lib/colors';
 
 export default function Index() {
+    const { theme } = useContext(ThemeContext);
+
     const router = useRouter();
 
     const handleSignUp = () => {
@@ -15,27 +19,27 @@ export default function Index() {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, theme === 'light' ? styles.container_light : styles.container_dark]}>
             <View style={styles.content}>
                 <Image source={require('../assets/logo.png')} style={styles.logo} />
-                <Text style={styles.title}>Let's Get Started!</Text>
-                <Text style={styles.subtitle}>Let's dive in into your account</Text>
+                <Text style={[styles.title, theme === 'light' ? styles.title_light : styles.title_dark]}>Let's Get Started!</Text>
+                <Text style={[styles.subtitle, theme === 'light' ? styles.subtitle_light : styles.subtitle_dark]}>Let's dive in into your account</Text>
 
                 <View style={styles.buttonContainer}>
-                    <Button icon="google" label="Continue with Google" onPress={() => { }} />
-                    <Button icon="apple" label="Continue with Apple" onPress={() => { }} />
-                    <Button icon="linkedin" label="Continue with LinkedIn" onPress={() => { }} />
+                    <Button icon="google" label="Continue with Google" onPress={() => { }} theme={theme} />
+                    <Button icon="apple" label="Continue with Apple" onPress={() => { }} theme={theme} />
+                    <Button icon="linkedin" label="Continue with LinkedIn" onPress={() => { }} theme={theme} />
                 </View>
 
                 <View style={styles.buttonContainer}>
-                    <Button label="Sign up" variant="primary" onPress={handleSignUp} />
-                    <Button label="Sign in" variant="secondary" onPress={handleSignIn} />
+                    <Button label="Sign up" variant="primary" onPress={handleSignUp} theme={theme} />
+                    <Button label="Sign in" variant="secondary" onPress={handleSignIn} theme={theme} />
                 </View>
 
                 <View style={styles.footer}>
-                    <Text style={{ color: '#EEE' }}>Privacy Policy</Text>
-                    <Text style={{ color: '#EEE' }}> · </Text>
-                    <Text style={{ color: '#EEE' }}>Terms of Service</Text>
+                    <Text style={[styles.footerText, theme === 'light' ? styles.footerText_light : styles.footerText_dark]}>Privacy Policy</Text>
+                    <Text style={styles.footerText}> · </Text>
+                    <Text style={[styles.footerText, theme === 'light' ? styles.footerText_light : styles.footerText_dark]}>Terms of Service</Text>
                 </View>
             </View>
         </SafeAreaView>
@@ -45,7 +49,12 @@ export default function Index() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#1a1a1a',
+    },
+    container_light: {
+        backgroundColor: colors.light_theme.background,
+    },
+    container_dark: {
+        backgroundColor: colors.dark_theme.background,
     },
     content: {
         flex: 1,
@@ -65,16 +74,37 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     title: {
-        fontSize: 24,
-        color: '#FFF',
+        fontSize: 32,
+        fontWeight: '700',
         marginBottom: 10,
     },
+    title_light: {
+        color: colors.light_theme.text_primary,
+    },
+    title_dark: {
+        color: colors.dark_theme.text_primary,
+    },
     subtitle: {
-        fontSize: 16,
-        color: '#FFF',
+        fontSize: 18,
+        fontWeight: '400',
         marginBottom: 30,
+    },
+    subtitle_light: {
+        color: colors.light_theme.text_primary,
+    },
+    subtitle_dark: {
+        color: colors.dark_theme.text_primary,
     },
     footer: {
         flexDirection: 'row',
+    },
+    footerText: {
+        fontSize: 14,
+    },
+    footerText_light: {
+        color: colors.light_theme.text_secondary,
+    },
+    footerText_dark: {
+        color: colors.dark_theme.text_secondary,
     },
 });

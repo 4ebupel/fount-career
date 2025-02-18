@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useContext } from 'react';
 import { View, Text, TextInput, Alert, StyleSheet, Pressable, Keyboard, TouchableWithoutFeedback, SafeAreaView } from 'react-native';
 import Checkbox from 'expo-checkbox';
 import Button from '@/components/Button';
@@ -6,6 +6,8 @@ import { supabase } from '@/lib/supabase';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Link, useRouter } from 'expo-router';
 import AuthFooter from '@/components/AuthFooter';
+import { colors } from '@/lib/colors';
+import { ThemeContext } from '@/contexts/ThemeContext';
 
 export default function Auth() {
     const router = useRouter();
@@ -14,6 +16,7 @@ export default function Auth() {
     const [password, setPassword] = useState('');
     const [agree, setAgree] = useState(false);
     const [loading, setLoading] = useState(false);
+    const { theme, themeMode, changeThemeMode } = useContext(ThemeContext);
 
     // Create a ref for the password TextInput
     const passwordRef = useRef<TextInput>(null);
@@ -79,27 +82,32 @@ export default function Auth() {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.topBar}>
+        <SafeAreaView style={[styles.container, theme === 'light' ? styles.container_light : styles.container_dark]}>
+            <View style={styles.backButtonContainer}>
                 <Pressable onPress={handleGoBack} style={styles.backButton}>
-                    <FontAwesome name="arrow-left" size={24} color="#FFF" />
+                    <FontAwesome name="arrow-left" size={24} color={theme === 'dark' ? colors.dark_theme.text_primary : colors.light_theme.text_primary} />
+                </Pressable>
+            </View>
+            <View style={styles.themeButtonContainer}>
+                <Pressable onPress={() => changeThemeMode(themeMode === 'dark' ? 'light' : 'dark')} style={styles.themeButton}>
+                    <FontAwesome name={themeMode === 'dark' ? 'moon-o' : 'sun-o'} size={24} color={theme === 'dark' ? colors.dark_theme.text_primary : colors.light_theme.text_primary} />
                 </Pressable>
             </View>
             <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()} accessible={false}>
                 <View style={styles.contentContainer}>
                     <View style={styles.header}>
-                        <Text style={styles.title}>{isSignUp ? 'Join fount.one Today ✨' : 'Welcome Back! 👋'}</Text>
-                        <Text style={styles.description}>
+                        <Text style={[styles.title, theme === 'dark' ? styles.title_dark : styles.title_light]}>{isSignUp ? 'Join fount.one Today ✨' : 'Welcome Back! 👋'}</Text>
+                        <Text style={[styles.description, theme === 'dark' ? styles.description_dark : styles.description_light]}>
                             {isSignUp ? 'Create your account and unlock a world of productivity.' : 'Sign in to access your goals, habits, and progress.'}
                         </Text>
                     </View>
                     <View style={styles.form}>
                         <View style={{ gap: 8 }}>
-                            <Text style={{ color: '#FFF', fontSize: 18 }}>
+                            <Text style={{ color: theme === 'dark' ? colors.dark_theme.text_primary : colors.light_theme.text_primary, fontSize: 18 }}>
                                 Email
                             </Text>
-                            <View style={styles.inputContainer}>
-                                <FontAwesome name="envelope" size={18} color="#9E9E9E" style={styles.inputIcon} />
+                            <View style={[styles.inputContainer, theme === 'dark' ? styles.inputContainer_dark : styles.inputContainer_light]}>
+                                <FontAwesome name="envelope" size={18} color={theme === 'dark' ? colors.dark_theme.text_secondary : colors.light_theme.text_secondary} style={styles.inputIcon} />
                                 <TextInput
                                     style={styles.input}
                                     placeholder="Email"
@@ -107,26 +115,26 @@ export default function Auth() {
                                     onChangeText={setEmail}
                                     keyboardType="email-address"
                                     autoCapitalize="none"
-                                    placeholderTextColor="#9E9E9E"
+                                    placeholderTextColor={theme === 'dark' ? colors.dark_theme.text_secondary : colors.light_theme.text_secondary}
                                     returnKeyType="next"
                                     onSubmitEditing={() => passwordRef.current?.focus()}
                                 />
                             </View>
                         </View>
                         <View style={{ gap: 8 }}>
-                            <Text style={{ color: '#FFF', fontSize: 18 }}>
+                            <Text style={{ color: theme === 'dark' ? colors.dark_theme.text_primary : colors.light_theme.text_primary, fontSize: 18 }}>
                                 Password
                             </Text>
-                            <View style={styles.inputContainer}>
-                                <FontAwesome name="lock" size={18} color="#9E9E9E" style={styles.inputIcon} />
+                            <View style={[styles.inputContainer, theme === 'dark' ? styles.inputContainer_dark : styles.inputContainer_light]}>
+                                <FontAwesome name="lock" size={18} color={theme === 'dark' ? colors.dark_theme.text_secondary : colors.light_theme.text_secondary} style={styles.inputIcon} />
                                 <TextInput
                                     ref={passwordRef}
-                                    style={styles.input}
+                                    style={[styles.input, theme === 'dark' ? styles.input_dark : styles.input_light]}
                                     placeholder="Password"
                                     value={password}
                                     onChangeText={setPassword}
                                     secureTextEntry
-                                    placeholderTextColor="#9E9E9E"
+                                    placeholderTextColor={theme === 'dark' ? colors.dark_theme.text_secondary : colors.light_theme.text_secondary}
                                     returnKeyType="done"
                                     onSubmitEditing={handleEmailSignIn}
                                 />
@@ -137,35 +145,35 @@ export default function Auth() {
                                 <Checkbox
                                     value={agree}
                                     onValueChange={setAgree}
-                                    color={agree ? '#FFA914' : undefined}
-                                    style={{ borderColor: '#FFA914' }}
+                                    color={agree ? theme === 'dark' ? colors.dark_theme.text_accent : colors.light_theme.text_accent : undefined}
+                                    style={{ borderColor: theme === 'dark' ? colors.dark_theme.text_accent : colors.light_theme.text_accent }}
                                 />
-                                <Text style={styles.checkboxLabel}>
+                                <Text style={[styles.checkboxLabel, theme === 'dark' ? styles.checkboxLabel_dark : styles.checkboxLabel_light]}>
                                     Agree to fount.one
                                 </Text>
                             </Pressable>
-                            <Link href="/terms" style={[{ color: '#FFA914' }, styles.link]}>terms and conditions</Link>
+                            <Link href="/terms" style={[styles.link, theme === 'dark' ? styles.link_dark : styles.link_light]}>terms and conditions</Link>
                         </View>
                     </View>
 
                     <View style={styles.signInContainer}>
-                        <Text style={{ color: '#FFF', fontSize: 18 }}>
+                        <Text style={{ color: theme === 'dark' ? colors.dark_theme.text_primary : colors.light_theme.text_primary, fontSize: 18 }}>
                             Already have an account?
                         </Text>
                         <Pressable onPress={() => setIsSignUp(!isSignUp)}>
-                            <Text style={styles.link}> {isSignUp ? 'Sign in' : 'Sign up'}</Text>
+                            <Text style={[styles.link, theme === 'dark' ? styles.link_dark : styles.link_light]}> {isSignUp ? 'Sign in' : 'Sign up'}</Text>
                         </Pressable>
                     </View>
 
                     <View style={styles.dividerContainer}>
-                        <View style={styles.divider}></View>
-                        <Text style={styles.dividerText}>Or</Text>
-                        <View style={styles.divider}></View>
+                        <View style={[styles.divider, theme === 'dark' ? styles.divider_dark : styles.divider_light]}></View>
+                        <Text style={[styles.dividerText, theme === 'dark' ? styles.dividerText_dark : styles.dividerText_light]}>Or</Text>
+                        <View style={[styles.divider, theme === 'dark' ? styles.divider_dark : styles.divider_light]}></View>
                     </View>
 
                     <View style={styles.socialSection}>
-                        <Button label="Continue with Apple" icon="apple" onPress={handleAppleSignIn} />
-                        <Button label="Continue with Google" icon="google" onPress={handleGoogleSignIn} />
+                        <Button label="Continue with Apple" icon="apple" onPress={handleAppleSignIn} theme={theme} />
+                        <Button label="Continue with Google" icon="google" onPress={handleGoogleSignIn} theme={theme} />
                     </View>
                 </View>
             </TouchableWithoutFeedback>
@@ -183,19 +191,32 @@ export default function Auth() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#181A20',
+    },
+    container_light: {
+        backgroundColor: colors.light_theme.background,
+    },
+    container_dark: {
+        backgroundColor: colors.dark_theme.background,
     },
     contentContainer: {
         flex: 1,
         padding: 20,
         justifyContent: 'center',
     },
-    topBar: {
+    backButtonContainer: {
         position: 'absolute',
         top: 20,
         left: 0,
         right: 0,
         paddingTop: 20,
+        paddingHorizontal: 20,
+        zIndex: 1
+    },
+    themeButtonContainer: {
+        position: 'absolute',
+        top: 20,
+        right: 0,
+        paddingTop: 25,
         paddingHorizontal: 20,
         zIndex: 1
     },
@@ -209,12 +230,22 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'left',
         marginBottom: 10,
-        color: '#fff'
+    },
+    title_light: {
+        color: colors.light_theme.text_primary
+    },
+    title_dark: {
+        color: colors.dark_theme.text_primary
     },
     description: {
         fontSize: 16,
         textAlign: 'left',
-        color: '#EEE'
+    },
+    description_light: {
+        color: colors.light_theme.text_secondary
+    },
+    description_dark: {
+        color: colors.dark_theme.text_secondary
     },
     form: {
         marginBottom: 30,
@@ -226,9 +257,15 @@ const styles = StyleSheet.create({
         height: 65,
         paddingHorizontal: 20,
         borderWidth: 1,
-        borderColor: '#1F222A',
         borderRadius: 8,
-        backgroundColor: '#1F222A',
+    },
+    inputContainer_light: {
+        borderColor: colors.light_theme.secondary_background,
+        backgroundColor: colors.light_theme.secondary_background,
+    },
+    inputContainer_dark: {
+        borderColor: colors.dark_theme.secondary_background,
+        backgroundColor: colors.dark_theme.secondary_background,
     },
     inputIcon: {
         marginRight: 12
@@ -237,8 +274,13 @@ const styles = StyleSheet.create({
         flex: 1,
         height: '100%',
         paddingHorizontal: 8,
-        color: '#FFF',
         fontSize: 18
+    },
+    input_light: {
+        color: colors.light_theme.text_primary,
+    },
+    input_dark: {
+        color: colors.dark_theme.text_primary,
     },
     checkboxContainer: {
         flexDirection: 'row',
@@ -248,7 +290,12 @@ const styles = StyleSheet.create({
     checkboxLabel: {
         marginLeft: 8,
         fontSize: 16,
-        color: '#EEE'
+    },
+    checkboxLabel_light: {
+        color: colors.light_theme.text_primary
+    },
+    checkboxLabel_dark: {
+        color: colors.dark_theme.text_primary
     },
     socialSection: {
         alignItems: 'center',
@@ -257,13 +304,23 @@ const styles = StyleSheet.create({
     },
     divider: {
         height: 1,
-        backgroundColor: '#ccc',
         flex: 1
+    },
+    divider_light: {
+        backgroundColor: colors.light_theme.tertiary_background,
+    },
+    divider_dark: {
+        backgroundColor: colors.dark_theme.tertiary_background,
     },
     dividerText: {
         textAlign: 'center',
-        color: '#EEE',
         fontSize: 16
+    },
+    dividerText_light: {
+        color: colors.light_theme.text_secondary
+    },
+    dividerText_dark: {
+        color: colors.dark_theme.text_secondary
     },
     dividerContainer: {
         flexDirection: 'row',
@@ -279,10 +336,18 @@ const styles = StyleSheet.create({
         marginBottom: 30
     },
     link: {
-        color: '#FFA914',
         fontSize: 18,
     },
+    link_light: {
+        color: colors.light_theme.text_accent,
+    },
+    link_dark: {
+        color: colors.dark_theme.text_accent,
+    },
     backButton: {
+        padding: 10,
+    },
+    themeButton: {
         padding: 10,
     },
 });

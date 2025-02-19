@@ -75,6 +75,8 @@ export default function Auth() {
     const handleGoogleSignIn = () => {
         // Handle Google sign in logic here.
         console.log('Continue with Google');
+        // No session check for testing purposes
+        router.push('/home');
     };
 
     const handleGoBack = () => {

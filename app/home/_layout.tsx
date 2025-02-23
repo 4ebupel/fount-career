@@ -20,14 +20,19 @@ export default function TabsLayout() {
                 ? colors.dark_theme.background
                 : colors.light_theme.background,
         },
+        // headerShown: false, // Hide the header
         headerShadowVisible: false,
         headerTintColor: theme === "dark"
             ? colors.dark_theme.text_primary
             : colors.light_theme.text_primary,
         tabBarStyle: {
             backgroundColor: theme === "dark"
-                ? colors.dark_theme.background
+                ? colors.dark_theme.tertiary_background
                 : colors.light_theme.background,
+            borderTopWidth: 1,
+            borderTopColor: theme === "dark"
+                ? colors.dark_theme.tertiary_background
+                : colors.light_theme.secondary_background,
         },
         // Custom logo on the left side of the header
         headerLeft: () => (

@@ -5,15 +5,16 @@ import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { FontAwesome5, Feather } from '@expo/vector-icons';
 import { Modal, Portal, Button, PaperProvider } from 'react-native-paper';
 import { colors } from '../lib/colors';
-const { width, height } = Dimensions.get('window');
-
-type Props = {
-    theme?: 'dark' | 'light';
-    visible: boolean;
-    setVisible: (visible: boolean) => void;
+import { DefaultModalProps } from '../types/defaultModalProps';
+import { useModal } from '@/hooks/useModal';
+interface Props extends DefaultModalProps {
+    isVisible: boolean;
 }
 
-export default function AddGoalModal({ theme = 'dark', visible, setVisible }: Props) {
+export default function AddGoalModal({ theme = 'dark', isVisible }: Props) {
+    if (!isVisible) return null;
+    const { closeModal } = useModal();
+
     // // Manage the modal visibility
     // const [visible, setVisible] = useState(false);
     // We'll store the button's position so that we know where to position the modal
@@ -131,7 +132,7 @@ export default function AddGoalModal({ theme = 'dark', visible, setVisible }: Pr
         //     )}
         // </View>
 
-        <Modal visible={visible} onDismiss={() => setVisible(false)} contentContainerStyle={styles.modal} style={{ marginTop: 0 }}>
+        <Modal visible={isVisible} onDismiss={() => { closeModal() }} contentContainerStyle={styles.modal} style={{ marginTop: 0 }}>
             <View style={styles.container}>
                 <TouchableOpacity style={[styles.button, theme === 'light' ? styles.buttonLight : styles.buttonDark]} onPress={() => { console.log('Goal Templates Pressed') }}>
                     <Feather name='file-text' size={24} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />

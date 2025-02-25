@@ -3,14 +3,35 @@ import { View, Text, StyleSheet, Image, SafeAreaView, Pressable } from "react-na
 import WeeklyCalendarHeader from "@/components/WeeklyCalendarHeader";
 import { colors } from "@/lib/colors";
 import { ThemeContext } from "@/contexts/ThemeContext";
-import { Portal, PaperProvider } from 'react-native-paper';
-import AddGoalModal from "@/components/AddGoalModal";
+import { PaperProvider } from 'react-native-paper';
 import { Feather } from '@expo/vector-icons';
-
+import { useModal } from "@/hooks/useModal";
 export default function MyGoals() {
     const [progressData, setProgressData] = useState([45, 20, 33, 40, 12, 90, 70]);
     const { theme } = useContext(ThemeContext);
-    const [visible, setVisible] = useState(false);
+    const { openModal } = useModal();
+
+    const onPress = () => {
+        openModal({
+            modalName: 'DefaultModal',
+            props: {
+                title: 'Add Goal',
+                description: 'Add a goal by clicking the (+) button below.',
+                primaryCTA: 'Add Goal',
+                secondaryCTA: 'Cancel',
+                theme: theme,
+                content: '',
+                onClose: () => { },
+                onConfirm: () => {
+                    console.log('Confirm');
+                },
+                onCancel: () => {
+                    console.log('Cancel');
+                },
+            }
+        });
+    }
+
     return (
         <PaperProvider>
             <SafeAreaView style={[
@@ -32,11 +53,14 @@ export default function MyGoals() {
                         <Text style={[styles.backgroundDescription, theme === 'dark' ? styles.backgroundDescriptionDark : styles.backgroundDescriptionLight]}>Add a goal by clicking the (+) button below.</Text>
                     </View>
                 </View>
-                <Portal>
+                {/* <Portal>
                     <AddGoalModal theme={theme} visible={visible} setVisible={setVisible} />
-                </Portal>
+                </Portal> */}
                 <Pressable
-                    onPress={() => setVisible(true)}
+                    onPress={() => {
+                        console.log('Pressed');
+                        onPress();
+                    }}
                     style={[
                         styles.button,
                         theme === 'light' ? styles.buttonLight : styles.buttonDark,

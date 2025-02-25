@@ -41,7 +41,7 @@ export const colors = {
         text_accent: '#2C0166',
         text_disabled: '#C0C0C0',
 
-        button_primary_bg: '#4B0082',
+        button_primary_bg: '#2C0166',
         button_secondary_bg: '#FFF4EF',
         button_primary_text: '#FFFFFF',
         button_secondary_text: '#4B0082',

@@ -1,14 +1,17 @@
 import React, { useCallback } from 'react';
 import AddGoalModal from '@/modals/AddGoalModal';
-import { useModal } from '@/hooks/useModal';
 import DefaultModal from '@/modals/DefaultModal';
+import GoalCreationTutorialModal from '@/modals/GoalCreationTutorialModal';
+import { useModal } from '@/hooks/useModal';
 
 export const DEFAULT_MODAL = 'DefaultModal';
 export const ADD_GOAL_MODAL = 'AddGoalModal';
+export const GOAL_CREATION_TUTORIAL_MODAL = 'GoalCreationTutorialModal';
 
 export const MODAL_LIST = {
     [DEFAULT_MODAL]: DefaultModal,
     [ADD_GOAL_MODAL]: AddGoalModal,
+    [GOAL_CREATION_TUTORIAL_MODAL]: GoalCreationTutorialModal,
 };
 
 

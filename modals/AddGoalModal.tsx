@@ -1,19 +1,43 @@
 import React, { useState, useRef } from 'react';
 import { View, StyleSheet, Text, Pressable, Dimensions, LayoutChangeEvent, TouchableOpacity } from "react-native";
-import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring } from 'react-native-reanimated';
-import { GestureDetector, Gesture } from 'react-native-gesture-handler';
+// import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring } from 'react-native-reanimated';
+// import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { FontAwesome5, Feather } from '@expo/vector-icons';
 import { Modal, Portal, Button, PaperProvider } from 'react-native-paper';
 import { colors } from '../lib/colors';
 import { DefaultModalProps } from '../types/defaultModalProps';
 import { useModal } from '@/hooks/useModal';
+import { GOAL_CREATION_TUTORIAL_MODAL } from '@/components/CustomModal';
 interface Props extends DefaultModalProps {
     isVisible: boolean;
 }
 
-export default function AddGoalModal({ theme = 'dark', isVisible }: Props) {
+export default function AddGoalModal({ theme = 'dark', isVisible, }: Props) {
     if (!isVisible) return null;
-    const { closeModal } = useModal();
+    const { closeModal, openModal } = useModal();
+
+    const handleSelfMadeGoalPress = () => {
+        openModal({
+            modalName: GOAL_CREATION_TUTORIAL_MODAL,
+            props: {
+                content: '',
+                description: '',
+                title: '',
+                primaryCTA: '',
+                secondaryCTA: '',
+                theme,
+                onClose: function (): void {
+                    console.log('Function not implemented.');
+                },
+                onConfirm: function (): void {
+                    console.log('Function not implemented.');
+                },
+                onCancel: function (): void {
+                    console.log('Function not implemented.');
+                }
+            }
+        })
+    }
 
     // // Manage the modal visibility
     // const [visible, setVisible] = useState(false);
@@ -139,7 +163,7 @@ export default function AddGoalModal({ theme = 'dark', isVisible }: Props) {
                     <Text style={[styles.modalText, theme === 'light' ? styles.modalTextLight : styles.modalTextDark]}>Goal Templates</Text>
                 </TouchableOpacity>
                 <View style={styles.modalDivider} />
-                <TouchableOpacity style={[styles.button, theme === 'light' ? styles.buttonLight : styles.buttonDark]} onPress={() => { console.log('Self-made Goal Pressed') }}>
+                <TouchableOpacity style={[styles.button, theme === 'light' ? styles.buttonLight : styles.buttonDark]} onPress={handleSelfMadeGoalPress}>
                     <FontAwesome5 name={theme === 'light' ? 'user' : 'user-alt'} size={24} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
                     <Text style={[styles.modalText, theme === 'light' ? styles.modalTextLight : styles.modalTextDark]}>Self-made Goal</Text>
                 </TouchableOpacity>

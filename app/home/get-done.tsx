@@ -13,7 +13,7 @@ export default function MyGoals() {
 
     const onPress = () => {
         openModal({
-            modalName: 'DefaultModal',
+            modalName: 'AddGoalModal',
             props: {
                 title: 'Add Goal',
                 description: 'Add a goal by clicking the (+) button below.',

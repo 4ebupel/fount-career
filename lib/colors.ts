@@ -33,7 +33,7 @@ export const colors = {
         background: '#FFFFFF',
         secondary_background: '#F5F5F5',
         tertiary_background: '#E0E0E0',
-        overlay_background: 'rgba(0, 0, 0, 0.05)',
+        overlay_background: 'rgba(0, 0, 0, 0.5)',
 
         text_primary: '#212121',
         text_secondary: '#606060',

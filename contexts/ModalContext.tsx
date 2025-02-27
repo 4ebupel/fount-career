@@ -17,14 +17,14 @@ const DEFAULT_PROPS: DefaultModalProps = {
 type ContextType = {
     modalName: string;
     modalProps: DefaultModalProps;
-    openModal: ({ modalName, props }: { modalName?: string, props: DefaultModalProps }) => void;
+    openModal: ({ modalName, props }: { modalName?: string, props?: DefaultModalProps }) => void;
     closeModal: () => void;
 };
 
 const contextType: ContextType = {
     modalName: DEFAULT_MODAL,
     modalProps: DEFAULT_PROPS,
-    openModal: ({ modalName, props }: { modalName?: string, props: DefaultModalProps }) => { },
+    openModal: ({ modalName, props }: { modalName?: string, props?: DefaultModalProps }) => { },
     closeModal: () => { },
 };
 
@@ -34,7 +34,7 @@ export const ModalProvider = ({ children }: { children: React.ReactNode }) => {
     const [modalName, setModalName] = useState<string>('');
     const [modalProps, setModalProps] = useState<DefaultModalProps>(DEFAULT_PROPS);
 
-    const openModal = ({ modalName, props }: { modalName?: string, props: DefaultModalProps }) => {
+    const openModal = ({ modalName, props }: { modalName?: string, props?: DefaultModalProps }) => {
         if (modalName) {
             setModalName(modalName);
             setModalProps({ ...modalProps, ...props });

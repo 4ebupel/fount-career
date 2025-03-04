@@ -7,7 +7,6 @@ import { Modal, Portal, Button, PaperProvider } from 'react-native-paper';
 import { colors } from '../lib/colors';
 import { DefaultModalProps } from '../types/defaultModalProps';
 import { useModal } from '@/hooks/useModal';
-import { GOAL_CREATION_TUTORIAL_MODAL } from '@/components/CustomModal';
 interface Props extends DefaultModalProps {
     isVisible: boolean;
 }
@@ -18,7 +17,7 @@ export default function AddGoalModal({ theme = 'dark', isVisible, }: Props) {
 
     const handleSelfMadeGoalPress = () => {
         openModal({
-            modalName: GOAL_CREATION_TUTORIAL_MODAL,
+            modalName: 'GoalCreationTutorialModal',
             props: {
                 content: '',
                 description: '',
@@ -157,7 +156,7 @@ export default function AddGoalModal({ theme = 'dark', isVisible, }: Props) {
         // </View>
 
         <Modal visible={isVisible} onDismiss={() => { closeModal() }} contentContainerStyle={styles.modal} style={{ marginTop: 0 }}>
-            <View style={styles.container}>
+            <View style={[styles.container, theme === 'light' ? { backgroundColor: colors.light_theme.background } : { backgroundColor: colors.dark_theme.background }]}>
                 <TouchableOpacity style={[styles.button, theme === 'light' ? styles.buttonLight : styles.buttonDark]} onPress={() => { console.log('Goal Templates Pressed') }}>
                     <Feather name='file-text' size={24} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
                     <Text style={[styles.modalText, theme === 'light' ? styles.modalTextLight : styles.modalTextDark]}>Goal Templates</Text>
@@ -179,14 +178,17 @@ const styles = StyleSheet.create({
         left: 120,
         right: -120,
         flex: 1,
+        gap: 16,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'red',
+        // backgroundColor: 'red',
         borderRadius: 16,
+        paddingHorizontal: 24,
+        paddingVertical: 18,
     },
     button: {
         flexDirection: 'row',
-        gap: 10,
+        gap: 16,
         padding: 14,
         justifyContent: 'center',
         alignItems: 'center',
@@ -195,7 +197,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'transparent',
     },
     buttonDark: {
-        backgroundColor: colors.dark_theme.button_primary_bg,
+        backgroundColor: 'transparent',
     },
     buttonIconContainer: {
         padding: 6,

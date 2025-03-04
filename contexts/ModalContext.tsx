@@ -1,5 +1,4 @@
-import React, { createContext, useCallback, useState } from 'react';
-import { DEFAULT_MODAL } from '@/components/CustomModal';
+import React, { createContext, useState } from 'react';
 import { DefaultModalProps } from '@/types/defaultModalProps';
 
 const DEFAULT_PROPS: DefaultModalProps = {
@@ -22,7 +21,7 @@ type ContextType = {
 };
 
 const contextType: ContextType = {
-    modalName: DEFAULT_MODAL,
+    modalName: 'DefaultModal',
     modalProps: DEFAULT_PROPS,
     openModal: ({ modalName, props }: { modalName?: string, props?: DefaultModalProps }) => { },
     closeModal: () => { },

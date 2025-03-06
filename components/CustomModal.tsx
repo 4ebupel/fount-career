@@ -1,4 +1,5 @@
-import React, { useCallback } from 'react';
+// CustomModal.tsx
+import React from 'react';
 import AddGoalModal from '@/modals/AddGoalModal';
 import DefaultModal from '@/modals/DefaultModal';
 import GoalCreationTutorialModal from '@/modals/GoalCreationTutorialModal';
@@ -14,23 +15,23 @@ export const MODAL_LIST = {
     [GOAL_CREATION_TUTORIAL_MODAL]: GoalCreationTutorialModal,
 };
 
-
 export default function CustomModal() {
-    const { modalName, modalProps, closeModal } = useModal();
+    const { modalStack, closeModal } = useModal();
 
-    const renderModal = useCallback(() => {
-        const Component = MODAL_LIST[modalName as keyof typeof MODAL_LIST];
-
-        return (
-            <Component
-                {...modalProps}
-                onClose={closeModal}
-                isVisible={!!modalName}
-            />
-        )
-    }, [modalName, modalProps, closeModal]);
-
-    if (!modalName) return null;
-
-    return renderModal();
-};
+    return (
+        <>
+            {modalStack.map((modal) => {
+                const Component = MODAL_LIST[modal.modalName as keyof typeof MODAL_LIST];
+                return (
+                    <Component
+                        key={modal.id}
+                        {...modal.modalProps}
+                        // Pass the modal's id so it can close itself specifically
+                        onClose={() => closeModal(modal.id)}
+                        isVisible={true}
+                    />
+                );
+            })}
+        </>
+    );
+}

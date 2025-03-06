@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Pressable } from "react-native";
+import { View, StyleSheet, Text, TouchableOpacity, Pressable, Modal } from "react-native";
 import { FontAwesome5, Feather } from '@expo/vector-icons';
 import { colors } from '../lib/colors';
 import { DefaultModalProps } from '../types/defaultModalProps';
@@ -8,41 +8,45 @@ interface Props extends DefaultModalProps {
     isVisible: boolean;
 }
 
-export default function DefaultModal({ theme = 'dark', ...props }: Props) {
-    if (!props.isVisible) return null;
+export default function DefaultModal({ theme = 'dark', isVisible, ...props }: Props) {
+    if (!isVisible) return null;
     const { closeModal } = useModal();
 
     return (
-        <Pressable style={styles.container} onPress={() => { closeModal() }}>
-            <View style={styles.contentContainer}>
-                <TouchableOpacity style={[styles.button, theme === 'light' ? styles.buttonLight : styles.buttonDark]} onPress={() => { props.onConfirm() }}>
-                    <Feather name='file-text' size={24} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
-                    <Text style={[styles.modalText, theme === 'light' ? styles.modalTextLight : styles.modalTextDark]}>{props.primaryCTA}</Text>
-                </TouchableOpacity>
-                <View style={styles.modalDivider} />
-                <TouchableOpacity style={[styles.button, theme === 'light' ? styles.buttonLight : styles.buttonDark]} onPress={() => { props.onCancel() }}>
-                    <FontAwesome5 name={theme === 'light' ? 'user' : 'user-alt'} size={24} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
-                    <Text style={[styles.modalText, theme === 'light' ? styles.modalTextLight : styles.modalTextDark]}>{props.secondaryCTA}</Text>
-                </TouchableOpacity>
-            </View>
+        <Pressable style={styles.container} onPress={() => { props.onClose() }}>
+            {/* <Modal visible={isVisible} animationType='fade'> */}
+                <View style={styles.contentContainer}>
+                    <TouchableOpacity style={[styles.button, theme === 'light' ? styles.buttonLight : styles.buttonDark]} onPress={() => { props.onConfirm() }}>
+                        <Feather name='file-text' size={24} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
+                        <Text style={[styles.modalText, theme === 'light' ? styles.modalTextLight : styles.modalTextDark]}>{props.primaryCTA}</Text>
+                    </TouchableOpacity>
+                    <View style={styles.modalDivider} />
+                    <TouchableOpacity style={[styles.button, theme === 'light' ? styles.buttonLight : styles.buttonDark]} onPress={() => { props.onCancel() }}>
+                        <FontAwesome5 name={theme === 'light' ? 'user' : 'user-alt'} size={24} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
+                        <Text style={[styles.modalText, theme === 'light' ? styles.modalTextLight : styles.modalTextDark]}>{props.secondaryCTA}</Text>
+                    </TouchableOpacity>
+                </View>
+            {/* </Modal> */}
         </Pressable>
     )
 }
 
 const styles = StyleSheet.create({
     container: {
-        position: 'absolute',
-        top: 0,
-        bottom: 0,
-        left: 0,
-        right: 0,
         flex: 1,
+        width: '100%',
+        height: '100%',
+        position: 'absolute',
+        backgroundColor: colors.light_theme.overlay_background,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: colors.dark_theme.overlay_background,
     },
     contentContainer: {
         // height: 150,
+        position: 'absolute',
+        // bottom: 0,
+        // left: 0,
+        // right: 0,
         padding: 16,
         justifyContent: 'center',
         alignItems: 'center',

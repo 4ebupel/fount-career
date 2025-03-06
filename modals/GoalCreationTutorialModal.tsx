@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+// import {Modal} from 'react-native-paper'
 import {
   Modal,
   View,
@@ -11,6 +12,7 @@ import {
   TouchableWithoutFeedback,
   KeyboardAvoidingView,
   Platform,
+  TouchableOpacity,
 } from 'react-native';
 import Button from '@/components/Button';
 import StepZero from '@/components/StepZero';
@@ -24,8 +26,11 @@ import Animated, {
   runOnJS,
   FadeOut,
   FadeIn,
+  SlideInUp,
+  SlideInDown,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { useModal } from '@/hooks/useModal';
 
 // Create an Animated version of SafeAreaView
 const AnimatedSafeAreaView = Animated.createAnimatedComponent(SafeAreaView);
@@ -40,10 +45,11 @@ const SWIPE_THRESHOLD = 200; // minimum downward drag required to close the moda
 
 export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: Props) {
   const [currentStep, setCurrentStep] = useState(0);
+  const { openModal, closeModal } = useModal()
   const totalSteps = 3;
 
   // Shared value for container height (initially 70% of the screen)
-  const containerHeight = useSharedValue(height * 0.7);
+  const containerHeight = useSharedValue(height * 0.8);
 
   const translateX = useSharedValue(0); // for horizontal step transitions
   const translateY = useSharedValue(0); // for vertical swipe-to-close
@@ -56,7 +62,7 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
     });
     const hideListener = Keyboard.addListener('keyboardWillHide', () => {
       // Animate back to the original container height when keyboard hides
-      containerHeight.value = withTiming(height * 0.7, { duration: 200 });
+      containerHeight.value = withTiming(height * 0.8, { duration: 200 });
     });
     return () => {
       showListener.remove();
@@ -118,6 +124,23 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
     }
   };
 
+  const confirmCloseTutorial = () => {
+    openModal({
+      modalName: 'DefaultModal',
+      props: {
+        primaryCTA: 'Yes pls',
+        secondaryCTA: 'I no no wanna',
+        content: '',
+        description: '',
+        title: 'Are you sure u wanna close it',
+        theme: 'light',
+        onClose: () => {},
+        onCancel: closeModal,
+        onConfirm: () => {closeModal(); closeModal()}
+      }
+    })
+  }
+
   // Render the dot indicator for steps
   const renderStepDots = () => {
     return (
@@ -137,50 +160,55 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
 
   return (
     <Animated.View style={styles.overlay} exiting={FadeOut.duration(200)} entering={FadeIn.duration(200)}>
-      <Modal visible={props.isVisible} transparent animationType="slide">
-          <AnimatedSafeAreaView style={[styles.container, gestureAnimatedStyle, containerAnimatedStyle]}>
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-              <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                style={styles.keyboardAvoiding}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 20 : 0}
-              >
-                <View style={styles.contentContainer}>
-                  <GestureDetector gesture={panGesture}>
-                    <View style={styles.header}>
-                      <View style={styles.headerCloseIcon} />
-                      <View style={styles.headerBar} />
-                      <Pressable onPress={props.onClose}>
-                        <AntDesign name="closesquareo" size={24} color={colors.light_theme.text_tertiary} style={styles.headerCloseIcon} />
-                      </Pressable>
-                    </View>
-                  </GestureDetector>
-                  {/* Steps container with horizontal translation */}
-                  <Animated.View style={[styles.stepsWrapper, animatedStyle]}>
-                    <View style={styles.stepContainer}><StepZero theme='dark'/></View>
-                    <View style={styles.stepContainer}><StepZero theme='dark'/></View>
-                    <View style={styles.stepContainer}><StepZero theme='dark'/></View>
-                  </Animated.View>
-                  {/* Dot-based step indicator */}
-                  {renderStepDots()}
-                  <View style={styles.dividerContainer}>
-                    <View style={styles.divider} />
+      {/* <Modal visible={props.isVisible} transparent animationType="slide"> */}
+        <AnimatedSafeAreaView style={[styles.container, gestureAnimatedStyle, containerAnimatedStyle]} entering={SlideInDown.duration(300)}>
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+              style={styles.keyboardAvoiding}
+              keyboardVerticalOffset={Platform.OS === 'ios' ? 20 : 0}
+            >
+              <View style={styles.contentContainer}>
+                <GestureDetector gesture={panGesture}>
+                  <View style={styles.header}>
+                    <View style={styles.headerCloseIcon} />
+                    <View style={styles.headerBar} />
+                    <Pressable onPress={props.onClose}>
+                      <AntDesign name="closesquareo" size={24} color={colors.light_theme.text_tertiary} style={styles.headerCloseIcon} />
+                    </Pressable>
                   </View>
-                  <View style={styles.buttonRow}>
-                    <View style={[styles.testBtnContainer, currentStep < 1 ? { maxWidth: '100%' } : {}]}>
-                      <Button label={currentStep < totalSteps - 1 ? 'Next' : 'Finish'} theme={theme} onPress={goNext} variant="primary" />
-                    </View>
-                    {currentStep > 0 && (
-                      <View style={styles.testBtnContainer}>
-                        <Button label="Back" theme={theme} onPress={goBack} variant="secondary" />
-                      </View>
-                    )}
-                  </View>
+                </GestureDetector>
+                {/* Steps container with horizontal translation */}
+                <Animated.View style={[styles.stepsWrapper, animatedStyle]}>
+                  <View style={styles.stepContainer}><StepZero theme='dark' /></View>
+                  <View style={styles.stepContainer}><StepZero theme='dark' /></View>
+                  <View style={styles.stepContainer}><StepZero theme='dark' /></View>
+                </Animated.View>
+                {/* Dot-based step indicator */}
+                {renderStepDots()}
+                <View style={styles.dividerContainer}>
+                  <View style={styles.divider} />
                 </View>
-              </KeyboardAvoidingView>
-            </TouchableWithoutFeedback>
-          </AnimatedSafeAreaView>
-      </Modal>
+                <View style={styles.buttonRow}>
+                  <View style={[styles.testBtnContainer, currentStep < 1 ? { maxWidth: '100%' } : {}]}>
+                    <Button label={currentStep < totalSteps - 1 ? 'Next' : 'Finish'} theme={theme} onPress={goNext} variant="primary" />
+                  </View>
+                  {currentStep > 0 && (
+                    <View style={styles.testBtnContainer}>
+                      <Button label="Back" theme={theme} onPress={goBack} variant="secondary" />
+                    </View>
+                  )}
+                </View>
+                <TouchableOpacity style={styles.closeTutorialContainer} onPress={confirmCloseTutorial}>
+                  <Text style={styles.closeTutorialText}>
+                    Set Goal manually
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </KeyboardAvoidingView>
+          </TouchableWithoutFeedback>
+        </AnimatedSafeAreaView>
+      {/* </Modal> */}
     </Animated.View>
   );
 }
@@ -287,4 +315,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignSelf: 'flex-end',
   },
+  closeTutorialContainer: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeTutorialText: {
+    textAlign: 'center',
+    textDecorationLine: 'underline',
+    fontWeight: 400,
+    fontSize: 18,
+  }
 });

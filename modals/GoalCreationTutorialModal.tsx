@@ -85,6 +85,19 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
     transform: [{ translateY: translateY.value }],
   }));
 
+  // Function to animate modal closure with consistent animation
+  const animateClose = () => {
+    translateY.value = withTiming(height, { duration: 300 }, () => {
+      runOnJS(props.onClose)();
+    });
+  };
+
+  // Helper function to close the modal after confirmation
+  const closeWithAnimation = () => {
+    closeModal(); // Close the confirmation modal first
+    animateClose(); // Then animate the main modal closing
+  };
+
   // Define the pan gesture using the new Gesture API
   const panGesture = Gesture.Pan()
     .onUpdate((event) => {
@@ -93,8 +106,8 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
     })
     .onEnd(() => {
       if (translateY.value > SWIPE_THRESHOLD) {
-        // If dragged down enough, animate offscreen and then close
-        translateY.value = withTiming(height, { duration: 200 }, () => {
+        // If dragged down enough, show confirmation dialog instead of directly closing
+        translateY.value = withTiming(height, { duration: 300 }, () => {
           runOnJS(props.onClose)();
         });
       } else {
@@ -111,19 +124,21 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
         runOnJS(setCurrentStep)(nextStep);
       });
     } else {
-      props.onClose();
+      // On the last step, show confirmation dialog
+      animateClose();
     }
   };
 
   const goBack = () => {
     if (currentStep > 0) {
-      const prevStep = currentStep - 1;
-      translateX.value = withTiming(-prevStep * width, { duration: 300 }, () => {
-        runOnJS(setCurrentStep)(prevStep);
+      const nextStep = currentStep - 1;
+      translateX.value = withTiming(-nextStep * width, { duration: 300 }, () => {
+        runOnJS(setCurrentStep)(nextStep);
       });
     }
   };
 
+  // Update confirmCloseTutorial to show confirmation dialog with animation on confirm
   const confirmCloseTutorial = () => {
     openModal({
       modalName: 'DefaultModal',
@@ -136,10 +151,12 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
         theme: 'light',
         onClose: () => {},
         onCancel: closeModal,
-        onConfirm: () => {closeModal(); closeModal()}
+        onConfirm: () => { 
+          closeWithAnimation();
+        }
       }
-    })
-  }
+    });
+  };
 
   // Render the dot indicator for steps
   const renderStepDots = () => {
@@ -161,53 +178,53 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
   return (
     <Animated.View style={styles.overlay} exiting={FadeOut.duration(200)} entering={FadeIn.duration(200)}>
       {/* <Modal visible={props.isVisible} transparent animationType="slide"> */}
-        <AnimatedSafeAreaView style={[styles.container, gestureAnimatedStyle, containerAnimatedStyle]} entering={SlideInDown.duration(300)}>
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <KeyboardAvoidingView
-              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-              style={styles.keyboardAvoiding}
-              keyboardVerticalOffset={Platform.OS === 'ios' ? 20 : 0}
-            >
-              <View style={styles.contentContainer}>
-                <GestureDetector gesture={panGesture}>
-                  <View style={styles.header}>
-                    <View style={styles.headerCloseIcon} />
-                    <View style={styles.headerBar} />
-                    <Pressable onPress={props.onClose}>
-                      <AntDesign name="closesquareo" size={24} color={colors.light_theme.text_tertiary} style={styles.headerCloseIcon} />
-                    </Pressable>
-                  </View>
-                </GestureDetector>
-                {/* Steps container with horizontal translation */}
-                <Animated.View style={[styles.stepsWrapper, animatedStyle]}>
-                  <View style={styles.stepContainer}><StepZero theme='dark' /></View>
-                  <View style={styles.stepContainer}><StepZero theme='dark' /></View>
-                  <View style={styles.stepContainer}><StepZero theme='dark' /></View>
-                </Animated.View>
-                {/* Dot-based step indicator */}
-                {renderStepDots()}
-                <View style={styles.dividerContainer}>
-                  <View style={styles.divider} />
+      <AnimatedSafeAreaView style={[styles.container, gestureAnimatedStyle, containerAnimatedStyle]} entering={SlideInDown.duration(300)}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.keyboardAvoiding}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 20 : 0}
+          >
+            <View style={styles.contentContainer}>
+              <GestureDetector gesture={panGesture}>
+                <View style={styles.header}>
+                  <View style={styles.headerCloseIcon} />
+                  <View style={styles.headerBar} />
+                  <Pressable onPress={animateClose}>
+                    <AntDesign name="closesquareo" size={24} color={colors.light_theme.text_tertiary} style={styles.headerCloseIcon} />
+                  </Pressable>
                 </View>
-                <View style={styles.buttonRow}>
-                  <View style={[styles.testBtnContainer, currentStep < 1 ? { maxWidth: '100%' } : {}]}>
-                    <Button label={currentStep < totalSteps - 1 ? 'Next' : 'Finish'} theme={theme} onPress={goNext} variant="primary" />
-                  </View>
-                  {currentStep > 0 && (
-                    <View style={styles.testBtnContainer}>
-                      <Button label="Back" theme={theme} onPress={goBack} variant="secondary" />
-                    </View>
-                  )}
-                </View>
-                <TouchableOpacity style={styles.closeTutorialContainer} onPress={confirmCloseTutorial}>
-                  <Text style={styles.closeTutorialText}>
-                    Set Goal manually
-                  </Text>
-                </TouchableOpacity>
+              </GestureDetector>
+              {/* Steps container with horizontal translation */}
+              <Animated.View style={[styles.stepsWrapper, animatedStyle]}>
+                <View style={styles.stepContainer}><StepZero theme='dark' /></View>
+                <View style={styles.stepContainer}><StepZero theme='dark' /></View>
+                <View style={styles.stepContainer}><StepZero theme='dark' /></View>
+              </Animated.View>
+              {/* Dot-based step indicator */}
+              {renderStepDots()}
+              <View style={styles.dividerContainer}>
+                <View style={styles.divider} />
               </View>
-            </KeyboardAvoidingView>
-          </TouchableWithoutFeedback>
-        </AnimatedSafeAreaView>
+              <View style={styles.buttonRow}>
+                <View style={[styles.testBtnContainer, currentStep < 1 ? { maxWidth: '100%' } : {}]}>
+                  <Button label={currentStep < totalSteps - 1 ? 'Next' : 'Finish'} theme={theme} onPress={goNext} variant="primary" />
+                </View>
+                {currentStep > 0 && (
+                  <View style={styles.testBtnContainer}>
+                    <Button label="Back" theme={theme} onPress={goBack} variant="secondary" />
+                  </View>
+                )}
+              </View>
+              <TouchableOpacity style={styles.closeTutorialContainer} onPress={confirmCloseTutorial}>
+                <Text style={styles.closeTutorialText}>
+                  Set Goal manually
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
+        </TouchableWithoutFeedback>
+      </AnimatedSafeAreaView>
       {/* </Modal> */}
     </Animated.View>
   );

@@ -1,7 +1,6 @@
-// StepZero.tsx
-import { ThemeMode } from "@/contexts/ThemeContext";
 import { colors } from "@/lib/colors";
-import { StyleSheet, View, Image, TextInput, Text } from "react-native";
+import { StyleSheet, View, Image, TextInput, Text, Platform } from "react-native";
+import { useState } from "react";
 
 const image = require('@/assets/goalCreationTutorialImage.png')
 
@@ -9,9 +8,11 @@ interface Props {
     theme: 'dark' | 'light',
 }
 
-const inputPlaceholder = "e.g. ‘Learn React Native and build 3 apps by end of 2025’";
+const inputPlaceholder = "e.g. 'Learn React Native and build 3 apps by end of 2025'";
 
 export default function StepZero({ theme }: Props) {
+    const [isFocused, setIsFocused] = useState(false);
+
     return (
         <View style={styles.container}>
             <View style={styles.headingContainer}>
@@ -25,7 +26,15 @@ export default function StepZero({ theme }: Props) {
             <View style={styles.divider} />
             <Image style={styles.picture} source={image} />
             <View style={styles.divider} />
-            <TextInput style={styles.input} placeholder={inputPlaceholder} />
+            <View style={styles.inputContainer}>
+                <TextInput
+                    style={[styles.input, isFocused && styles.inputFocused]}
+                    placeholder={inputPlaceholder}
+                    multiline={true}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                />
+            </View>
         </View>
     )
 }
@@ -34,12 +43,12 @@ const styles = StyleSheet.create({
     container: {
         width: '100%',
         maxHeight: '100%',
-        gap: 20,
+        gap: 12,
         alignItems: 'center',
         justifyContent: 'center',
     },
     headingContainer: {
-        gap: 8,
+        gap: 6,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -59,18 +68,25 @@ const styles = StyleSheet.create({
         backgroundColor: colors.light_theme.tertiary_background,
     },
     picture: {
-        maxHeight: '40%',
-        maxWidth: '40%',
+        maxHeight: '50%',
+        maxWidth: '50%',
         resizeMode: 'contain',
     },
-    input: {
-        maxHeight: '33%',
-        height: 0,
-        minHeight: '10%',
+    inputContainer: {
         width: '100%',
-        paddingHorizontal: 20,
-        paddingVertical: 30,
+        marginBottom: Platform.OS === 'ios' ? 8 : 4,
+    },
+    input: {
+        minHeight: 60,
+        width: '100%',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
         backgroundColor: colors.light_theme.secondary_background,
         textAlign: 'center',
+        borderRadius: 8,
     },
+    inputFocused: {
+        borderWidth: 2,
+        borderColor: colors.light_theme.text_accent,
+    }
 });

@@ -34,6 +34,7 @@ import StepThree from '@/components/goalCreationTutorial/StepThree';
 import StepFour from '@/components/goalCreationTutorial/StepFour';
 import StepFive from '@/components/goalCreationTutorial/StepFive';
 import LastDetails from '@/components/goalCreationTutorial/LastDetails';
+import GoodJob from '@/components/goalCreationTutorial/GoodJob';
 // Create an Animated version of SafeAreaView
 const AnimatedSafeAreaView = Animated.createAnimatedComponent(SafeAreaView);
 
@@ -45,11 +46,12 @@ const steps = [
   StepFour,
   StepFive,
   LastDetails,
-]
+  GoodJob,
+];
 
 interface Props extends DefaultModalProps {
   isVisible: boolean;
-}
+};
 
 const paddingHorizontal = 24;
 const { width, height } = Dimensions.get('window');
@@ -66,7 +68,7 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
   const getStepHeight = () => {
     switch(currentStep) {
       case 0: return height * 0.45;  // Step 0 height
-      case steps.length - 1: return height * 0.6;  // Last step height
+      case steps.length - 1: return height * 0.5;  // Last step height
       default: return height * 0.55; // Default height for future steps
     }
   };
@@ -74,7 +76,7 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
   const getContainerHeight = () => {
     switch(currentStep) {
       case 0: return height * 0.8;
-      case steps.length - 1: return height * 0.9;
+      case steps.length - 1: return height * 0.8;
       default: return height * 0.85;
     }
   }

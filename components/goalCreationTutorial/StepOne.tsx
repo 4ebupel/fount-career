@@ -2,7 +2,7 @@ import { colors } from "@/lib/colors";
 import { StyleSheet, View, Image, TextInput, Text, Platform } from "react-native";
 import { useState } from "react";
 
-const image = require('@/assets/goalCreationTutorialStepZero.png')
+const image = require('@/assets/goalCreationTutorialStepOne.png')
 
 interface Props {
     theme: 'dark' | 'light',
@@ -12,17 +12,17 @@ interface Props {
 
 const inputPlaceholder = "e.g. 'Learn React Native and build 3 apps by end of 2025'";
 
-export default function StepZero({ theme, goal, setGoal }: Props) {
+export default function StepOne({ theme, goal, setGoal }: Props) {
     const [isFocused, setIsFocused] = useState(false);
 
     return (
         <View style={styles.container}>
             <View style={styles.headingContainer}>
                 <Text style={styles.title}>
-                    What's your Goal?
+                    Step 1: Specific
                 </Text>
                 <Text style={styles.description}>
-                    Take a moment to write down an inspiring goal you want to achieve. Be clear and ambitious!
+                    Is your goal specific enough?
                 </Text>
             </View>
             <View style={styles.divider} />
@@ -39,6 +39,17 @@ export default function StepZero({ theme, goal, setGoal }: Props) {
                     onChangeText={setGoal}
                 />
             </View>
+            <View style={styles.examplesContainer}>
+                <Text style={styles.examplesTitle}>
+                    Examples:
+                </Text>
+                <Text style={styles.examplesText}>
+                    ❌ "Get better at coding"
+                </Text>
+                <Text style={styles.examplesText}>
+                    ✅ "Learn React and build 3 projects"
+                </Text>
+            </View>
         </View>
     )
 }
@@ -47,9 +58,9 @@ const styles = StyleSheet.create({
     container: {
         width: '100%',
         maxHeight: '100%',
-        gap: 20,
+        gap: 12,
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
     },
     headingContainer: {
         gap: 6,
@@ -92,5 +103,17 @@ const styles = StyleSheet.create({
     inputFocused: {
         borderWidth: 2,
         borderColor: colors.light_theme.text_accent,
-    }
+    },
+    examplesContainer: {
+        width: '100%',
+        gap: 4,
+    },
+    examplesTitle: {
+        fontSize: 16,
+        fontWeight: '700',
+    },
+    examplesText: {
+        fontSize: 14,
+        fontWeight: '400',
+    },
 });

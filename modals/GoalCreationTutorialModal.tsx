@@ -28,9 +28,24 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useModal } from '@/hooks/useModal';
-
+import StepOne from '@/components/goalCreationTutorial/StepOne';
+import StepTwo from '@/components/goalCreationTutorial/StepTwo';  
+import StepThree from '@/components/goalCreationTutorial/StepThree';
+import StepFour from '@/components/goalCreationTutorial/StepFour';
+import StepFive from '@/components/goalCreationTutorial/StepFive';
+import LastDetails from '@/components/goalCreationTutorial/LastDetails';
 // Create an Animated version of SafeAreaView
 const AnimatedSafeAreaView = Animated.createAnimatedComponent(SafeAreaView);
+
+const steps = [
+  StepZero,
+  StepOne,
+  StepTwo,
+  StepThree,
+  StepFour,
+  StepFive,
+  LastDetails,
+]
 
 interface Props extends DefaultModalProps {
   isVisible: boolean;
@@ -43,55 +58,103 @@ const HORIZONTAL_SWIPE_THRESHOLD = 100; // minimum horizontal drag required to n
 
 export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: Props) {
   const [currentStep, setCurrentStep] = useState(0);
+  const [goal, setGoal] = useState('');
   const { openModal, closeModal } = useModal()
-  const totalSteps = 3;
+  // const totalSteps = 3;
+
+  // Step-specific height values (adjust these based on actual content)
+  const getStepHeight = () => {
+    switch(currentStep) {
+      case 0: return height * 0.45;  // Step 0 height
+      case steps.length - 1: return height * 0.6;  // Last step height
+      default: return height * 0.55; // Default height for future steps
+    }
+  };
+
+  const getContainerHeight = () => {
+    switch(currentStep) {
+      case 0: return height * 0.8;
+      case steps.length - 1: return height * 0.9;
+      default: return height * 0.85;
+    }
+  }
 
   // Shared value for container height
-  const containerHeight = useSharedValue(height * 0.75);
+  const containerHeight = useSharedValue(getContainerHeight());
+  
+  // Shared value for step container height - updates when currentStep changes
+  const stepContainerHeight = useSharedValue(getStepHeight());
 
   const translateX = useSharedValue(0); // for horizontal step transitions
   const translateY = useSharedValue(0); // for vertical swipe-to-close
   const isSwipingHorizontally = useSharedValue(false); // track if horizontal swipe is active
   const isSwipingVertically = useSharedValue(false); // track if vertical swipe is active
   const horizontalSwipeOffset = useSharedValue(0); // for temporary horizontal swipe movement
-  
+
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  // Update step container height when currentStep changes
+  useEffect(() => {
+    stepContainerHeight.value = withTiming(getStepHeight(), { duration: 300 });
+    containerHeight.value = withTiming(getContainerHeight(), { duration: 300 });
+  }, [currentStep]);
 
   // Listen to keyboard events and update containerHeight shared value.
   useEffect(() => {
     const keyboardWillShow = (event: any) => {
       // Mark keyboard as visible
       setIsKeyboardVisible(true);
-      
+
       // Reset any vertical translation when keyboard opens
       translateY.value = withTiming(0, { duration: 150 });
+
+      // Store current step to calculate height
+      const currentStepIndex = currentStep;
       
-      // Adjust container height for keyboard while preserving header position
-      containerHeight.value = withTiming(height * 0.85, { duration: 200 });
+      // Get the current container height before keyboard shows
+      const currentHeight = getContainerHeight();
+      
+      // Calculate keyboard-visible height - ensure it's never smaller than current height
+      const keyboardVisibleHeight = Math.max(
+        currentStepIndex === 0 ? height * 0.9 : height * 0.85,
+        currentHeight
+      );
+      
+      // Adjust container height for keyboard
+      containerHeight.value = withTiming(keyboardVisibleHeight, { duration: 200 });
+      
+      // Adjust step container height when keyboard is visible - ensure it's appropriate for the content
+      stepContainerHeight.value = withTiming(
+        currentStepIndex === 0 ? height * 0.45 : height * 0.5, 
+        { duration: 200 }
+      );
     };
-    
+
     const keyboardWillHide = () => {
       // Mark keyboard as hidden
       setIsKeyboardVisible(false);
-      
+
       // Animate back to the original container height when keyboard hides
-      containerHeight.value = withTiming(height * 0.8, { duration: 200 });
+      containerHeight.value = withTiming(getContainerHeight(), { duration: 200 });
+      
+      // Reset step container height
+      stepContainerHeight.value = withTiming(getStepHeight(), { duration: 200 });
     };
 
     // Use correct keyboard event listeners based on platform
-    const showListener = Platform.OS === 'ios' 
+    const showListener = Platform.OS === 'ios'
       ? Keyboard.addListener('keyboardWillShow', keyboardWillShow)
       : Keyboard.addListener('keyboardDidShow', keyboardWillShow);
-      
+
     const hideListener = Platform.OS === 'ios'
       ? Keyboard.addListener('keyboardWillHide', keyboardWillHide)
       : Keyboard.addListener('keyboardDidHide', keyboardWillHide);
-      
+
     return () => {
       showListener.remove();
       hideListener.remove();
     };
-  }, []);
+  }, [currentStep]);
 
   // Animated style for container height
   const containerAnimatedStyle = useAnimatedStyle(() => ({
@@ -110,6 +173,11 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
     transform: [{ translateY: translateY.value }],
   }));
 
+  // Add animated style for step container height
+  const stepContainerStyle = useAnimatedStyle(() => ({
+    height: stepContainerHeight.value,
+  }));
+
   // Function to animate modal closure with consistent animation
   const animateClose = () => {
     translateY.value = withTiming(height, { duration: 300 }, () => {
@@ -119,7 +187,7 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
 
   // Navigation handlers for steps - defined before gesture handlers to ensure they're available
   const goNext = () => {
-    if (currentStep < totalSteps - 1) {
+    if (currentStep < steps.length - 1) {
       const nextStep = currentStep + 1;
       translateX.value = withTiming(-nextStep * width, { duration: 300 }, () => {
         runOnJS(setCurrentStep)(nextStep);
@@ -171,7 +239,7 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
 
   // Safe wrapper function to handle navigation
   const safeGoNext = () => {
-    if (currentStep < totalSteps - 1) {
+    if (currentStep < steps.length - 1) {
       goNext();
     }
   };
@@ -191,13 +259,13 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
     })
     .onUpdate((event) => {
       if (!isSwipingHorizontally.value || isKeyboardVisible) return;
-      
+
       // Logic for horizontal drag constraints
       if (currentStep === 0 && event.translationX > 0) {
         // First step - prevent dragging right
         horizontalSwipeOffset.value = 0;
-      } 
-      else if (currentStep === totalSteps - 1 && event.translationX < 0) {
+      }
+      else if (currentStep === steps.length - 1 && event.translationX < 0) {
         // Last step - prevent dragging left
         horizontalSwipeOffset.value = 0;
       }
@@ -213,20 +281,20 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
         isSwipingHorizontally.value = false;
         return;
       }
-      
+
       // Reset the swipe offset with animation regardless of direction
       horizontalSwipeOffset.value = withTiming(0, { duration: 300 });
-      
+
       // Process the swipe direction after ensuring the offset is being reset
       if (event.translationX > HORIZONTAL_SWIPE_THRESHOLD && currentStep > 0) {
         // Only call goBack if we're not on the first step
         runOnJS(safeGoBack)();
-      } 
-      else if (event.translationX < -HORIZONTAL_SWIPE_THRESHOLD && currentStep < totalSteps - 1) {
+      }
+      else if (event.translationX < -HORIZONTAL_SWIPE_THRESHOLD && currentStep < steps.length - 1) {
         // Only call goNext if we're not on the last step
         runOnJS(safeGoNext)();
       }
-      
+
       // Always reset the swiping state
       isSwipingHorizontally.value = false;
     })
@@ -243,9 +311,9 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
         description: '',
         title: 'Are you sure u wanna close it',
         theme: 'light',
-        onClose: () => {},
+        onClose: () => { },
         onCancel: closeModal,
-        onConfirm: () => { 
+        onConfirm: () => {
           closeWithAnimation();
         }
       }
@@ -256,7 +324,7 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
   const renderStepDots = () => {
     return (
       <View style={styles.stepDotsContainer}>
-        {Array.from({ length: totalSteps }).map((_, index) => {
+        {Array.from({ length: steps.length }).map((_, index) => {
           const isActive = index === currentStep;
           return (
             <View
@@ -288,30 +356,32 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
                   </Pressable>
                 </View>
               </GestureDetector>
-              
+
               {/* Content section with adaptive spacing */}
               <View style={[styles.scrollableContent, isKeyboardVisible && styles.scrollableContentKeyboardVisible]}>
-                {/* Wrap the gesture detector in a View with proper dimensions to contain it */}
-                <View style={styles.stepsContainer}>
+                {/* Wrap the gesture detector in a View with animate-able height */}
+                <Animated.View style={[styles.stepsContainer, stepContainerStyle]}>
                   <GestureDetector gesture={stepsPanGesture}>
                     <Animated.View style={[styles.stepsWrapper, animatedStyle]}>
-                      <View style={styles.stepContainer}><StepZero theme='dark' /></View>
-                      <View style={styles.stepContainer}><StepZero theme='dark' /></View>
-                      <View style={styles.stepContainer}><StepZero theme='dark' /></View>
+                      {steps.map((Step, index) => (
+                        <View style={styles.stepContainer} key={index}>
+                          <Step theme={theme} goal={goal} setGoal={setGoal} />
+                        </View>
+                      ))}
                     </Animated.View>
                   </GestureDetector>
-                </View>
-                
+                </Animated.View>
+
                 {/* Dot-based step indicator */}
                 {renderStepDots()}
-                
+
                 <View style={styles.dividerContainer}>
                   <View style={styles.divider} />
                 </View>
-                
+
                 <View style={styles.buttonRow}>
-                  <View style={[styles.testBtnContainer, currentStep < 1 ? { maxWidth: '100%' } : {}]}>
-                    <Button label={currentStep < totalSteps - 1 ? 'Next' : 'Finish'} theme={theme} onPress={goNext} variant="primary" />
+                  <View style={styles.testBtnContainer}>
+                    <Button label={currentStep < steps.length - 1 ? 'Next' : 'Finish'} theme={theme} onPress={goNext} variant="primary" disabled={goal.length <= 0} />
                   </View>
                   {currentStep > 0 && (
                     <View style={styles.testBtnContainer}>
@@ -319,18 +389,20 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
                     </View>
                   )}
                 </View>
-                
-                <TouchableOpacity 
-                  style={[
-                    styles.closeTutorialContainer,
-                    isKeyboardVisible && styles.closeTutorialContainerKeyboardVisible
-                  ]} 
-                  onPress={confirmCloseTutorial}
-                >
-                  <Text style={styles.closeTutorialText}>
-                    Set Goal manually
-                  </Text>
-                </TouchableOpacity>
+
+                {currentStep === 0 && (
+                  <TouchableOpacity
+                    style={[
+                      styles.closeTutorialContainer,
+                      isKeyboardVisible && styles.closeTutorialContainerKeyboardVisible
+                    ]}
+                    onPress={confirmCloseTutorial}
+                  >
+                    <Text style={styles.closeTutorialText}>
+                      Set Goal manually
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           </KeyboardAvoidingView>
@@ -387,9 +459,10 @@ const styles = StyleSheet.create({
     width: 24,
   },
   testBtnContainer: {
-    maxWidth: '50%',
+    maxWidth: '100%',
     width: 'auto',
     flexGrow: 1,
+    flex: 1,
   },
   contentContainer: {
     width: '100%',
@@ -410,17 +483,16 @@ const styles = StyleSheet.create({
   stepsContainer: {
     width: '100%',
     overflow: 'hidden', // Ensures content doesn't spill outside container
-    height: height * 0.4, // Explicit height to properly contain the gesture area
   },
   stepsWrapper: {
     flexDirection: 'row',
-    width: width * 3,
+    width: width * steps.length,
     alignSelf: 'flex-start',
   },
   stepContainer: {
     width: width,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     paddingHorizontal,
   },
   stepDotsContainer: {
@@ -457,6 +529,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'flex-end',
+    width: '100%',
   },
   closeTutorialContainer: {
     width: '100%',
@@ -472,5 +545,5 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
     fontWeight: 400,
     fontSize: 18,
-  }
+  },
 });

@@ -8,4 +8,9 @@ export interface DefaultModalProps {
     onClose: () => void;
     onConfirm: () => void;
     onCancel: () => void;
+    // Additional optional props for CategorySelectorModal
+    categories?: string[];
+    onSelectCategory?: (category: string) => void;
+    // Additional optional props for DateSelectorModal
+    onSelectDate?: (date: string) => void;
 };

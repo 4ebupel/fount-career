@@ -14,10 +14,11 @@ type Props = {
     icon?: string;
     variant?: 'primary' | 'secondary';
     theme?: 'dark' | 'light';
+    disabled?: boolean;
     onPress?: () => void;
 };
 
-export default function Button({ label, icon, onPress, variant = 'secondary', theme = 'dark' }: Props) {
+export default function Button({ label, icon, onPress, variant = 'secondary', theme = 'dark', disabled = false }: Props) {
     // One shared value to track the press state (0 = unpressed, 1 = pressed)
     const pressProgress = useSharedValue(0);
 
@@ -52,9 +53,6 @@ export default function Button({ label, icon, onPress, variant = 'secondary', th
             : undefined,
     }));
 
-    // For a secondary button:
-    // - The background color transitions from the default to a much lighter gray.
-    // - The text color is also adjusted to a lighter gray.
     const secondaryBackgroundStyle = useAnimatedStyle(() => ({
         backgroundColor: variant === 'secondary'
             ? interpolateColor(
@@ -91,14 +89,14 @@ export default function Button({ label, icon, onPress, variant = 'secondary', th
                 onPressIn={handlePressIn}
                 onPressOut={handlePressOut}
                 onPress={onPress}
-                style={styles.pressable}
+                disabled={disabled}
+                style={[styles.pressable, disabled && styles.buttonDisabled]}
             >
                 <Animated.View style={buttonStyles}>
                     {icon && (
                         <FontAwesome
                             name={icon as keyof typeof FontAwesome.glyphMap}
                             size={18}
-                            // Use the default text color for rendering icons.
                             color={variant === 'primary' ? theme === 'dark' ? colors.dark_theme.button_primary_text : colors.light_theme.button_primary_text : theme === 'dark' ? colors.dark_theme.button_secondary_text : colors.light_theme.button_secondary_text}
                             style={styles.buttonIcon}
                         />
@@ -133,6 +131,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         paddingHorizontal: 16,
         borderRadius: 40,
+    },
+    buttonDisabled: {
+        opacity: 0.5,
     },
     buttonIcon: {
         marginRight: 8,

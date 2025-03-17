@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, Image, SafeAreaView, Pressable } from "react-na
 import WeeklyCalendarHeader from "@/components/WeeklyCalendarHeader";
 import { colors } from "@/lib/colors";
 import { ThemeContext } from "@/contexts/ThemeContext";
-import { PaperProvider } from 'react-native-paper';
 import { Feather } from '@expo/vector-icons';
 import { useModal } from "@/hooks/useModal";
 export default function MyGoals() {
@@ -33,43 +32,38 @@ export default function MyGoals() {
     }
 
     return (
-        <PaperProvider>
-            <SafeAreaView style={[
-                styles.container,
-                theme === 'dark' ? styles.containerDark : styles.containerLight
-            ]}>
-                <WeeklyCalendarHeader progressData={progressData} />
-                <View style={styles.backgroundImageContainer}>
-                    <Image
-                        source={theme === 'dark'
-                            ? require("@/assets/get-done-background-image-dark.png")
-                            : require("@/assets/get-done-background-image-light.png")
-                        }
-                        style={styles.backgroundImage}
-                        resizeMode="contain"
-                    />
-                    <View style={styles.backgroundTitleContainer}>
-                        <Text style={[styles.backgroundTitle, theme === 'dark' ? styles.backgroundTitleDark : styles.backgroundTitleLight]}>You have no goals</Text>
-                        <Text style={[styles.backgroundDescription, theme === 'dark' ? styles.backgroundDescriptionDark : styles.backgroundDescriptionLight]}>Add a goal by clicking the (+) button below.</Text>
-                    </View>
+        <SafeAreaView style={[
+            styles.container,
+            theme === 'dark' ? styles.containerDark : styles.containerLight
+        ]}>
+            <WeeklyCalendarHeader progressData={progressData} />
+            <View style={styles.backgroundImageContainer}>
+                <Image
+                    source={theme === 'dark'
+                        ? require("@/assets/get-done-background-image-dark.png")
+                        : require("@/assets/get-done-background-image-light.png")
+                    }
+                    style={styles.backgroundImage}
+                    resizeMode="contain"
+                />
+                <View style={styles.backgroundTitleContainer}>
+                    <Text style={[styles.backgroundTitle, theme === 'dark' ? styles.backgroundTitleDark : styles.backgroundTitleLight]}>You have no goals</Text>
+                    <Text style={[styles.backgroundDescription, theme === 'dark' ? styles.backgroundDescriptionDark : styles.backgroundDescriptionLight]}>Add a goal by clicking the (+) button below.</Text>
                 </View>
-                {/* <Portal>
-                    <AddGoalModal theme={theme} visible={visible} setVisible={setVisible} />
-                </Portal> */}
-                <Pressable
-                    onPress={() => {
-                        console.log('Pressed');
-                        onPress();
-                    }}
-                    style={[
-                        styles.button,
-                        theme === 'light' ? styles.buttonLight : styles.buttonDark,
-                    ]}
-                >
-                    <Feather name="plus" size={24} color={theme === 'light' ? colors.light_theme.button_primary_text : colors.dark_theme.button_primary_text} />
-                </Pressable>
-            </SafeAreaView>
-        </PaperProvider >
+            </View>
+            <Pressable
+                onPress={() => {
+                    console.log('Pressed');
+                    onPress();
+                }}
+                style={[
+                    styles.button,
+                    theme === 'light' ? styles.buttonLight : styles.buttonDark,
+                ]}
+            >
+                <Feather name="plus" size={24} color={theme === 'light' ? colors.light_theme.button_primary_text : colors.dark_theme.button_primary_text} />
+            </Pressable>
+        </SafeAreaView>
     )
 }
 

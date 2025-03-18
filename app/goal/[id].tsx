@@ -1,4 +1,4 @@
-import { View, Text, SafeAreaView, StyleSheet, Image, Pressable } from "react-native";
+import { View, Text, SafeAreaView, StyleSheet, Image, Pressable, ScrollView, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from 'expo-router';
 import { mockData } from "@/lib/mock-data";
 import { ThemeContext } from "@/contexts/ThemeContext";
@@ -44,16 +44,35 @@ export default function Goal() {
                     </View>
                 </View>
                 <View style={[styles.divider, theme === 'light' ? styles.dividerLight : styles.dividerDark]} />
-                <View>
-                    <View>
-                        <Text>Tasks ({goal?.tasks.length || 0})</Text>
-                        <FontAwesome />
+                <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scrollContentContainer}>
+                    <View style={styles.sectionsContainer}>
+                        <View style={styles.sectionContainer}>
+                            <View style={styles.sectionHeadingContainer}>
+                                <Text style={[styles.sectionHeadingTitle, theme === 'light' ? styles.sectionHeadingTitleLight : styles.sectionHeadingTitleDark]}>Tasks ({goal?.tasks.length || 0})</Text>
+                                <Pressable style={[styles.infoButton, theme === 'light' ? styles.infoButtonLight : styles.infoButtonDark]}>
+                                    <FontAwesome name="info" size={12} color={theme === 'light' ? colors.light_theme.text_secondary : colors.dark_theme.text_secondary} />
+                                </Pressable>
+                            </View>
+                            <TouchableOpacity style={[styles.addButton, styles.addTaskButtonBgColor]}>
+                                <FontAwesome name="plus" size={16} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
+                                <Text style={[styles.addButtonText, theme === 'light' ? styles.addButtonTextLight : styles.addButtonTextDark]}>Add Task</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.sectionContainer}>
+                            <View style={styles.sectionHeadingContainer}>
+                                <Text style={[styles.sectionHeadingTitle, theme === 'light' ? styles.sectionHeadingTitleLight : styles.sectionHeadingTitleDark]}>Habits ({goal?.habits.length || 0})</Text>
+                                <Pressable style={[styles.infoButton, theme === 'light' ? styles.infoButtonLight : styles.infoButtonDark]}>
+                                    <FontAwesome name="info" size={12} color={theme === 'light' ? colors.light_theme.text_secondary : colors.dark_theme.text_secondary} />
+                                </Pressable>
+                            </View>
+                            <TouchableOpacity style={[styles.addButton, styles.addHabitButtonBgColor]}>
+                                <FontAwesome name="plus" size={16} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
+                                <Text style={[styles.addButtonText, theme === 'light' ? styles.addButtonTextLight : styles.addButtonTextDark]}>Add Habit</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
-                    <Pressable>
-                        <FontAwesome />
-                        <Text>Add Task</Text>
-                    </Pressable>
-                </View>
+                </ScrollView>
             </View>
         </View>
     )
@@ -212,5 +231,73 @@ const styles = StyleSheet.create({
     },
     dueDateTextDark: {
         color: colors.dark_theme.text_tertiary,
+    },
+    infoButton: {
+        marginTop: 2,
+        width: 20,
+        height: 20,
+        borderRadius: 6,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+    },
+    infoButtonLight: {
+        borderColor: colors.light_theme.text_secondary,
+    },
+    infoButtonDark: {
+        borderColor: colors.dark_theme.text_secondary,
+    },
+    scrollContainer: {
+        flex: 1,
+    },
+    scrollContentContainer: {
+        flexGrow: 1,
+        gap: 24,
+    },
+    sectionsContainer: {
+        gap: 24,
+    },
+    sectionContainer: {
+        gap: 12,
+    },
+    sectionHeadingContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        gap: 8,
+    },
+    sectionHeadingTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+    },
+    sectionHeadingTitleLight: {
+        color: colors.light_theme.text_primary,
+    },
+    sectionHeadingTitleDark: {
+        color: colors.dark_theme.text_primary,
+    },
+    addButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 12,
+        padding: 16,
+        borderRadius: 8,
+    },
+    addTaskButtonBgColor: {
+        backgroundColor: 'rgba(26, 153, 142, 0.08)',
+    },
+    addHabitButtonBgColor: {
+        backgroundColor: 'rgba(44, 1, 102, 0.08)',
+    },
+    addButtonText: {
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    addButtonTextLight: {
+        color: colors.light_theme.text_primary,
+    },
+    addButtonTextDark: {
+        color: colors.dark_theme.text_primary,
     },
 });

@@ -4,144 +4,9 @@ import { ThemeContext } from "@/contexts/ThemeContext";
 import { useContext, useState } from "react";
 import React from "react";
 import GoalCard from "@/components/GoalCard";
-const testData = [
-    {
-        id: 1,
-        createdAt: "2025-01-01",
-        updatedAt: "2025-02-01",
-        title: "Become a UI/UX Designer",
-        habits: [
-            {
-                id: 1,
-                title: "Habit 1",
-                completed: false,
-            },
-            {
-                id: 2,
-                title: "Habit 2",
-                completed: true,
-            },
-            {
-                id: 3,
-                title: "Habit 3",
-                completed: true,
-            },
-        ],
-        tasks: [
-            {
-                id: 1,
-                title: "Task 1",
-                completed: false,
-            },
-            {
-                id: 2,
-                title: "Task 2",
-                completed: true,
-            },
-            {
-                id: 3,
-                title: "Task 3",
-                completed: false,
-            },
-        ],
-        dueDate: "2026-01-01",
-        completed: false,
-        imageSmall: "https://picsum.photos/200/300",
-        imageLarge: "https://picsum.photos/600/800",
-    },
-    {
-        id: 2,
-        createdAt: "2025-01-01",
-        updatedAt: "2025-02-01",
-        title: "Goal 2",
-        habits: [
-            {
-                id: 1,
-                title: "Habit 1",
-                completed: true,
-            },
-            {
-                id: 2,
-                title: "Habit 2",
-                completed: true,
-            },
-            {
-                id: 3,
-                title: "Habit 3",
-                completed: true,
-            },
-        ],
-        tasks: [
-            {
-                id: 1,
-                title: "Task 1",
-                completed: false,
-            },
-            {
-                id: 2,
-                title: "Task 2",
-                completed: true,
-            },
-            {
-                id: 3,
-                title: "Task 3",
-                completed: true,
-            },
-        ],
-        dueDate: "2025-06-21",
-        completed: true,
-        imageSmall: "https://picsum.photos/200/300",
-        imageLarge: "https://picsum.photos/600/800",
-    },
-    {
-        id: 3,
-        createdAt: "2025-01-01",
-        updatedAt: "2025-02-01",
-        title: "Lorem Ipsum Dolor Sit Amet Consectetur Adipiscing Elit Sed Do Eiusmod Tempor Incididunt Ut Labore Et Dolore Magna Aliqua",
-        completed: false,
-        habits: [],
-        tasks: [],
-        dueDate: "2025-06-21",
-        imageSmall: "https://picsum.photos/200/300",
-        imageLarge: "https://picsum.photos/600/800",
-    },
-    {
-        id: 4,
-        createdAt: "2025-01-01",
-        updatedAt: "2025-02-01",
-        title: "Learn How to Play Guitar",
-        completed: false,
-        habits: [],
-        tasks: [],
-        dueDate: "2025-06-21",
-        imageSmall: "https://picsum.photos/200/300",
-        imageLarge: "https://picsum.photos/600/800",
-    },
-    {
-        id: 5,
-        createdAt: "2025-01-01",
-        updatedAt: "2025-02-01",
-        title: "Learn How to Play Guitar",
-        completed: false,
-        habits: [],
-        tasks: [],
-        dueDate: "2025-06-21",
-        imageSmall: "https://picsum.photos/200/300",
-        imageLarge: "https://picsum.photos/600/800",
-    },
-    {
-        id: 6,
-        createdAt: "2025-01-01",
-        updatedAt: "2025-02-01",
-        title: "Lorem Ipsum Dolor Sit Amet Consectetur Adipiscing Elit Sed Do Eiusmod Tempor Incididunt Ut Labore Et Dolore Magna Aliqua",
-        completed: false,
-        habits: [],
-        tasks: [],
-        dueDate: "2025-06-21",
-        imageSmall: "https://picsum.photos/200/300",
-        imageLarge: "https://picsum.photos/600/800",
-    },
-];
+import { GoalCardPressProvider } from "@/contexts/GoalCardPressedContext";
+import { mockData } from "@/lib/mock-data";
+
 
 export default function Home() {
     const [selectedButton, setSelectedButton] = useState<'ongoing' | 'achieved'>('ongoing');
@@ -158,27 +23,29 @@ export default function Home() {
                 </TouchableOpacity>
             </View>
             <ScrollView style={styles.goalsContainer}>
-                {
-                    selectedButton === 'ongoing' ? (
-                        testData.filter((item) => !item.completed).map((item, index) => (
-                            <React.Fragment key={item.id}>
-                                <GoalCard goal={item} theme={theme} />
-                                {index < testData.length - 1 && (
-                                    <View style={[styles.divider, theme === 'light' ? styles.dividerLight : styles.dividerDark]} />
-                                )}
-                            </React.Fragment>
-                        ))
-                    ) : (
-                        testData.filter((item) => item.completed).map((item, index) => (
-                            <React.Fragment key={item.id}>
-                                <GoalCard goal={item} theme={theme} />
-                                {index < testData.length - 1 && (
-                                    <View style={[styles.divider, theme === 'light' ? styles.dividerLight : styles.dividerDark]} />
-                                )}
-                            </React.Fragment>
-                        ))
-                    )
-                }
+                <GoalCardPressProvider>
+                    {
+                        selectedButton === 'ongoing' ? (
+                            mockData.filter((item) => !item.completed).map((item, index) => (
+                                <React.Fragment key={item.id}>
+                                    <GoalCard goal={item} theme={theme} />
+                                    {index < mockData.length - 1 && (
+                                        <View style={[styles.divider, theme === 'light' ? styles.dividerLight : styles.dividerDark]} />
+                                    )}
+                                </React.Fragment>
+                            ))
+                        ) : (
+                            mockData.filter((item) => item.completed).map((item, index) => (
+                                <React.Fragment key={item.id}>
+                                    <GoalCard goal={item} theme={theme} />
+                                    {index < mockData.length - 1 && (
+                                        <View style={[styles.divider, theme === 'light' ? styles.dividerLight : styles.dividerDark]} />
+                                    )}
+                                </React.Fragment>
+                            ))
+                        )
+                    }
+                </GoalCardPressProvider>
             </ScrollView>
         </SafeAreaView>
     )

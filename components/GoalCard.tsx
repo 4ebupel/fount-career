@@ -1,6 +1,12 @@
 import { colors } from "@/lib/colors";
 import { View, Text, Image, StyleSheet } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { router } from "expo-router";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import { Pressable } from "react-native";
+import React, { useContext } from "react";
+import { GoalCardPressContext } from "@/contexts/GoalCardPressedContext";
+
 
 interface GoalCardProps {
     goal: any;
@@ -14,14 +20,55 @@ const daysRemaining = (dueDate: string) => {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function GoalCard({ goal, theme }: GoalCardProps) {
     // Calculate completed habits and tasks
-    const completedHabits = goal.habits.filter((habit: any) => habit.completed).length;
-    const completedTasks = goal.tasks.filter((task: any) => task.completed).length;
+    const completedHabits = goal.habits?.filter((habit: any) => habit.completed).length || 0;
+    const completedTasks = goal.tasks?.filter((task: any) => task.completed).length || 0;
+    const totalHabits = goal.habits?.length || 0;
+    const totalTasks = goal.tasks?.length || 0;
+    
+    // Access the context to track active cards
+    const { activeCardId, setActiveCardId } = useContext(GoalCardPressContext);
+    
+    // Animation shared value
+    const pressed = useSharedValue(0);
+    
+    // Animated style for background color transition
+    const animatedStyle = useAnimatedStyle(() => {
+        const backgroundColor = theme === 'light' 
+            ? `rgba(240, 240, 240, ${pressed.value})` 
+            : `rgba(48, 48, 48, ${pressed.value})`;
+        
+        return {
+            backgroundColor
+        };
+    });
+
+    // Determine if this card can respond to touch events
+    const isInteractionBlocked = activeCardId !== null && activeCardId !== goal.id;
     
     return (
-        <View style={styles.goalContainer}>
+        <AnimatedPressable
+            onPress={() => {
+                if (!isInteractionBlocked) {
+                    router.push(`/goal/${goal.id}`);
+                    // router.push(`/goal/0`);
+                }
+            }}
+            onPressIn={() => {
+                if (!isInteractionBlocked) {
+                    pressed.value = withTiming(1, { duration: 150 });
+                    setActiveCardId(goal.id);
+                }
+            }}
+            onPressOut={() => {
+                pressed.value = withTiming(0, { duration: 200 });
+                setActiveCardId(null);
+            }}
+            style={[styles.goalContainer, animatedStyle]}
+        >
             <Image source={{ uri: goal.imageSmall }} style={styles.goalContainerImage} />
             <View style={styles.goalContainerInfo}>
                 <Text 
@@ -33,10 +80,10 @@ export default function GoalCard({ goal, theme }: GoalCardProps) {
                 </Text>
                 <View style={styles.goalContainerInfoPills}>
                     <View style={[styles.goalContainerInfoPill, theme === 'light' ? styles.goalContainerInfoPillLight : styles.goalContainerInfoPillDark]}>
-                        <Text style={[styles.goalContainerInfoPillText, theme === 'light' ? styles.goalContainerInfoPillTextLight : styles.goalContainerInfoPillTextDark]}>Habits {completedHabits}/{goal.habits.length}</Text>
+                        <Text style={[styles.goalContainerInfoPillText, theme === 'light' ? styles.goalContainerInfoPillTextLight : styles.goalContainerInfoPillTextDark]}>Habits {completedHabits}/{totalHabits}</Text>
                     </View>
                     <View style={[styles.goalContainerInfoPill, {borderColor: "#1A96F0"}]}>
-                        <Text style={[styles.goalContainerInfoPillText, {color: "#1A96F0"}]}>Tasks {completedTasks}/{goal.tasks.length}</Text>
+                        <Text style={[styles.goalContainerInfoPillText, {color: "#1A96F0"}]}>Tasks {completedTasks}/{totalTasks}</Text>
                     </View>
                 </View>
                 <View style={styles.goalContainerInfoDueDate}>
@@ -44,7 +91,7 @@ export default function GoalCard({ goal, theme }: GoalCardProps) {
                     <Text style={[styles.goalContainerInfoDueDateText, theme === 'light' ? styles.goalContainerInfoDueDateTextLight : styles.goalContainerInfoDueDateTextDark]}>{daysRemaining(goal.dueDate)} days remaining</Text>
                 </View>
             </View>
-        </View>
+        </AnimatedPressable>
     );
 }
 

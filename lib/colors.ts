@@ -7,6 +7,7 @@ export const colors = {
 
         text_primary: '#FFFFFF',
         text_secondary: '#9E9E9E',
+        text_tertiary: '#EEEEEE',
         text_accent: '#FFA914',
         text_disabled: '#C0C0C0',
 

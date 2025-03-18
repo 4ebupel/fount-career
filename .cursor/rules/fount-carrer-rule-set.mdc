@@ -36,6 +36,8 @@ app/
   +not_found.tsx
   auth.tsx
   index.tsx
+  goal/
+    [id].tsx
   home/
     _layout.tsx
     account.tsx

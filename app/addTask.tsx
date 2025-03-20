@@ -22,6 +22,7 @@ export default function AddTask() {
     const goal = mockData.find((item) => item.id === parseInt(goalId as string));
 
     const handleEmojiSelect = () => {
+        Keyboard.dismiss();
         openModal({
             modalName: EMOJI_SELECTOR_MODAL,
             props: {

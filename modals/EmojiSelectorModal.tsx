@@ -91,6 +91,18 @@ export default function EmojiSelectorModal({
         }
     }, [initialEmoji]);
 
+    // Center the active category when component mounts
+    useEffect(() => {
+        // Find the index of the active category
+        const activeCategoryIndex = emojiCategories.findIndex(category => category.id === activeCategory);
+        if (activeCategoryIndex !== -1) {
+            // Use a timeout to ensure the scroll view is ready
+            setTimeout(() => {
+                scrollToCategory(activeCategoryIndex);
+            }, 300);
+        }
+    }, [isVisible]); // Only run when the modal becomes visible
+
     // Animated style for vertical translation
     const gestureAnimatedStyle = useAnimatedStyle(() => ({
         transform: [{ translateY: translateY.value }],
@@ -161,11 +173,27 @@ export default function EmojiSelectorModal({
         safeCloseModal();
     };
 
-    // Scroll to category
+    // Scroll to category and center it in the view
     const scrollToCategory = (index: number) => {
         if (categoryScrollRef.current) {
+            // Calculate the container width and the approximate item width
+            const containerWidth = width - (paddingHorizontal * 2);
+            const categoryItemWidth = 100; // Approximate width of each category button
+            
+            // Calculate the x position that would center the item
+            // We need to account for the item's position in the scroll view
+            // and the center point of the container
+            const itemXPosition = index * categoryItemWidth;
+            
+            // Center the item by scrolling to its position minus half the container width
+            // plus half the item width
+            const centeredXPosition = Math.max(
+                0, 
+                itemXPosition - (containerWidth / 2) + (categoryItemWidth / 2)
+            );
+            
             categoryScrollRef.current.scrollTo({
-                x: index * 100, // Approximate width of category button
+                x: centeredXPosition,
                 animated: true,
             });
         }
@@ -183,14 +211,18 @@ export default function EmojiSelectorModal({
 
         const containerWidth = width - (paddingHorizontal * 2);
         const indicatorContainerWidth = containerWidth * 0.5; // 50% of container width
-        const ratio = indicatorContainerWidth / contentWidth;
-        const indicatorWidth = Math.max(indicatorContainerWidth * ratio, 30); // Min width 30px
         
-        // Calculate position (left offset)
+        // Calculate what portion of the content is visible
+        const visiblePortion = Math.min(1, containerWidth / contentWidth);
+        const indicatorWidth = Math.max(indicatorContainerWidth * visiblePortion, 30); // Min width 30px
+        
+        // Calculate position (left offset) based on scroll position
         const maxScrollPosition = contentWidth - containerWidth;
         const percentScrolled = maxScrollPosition > 0 ? scrollPosition / maxScrollPosition : 0;
-        const trackWidth = indicatorContainerWidth - indicatorWidth;
-        const leftOffset = trackWidth * percentScrolled;
+        
+        // Calculate indicator position - adjust for the container width
+        const availableTrackWidth = indicatorContainerWidth - indicatorWidth;
+        const leftOffset = percentScrolled * availableTrackWidth;
         
         return {
             left: leftOffset,

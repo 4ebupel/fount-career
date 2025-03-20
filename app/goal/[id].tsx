@@ -53,7 +53,13 @@ export default function Goal() {
                                     <FontAwesome name="info" size={12} color={theme === 'light' ? colors.light_theme.text_secondary : colors.dark_theme.text_secondary} />
                                 </Pressable>
                             </View>
-                            <TouchableOpacity style={[styles.addButton, styles.addTaskButtonBgColor]}>
+                            <TouchableOpacity 
+                                style={[styles.addButton, styles.addTaskButtonBgColor]} 
+                                onPress={() => router.push({
+                                    pathname: '/addTask',
+                                    params: { goalId: id }
+                                })}
+                            >
                                 <FontAwesome name="plus" size={16} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
                                 <Text style={[styles.addButtonText, theme === 'light' ? styles.addButtonTextLight : styles.addButtonTextDark]}>Add Task</Text>
                             </TouchableOpacity>

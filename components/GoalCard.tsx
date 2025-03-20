@@ -53,8 +53,8 @@ export default function GoalCard({ goal, theme }: GoalCardProps) {
         <AnimatedPressable
             onPress={() => {
                 if (!isInteractionBlocked) {
-                    // router.push(`/goal/${goal.id}`);
-                    router.push(`/goal/0`);
+                    router.push(`/goal/${goal.id}`);
+                    // router.push(`/goal/0`);
                 }
             }}
             onPressIn={() => {

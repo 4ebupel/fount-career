@@ -13,4 +13,6 @@ export interface DefaultModalProps {
     onSelectCategory?: (category: string) => void;
     // Additional optional props for DateSelectorModal
     onSelectDate?: (date: string) => void;
+    // Additional optional props for EmojiSelectorModal
+    onSelectEmoji?: (emoji: string) => void;
 };

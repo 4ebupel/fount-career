@@ -4,11 +4,12 @@ import { useState } from "react";
 import { useModal } from "@/hooks/useModal";
 import { CATEGORY_SELECTOR_MODAL, DATE_SELECTOR_MODAL } from "@/components/CustomModal";
 import { AntDesign } from '@expo/vector-icons';
+import { Goal } from "@/types/database";
 
 interface Props {
     theme: 'dark' | 'light',
-    goal: string,
-    setGoal: (goal: string) => void,
+    goal: Goal,
+    setGoal: (goal: Goal) => void,
 }
 
 export default function LastDetails({ theme, goal, setGoal }: Props) {
@@ -45,7 +46,9 @@ export default function LastDetails({ theme, goal, setGoal }: Props) {
                 title: 'Choose Goal Category',
                 primaryCTA: '',
                 secondaryCTA: '',
-                onConfirm: () => {},
+                onConfirm: () => {
+                    setGoal({ ...goal, category: category });
+                },
                 onCancel: () => {},
                 onClose: () => closeModal(),
             }
@@ -70,7 +73,9 @@ export default function LastDetails({ theme, goal, setGoal }: Props) {
                 title: 'Choose Due Date',
                 primaryCTA: '',
                 secondaryCTA: '',
-                onConfirm: () => {},
+                onConfirm: () => {
+                    setGoal({ ...goal, due_date: dueDate });
+                },
                 onCancel: () => {},
                 onClose: () => closeModal(),
             }
@@ -89,7 +94,7 @@ export default function LastDetails({ theme, goal, setGoal }: Props) {
                 </Text>
                 <View style={styles.goalTextContainer}>
                     <Text style={styles.text}>
-                        {goal}
+                        {goal.title}
                     </Text>
                 </View>
             </View>

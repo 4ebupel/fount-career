@@ -29,12 +29,13 @@ import Animated, {
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useModal } from '@/hooks/useModal';
 import StepOne from '@/components/goalCreationTutorial/StepOne';
-import StepTwo from '@/components/goalCreationTutorial/StepTwo';  
+import StepTwo from '@/components/goalCreationTutorial/StepTwo';
 import StepThree from '@/components/goalCreationTutorial/StepThree';
 import StepFour from '@/components/goalCreationTutorial/StepFour';
 import StepFive from '@/components/goalCreationTutorial/StepFive';
 import LastDetails from '@/components/goalCreationTutorial/LastDetails';
 import GoodJob from '@/components/goalCreationTutorial/GoodJob';
+import { Goal } from '@/types/database';
 // Create an Animated version of SafeAreaView
 const AnimatedSafeAreaView = Animated.createAnimatedComponent(SafeAreaView);
 
@@ -60,13 +61,23 @@ const HORIZONTAL_SWIPE_THRESHOLD = 100; // minimum horizontal drag required to n
 
 export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: Props) {
   const [currentStep, setCurrentStep] = useState(0);
-  const [goal, setGoal] = useState('');
+  const [goal, setGoal] = useState<Goal>({
+    id: '',
+    created_at: '',
+    updated_at: '',
+    title: '',
+    category: '',
+    due_date: null,
+    achieved: false,
+    image_small: null,
+    image_large: null,
+  } as Goal);
   const { openModal, closeModal } = useModal()
   // const totalSteps = 3;
 
   // Step-specific height values (adjust these based on actual content)
   const getStepHeight = () => {
-    switch(currentStep) {
+    switch (currentStep) {
       case 0: return height * 0.45;  // Step 0 height
       case steps.length - 1: return height * 0.5;  // Last step height
       default: return height * 0.55; // Default height for future steps
@@ -74,7 +85,7 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
   };
 
   const getContainerHeight = () => {
-    switch(currentStep) {
+    switch (currentStep) {
       case 0: return height * 0.8;
       case steps.length - 1: return height * 0.8;
       default: return height * 0.85;
@@ -83,7 +94,7 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
 
   // Shared value for container height
   const containerHeight = useSharedValue(getContainerHeight());
-  
+
   // Shared value for step container height - updates when currentStep changes
   const stepContainerHeight = useSharedValue(getStepHeight());
 
@@ -112,22 +123,22 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
 
       // Store current step to calculate height
       const currentStepIndex = currentStep;
-      
+
       // Get the current container height before keyboard shows
       const currentHeight = getContainerHeight();
-      
+
       // Calculate keyboard-visible height - ensure it's never smaller than current height
       const keyboardVisibleHeight = Math.max(
         currentStepIndex === 0 ? height * 0.9 : height * 0.85,
         currentHeight
       );
-      
+
       // Adjust container height for keyboard
       containerHeight.value = withTiming(keyboardVisibleHeight, { duration: 200 });
-      
+
       // Adjust step container height when keyboard is visible - ensure it's appropriate for the content
       stepContainerHeight.value = withTiming(
-        currentStepIndex === 0 ? height * 0.45 : height * 0.5, 
+        currentStepIndex === 0 ? height * 0.45 : height * 0.5,
         { duration: 200 }
       );
     };
@@ -138,7 +149,7 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
 
       // Animate back to the original container height when keyboard hides
       containerHeight.value = withTiming(getContainerHeight(), { duration: 200 });
-      
+
       // Reset step container height
       stepContainerHeight.value = withTiming(getStepHeight(), { duration: 200 });
     };
@@ -207,6 +218,11 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
         runOnJS(setCurrentStep)(nextStep);
       });
     }
+  };
+
+  const handleConfirm = () => {
+    props.onConfirm({ title: goal.title, category: goal.category, dueDate: goal.due_date });
+    animateClose();
   };
 
   // Helper function to close the modal after confirmation
@@ -383,7 +399,7 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
 
                 <View style={styles.buttonRow}>
                   <View style={styles.testBtnContainer}>
-                    <Button label={currentStep < steps.length - 1 ? 'Next' : 'Finish'} theme={theme} onPress={goNext} variant="primary" disabled={goal.length <= 0} />
+                    <Button label={currentStep < steps.length - 1 ? 'Next' : 'Finish'} theme={theme} onPress={currentStep < steps.length - 1 ? goNext : handleConfirm} variant="primary" disabled={goal.title.length <= 0} />
                   </View>
                   {currentStep > 0 && (
                     <View style={styles.testBtnContainer}>

@@ -1,23 +1,145 @@
-import { View, Text, SafeAreaView, StyleSheet, Image, Pressable, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, SafeAreaView, StyleSheet, Image, Pressable, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import { useLocalSearchParams, router } from 'expo-router';
-import { mockData } from "@/lib/mock-data";
 import { ThemeContext } from "@/contexts/ThemeContext";
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { colors } from "@/lib/colors";
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { useDatabase } from "@/contexts/DatabaseContext";
+import { Goal as GoalType, Task, Habit } from "@/types/database";
+
 export default function Goal() {
     const { id } = useLocalSearchParams();
-    const goal = mockData.find((item) => item.id === parseInt(id as string));
     const { theme } = useContext(ThemeContext);
+    const { getGoalById, getTasksByGoalId, getHabitsByGoalId, hasError, errorMessage, clearError } = useDatabase();
+    
+    const [loading, setLoading] = useState(true);
+    const [goal, setGoal] = useState<GoalType | null>(null);
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [habits, setHabits] = useState<Habit[]>([]);
+    const [localError, setLocalError] = useState<string | null>(null);
 
+    useEffect(() => {
+        const fetchGoalData = async () => {
+            if (!id || typeof id !== 'string') {
+                setLocalError('Invalid goal ID');
+                setLoading(false);
+                return;
+            }
+
+            try {
+                setLoading(true);
+                setLocalError(null);
+                clearError(); // Clear any previous database errors
+                console.log(`Fetching goal data for ID: ${id}`);
+                
+                // Fetch goal
+                const goalData = await getGoalById(id);
+                
+                if (!goalData) {
+                    console.error('Goal not found');
+                    setLocalError(`Goal with ID ${id} not found`);
+                    setLoading(false);
+                    return;
+                }
+                
+                setGoal(goalData);
+                
+                // Fetch tasks and habits
+                try {
+                    const goalTasks = await getTasksByGoalId(id);
+                    setTasks(goalTasks);
+                } catch (error) {
+                    console.error('Failed to fetch tasks:', error);
+                    // Continue with empty tasks
+                    setTasks([]);
+                }
+                
+                try {
+                    const goalHabits = await getHabitsByGoalId(id);
+                    setHabits(goalHabits);
+                } catch (error) {
+                    console.error('Failed to fetch habits:', error);
+                    // Continue with empty habits
+                    setHabits([]);
+                }
+            } catch (error) {
+                console.error('Failed to fetch goal data:', error);
+                setLocalError('Error loading goal data. Please try again.');
+                
+                // Show alert for database errors
+                Alert.alert(
+                    'Error Loading Goal',
+                    'There was a problem loading the goal data. Do you want to go back?',
+                    [
+                        { text: 'Try Again', onPress: () => fetchGoalData() },
+                        { text: 'Go Back', onPress: () => router.back() }
+                    ]
+                );
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchGoalData();
+    }, [id]);
+
+    // Handle back navigation
     const handleGoBack = () => {
         router.back();
+    };
+
+    // Show loading indicator
+    if (loading) {
+        return (
+            <View style={[styles.container, theme === 'light' ? styles.containerLight : styles.containerDark, styles.loadingContainer]}>
+                <ActivityIndicator size="large" color={theme === 'light' ? colors.light_theme.button_primary_bg : colors.dark_theme.button_primary_bg} />
+                <Text style={[styles.loadingText, theme === 'light' ? styles.textLight : styles.textDark]}>
+                    Loading goal...
+                </Text>
+            </View>
+        );
     }
 
+    // Show error state
+    if (localError || hasError) {
+        return (
+            <View style={[styles.container, theme === 'light' ? styles.containerLight : styles.containerDark, styles.loadingContainer]}>
+                <Text style={[styles.errorText, theme === 'light' ? styles.errorTextLight : styles.errorTextDark]}>
+                    {localError || errorMessage || 'An error occurred'}
+                </Text>
+                <TouchableOpacity onPress={handleGoBack} style={styles.goBackButton}>
+                    <Text style={[styles.goBackButtonText, theme === 'light' ? styles.goBackButtonTextLight : styles.goBackButtonTextDark]}>
+                        Go Back
+                    </Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
+
+    // Show goal not found state
+    if (!goal) {
+        return (
+            <View style={[styles.container, theme === 'light' ? styles.containerLight : styles.containerDark, styles.loadingContainer]}>
+                <Text style={[styles.errorText, theme === 'light' ? styles.errorTextLight : styles.errorTextDark]}>
+                    Goal not found
+                </Text>
+                <TouchableOpacity onPress={handleGoBack} style={styles.goBackButton}>
+                    <Text style={[styles.goBackButtonText, theme === 'light' ? styles.goBackButtonTextLight : styles.goBackButtonTextDark]}>
+                        Go Back
+                    </Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
+
+    // Main goal view
     return (
         <View style={[styles.container, theme === 'light' ? styles.containerLight : styles.containerDark]}>
             <View style={styles.goalImageContainer}>
-                <Image source={goal?.imageLarge ? { uri: goal.imageLarge } : require('@/assets/goalCreationTutorialFinal.png')} style={styles.goalImage} />
+                <Image 
+                    source={goal.image_large ? { uri: goal.image_large } : require('@/assets/goalCreationTutorialFinal.png')} 
+                    style={styles.goalImage} 
+                />
                 <Pressable onPress={handleGoBack} style={[styles.backButton, theme === 'light' ? styles.backButtonLight : styles.backButtonDark]}>
                     <FontAwesome name="arrow-left" size={24} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
                 </Pressable>
@@ -28,18 +150,32 @@ export default function Goal() {
             <View style={styles.contentContainer}>
                 <View style={styles.goalHeadingContainer}>
                     <View style={styles.goalTitleContainer}>
-                        <Text numberOfLines={2} ellipsizeMode="tail" style={[styles.goalTitle, theme === 'light' ? styles.goalTitleLight : styles.goalTitleDark, goal?.title ? styles.goalTitle : styles.goalTitlePlaceholder]}>{goal?.title || 'Add a Goal Title'}</Text>
+                        <Text 
+                            numberOfLines={2} 
+                            ellipsizeMode="tail" 
+                            style={[
+                                styles.goalTitle, 
+                                theme === 'light' ? styles.goalTitleLight : styles.goalTitleDark, 
+                                goal.title ? styles.goalTitle : styles.goalTitlePlaceholder
+                            ]}
+                        >
+                            {goal.title || 'Add a Goal Title'}
+                        </Text>
                         <Pressable style={[styles.editGoalTitleButton, theme === 'light' ? styles.editGoalTitleButtonLight : styles.editGoalTitleButtonDark]}>
                             <FontAwesome name="pencil" size={18} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
                         </Pressable>
                     </View>
                     <View style={styles.goalHeadingSubContainer}>
                         <View style={[styles.goalHeadingCategoryContainer, theme === 'light' ? styles.goalHeadingCategoryContainerLight : styles.goalHeadingCategoryContainerDark]}>
-                            <Text style={[styles.categoryText, theme === 'light' ? styles.categoryTextLight : styles.categoryTextDark]}>{goal?.category || 'Category'}</Text>
+                            <Text style={[styles.categoryText, theme === 'light' ? styles.categoryTextLight : styles.categoryTextDark]}>
+                                {goal.category || 'Category'}
+                            </Text>
                         </View>
                         <View style={styles.goalHeadingDateContainer}>
                             <FontAwesome name="calendar" size={14} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
-                            <Text style={[styles.dueDateText, theme === 'light' ? styles.dueDateTextLight : styles.dueDateTextDark]}>{goal?.dueDate || 'No due date'}</Text>
+                            <Text style={[styles.dueDateText, theme === 'light' ? styles.dueDateTextLight : styles.dueDateTextDark]}>
+                                {goal.due_date ? new Date(goal.due_date).toLocaleDateString() : 'No due date'}
+                            </Text>
                         </View>
                     </View>
                 </View>
@@ -48,11 +184,37 @@ export default function Goal() {
                     <View style={styles.sectionsContainer}>
                         <View style={styles.sectionContainer}>
                             <View style={styles.sectionHeadingContainer}>
-                                <Text style={[styles.sectionHeadingTitle, theme === 'light' ? styles.sectionHeadingTitleLight : styles.sectionHeadingTitleDark]}>Tasks ({goal?.tasks.length || 0})</Text>
+                                <Text style={[styles.sectionHeadingTitle, theme === 'light' ? styles.sectionHeadingTitleLight : styles.sectionHeadingTitleDark]}>
+                                    Tasks ({tasks.length})
+                                </Text>
                                 <Pressable style={[styles.infoButton, theme === 'light' ? styles.infoButtonLight : styles.infoButtonDark]}>
                                     <FontAwesome name="info" size={12} color={theme === 'light' ? colors.light_theme.text_secondary : colors.dark_theme.text_secondary} />
                                 </Pressable>
                             </View>
+                            
+                            {tasks.length > 0 ? (
+                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tasksList}>
+                                    {tasks.map((task) => (
+                                        <View 
+                                            key={task.id} 
+                                            style={[styles.taskItem, theme === 'light' ? styles.taskItemLight : styles.taskItemDark]}
+                                        >
+                                            <Text style={[styles.taskEmoji]}>{task.selected_emoji}</Text>
+                                            <Text 
+                                                style={[styles.taskTitle, theme === 'light' ? styles.taskTitleLight : styles.taskTitleDark]}
+                                                numberOfLines={1}
+                                            >
+                                                {task.title}
+                                            </Text>
+                                        </View>
+                                    ))}
+                                </ScrollView>
+                            ) : (
+                                <Text style={[styles.emptyStateText, theme === 'light' ? styles.textSecondaryLight : styles.textSecondaryDark]}>
+                                    No tasks added yet
+                                </Text>
+                            )}
+                            
                             <TouchableOpacity 
                                 style={[styles.addButton, styles.addTaskButtonBgColor]} 
                                 onPress={() => router.push({
@@ -67,11 +229,37 @@ export default function Goal() {
 
                         <View style={styles.sectionContainer}>
                             <View style={styles.sectionHeadingContainer}>
-                                <Text style={[styles.sectionHeadingTitle, theme === 'light' ? styles.sectionHeadingTitleLight : styles.sectionHeadingTitleDark]}>Habits ({goal?.habits.length || 0})</Text>
+                                <Text style={[styles.sectionHeadingTitle, theme === 'light' ? styles.sectionHeadingTitleLight : styles.sectionHeadingTitleDark]}>
+                                    Habits ({habits.length})
+                                </Text>
                                 <Pressable style={[styles.infoButton, theme === 'light' ? styles.infoButtonLight : styles.infoButtonDark]}>
                                     <FontAwesome name="info" size={12} color={theme === 'light' ? colors.light_theme.text_secondary : colors.dark_theme.text_secondary} />
                                 </Pressable>
                             </View>
+                            
+                            {habits.length > 0 ? (
+                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.habitsList}>
+                                    {habits.map((habit) => (
+                                        <View 
+                                            key={habit.id} 
+                                            style={[styles.habitItem, theme === 'light' ? styles.habitItemLight : styles.habitItemDark]}
+                                        >
+                                            <Text style={[styles.habitEmoji]}>{habit.selected_emoji}</Text>
+                                            <Text 
+                                                style={[styles.habitTitle, theme === 'light' ? styles.habitTitleLight : styles.habitTitleDark]}
+                                                numberOfLines={1}
+                                            >
+                                                {habit.title}
+                                            </Text>
+                                        </View>
+                                    ))}
+                                </ScrollView>
+                            ) : (
+                                <Text style={[styles.emptyStateText, theme === 'light' ? styles.textSecondaryLight : styles.textSecondaryDark]}>
+                                    No habits added yet
+                                </Text>
+                            )}
+                            
                             <TouchableOpacity style={[styles.addButton, styles.addHabitButtonBgColor]}>
                                 <FontAwesome name="plus" size={16} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
                                 <Text style={[styles.addButtonText, theme === 'light' ? styles.addButtonTextLight : styles.addButtonTextDark]}>Add Habit</Text>
@@ -81,7 +269,7 @@ export default function Goal() {
                 </ScrollView>
             </View>
         </View>
-    )
+    );
 }
 
 const styles = StyleSheet.create({
@@ -248,23 +436,22 @@ const styles = StyleSheet.create({
         borderWidth: 1,
     },
     infoButtonLight: {
-        borderColor: colors.light_theme.text_secondary,
+        borderColor: colors.light_theme.border_input,
     },
     infoButtonDark: {
-        borderColor: colors.dark_theme.text_secondary,
+        borderColor: colors.dark_theme.border_input,
     },
     scrollContainer: {
         flex: 1,
     },
     scrollContentContainer: {
-        flexGrow: 1,
-        gap: 24,
+        gap: 20,
     },
     sectionsContainer: {
         gap: 24,
     },
     sectionContainer: {
-        gap: 12,
+        gap: 16,
     },
     sectionHeadingContainer: {
         flexDirection: 'row',
@@ -273,8 +460,8 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     sectionHeadingTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
+        fontSize: 18,
+        fontWeight: '600',
     },
     sectionHeadingTitleLight: {
         color: colors.light_theme.text_primary,
@@ -283,27 +470,147 @@ const styles = StyleSheet.create({
         color: colors.dark_theme.text_primary,
     },
     addButton: {
+        padding: 16,
+        borderRadius: 8,
+        gap: 8,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 12,
-        padding: 16,
-        borderRadius: 8,
     },
     addTaskButtonBgColor: {
-        backgroundColor: 'rgba(26, 153, 142, 0.08)',
+        backgroundColor: '#FFF5E4',
     },
     addHabitButtonBgColor: {
-        backgroundColor: 'rgba(44, 1, 102, 0.08)',
+        backgroundColor: '#EAF4F4',
     },
     addButtonText: {
         fontSize: 16,
-        fontWeight: '500',
+        fontWeight: '600',
     },
     addButtonTextLight: {
         color: colors.light_theme.text_primary,
     },
     addButtonTextDark: {
         color: colors.dark_theme.text_primary,
+    },
+    loadingContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    errorText: {
+        fontSize: 18,
+        marginBottom: 20,
+    },
+    errorTextLight: {
+        color: colors.light_theme.text_primary,
+    },
+    errorTextDark: {
+        color: colors.dark_theme.text_primary,
+    },
+    goBackButton: {
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+    },
+    goBackButtonLight: {
+        borderColor: colors.light_theme.border_button,
+    },
+    goBackButtonDark: {
+        borderColor: colors.dark_theme.border_button,
+    },
+    goBackButtonText: {
+        fontSize: 16,
+    },
+    goBackButtonTextLight: {
+        color: colors.light_theme.text_primary,
+    },
+    goBackButtonTextDark: {
+        color: colors.dark_theme.text_primary,
+    },
+    tasksList: {
+        marginBottom: 16,
+    },
+    habitsList: {
+        marginBottom: 16,
+    },
+    taskItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        marginRight: 12,
+        gap: 8,
+    },
+    taskItemLight: {
+        backgroundColor: colors.light_theme.tertiary_background,
+    },
+    taskItemDark: {
+        backgroundColor: colors.dark_theme.tertiary_background,
+    },
+    habitItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        marginRight: 12,
+        gap: 8,
+    },
+    habitItemLight: {
+        backgroundColor: colors.light_theme.tertiary_background,
+    },
+    habitItemDark: {
+        backgroundColor: colors.dark_theme.tertiary_background,
+    },
+    taskEmoji: {
+        fontSize: 16,
+    },
+    habitEmoji: {
+        fontSize: 16,
+    },
+    taskTitle: {
+        fontSize: 14,
+        fontWeight: '500',
+        maxWidth: 150,
+    },
+    taskTitleLight: {
+        color: colors.light_theme.text_primary,
+    },
+    taskTitleDark: {
+        color: colors.dark_theme.text_primary,
+    },
+    habitTitle: {
+        fontSize: 14,
+        fontWeight: '500',
+        maxWidth: 150,
+    },
+    habitTitleLight: {
+        color: colors.light_theme.text_primary,
+    },
+    habitTitleDark: {
+        color: colors.dark_theme.text_primary,
+    },
+    loadingText: {
+        fontSize: 18,
+        marginTop: 20,
+    },
+    textLight: {
+        color: colors.light_theme.text_primary,
+    },
+    textDark: {
+        color: colors.dark_theme.text_primary,
+    },
+    emptyStateText: {
+        fontSize: 18,
+        textAlign: 'center',
+    },
+    textSecondaryLight: {
+        color: colors.light_theme.text_secondary,
+    },
+    textSecondaryDark: {
+        color: colors.dark_theme.text_secondary,
     },
 });

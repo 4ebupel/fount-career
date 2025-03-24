@@ -1,14 +1,56 @@
 import { Tabs } from "expo-router";
 import { Ionicons, Entypo } from "@expo/vector-icons";
 import { colors } from "@/lib/colors";
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import { ThemeContext } from "@/contexts/ThemeContext";
-import { TouchableOpacity, Image, View, Text } from "react-native";
+import { TouchableOpacity, Image, View, Text, ActivityIndicator } from "react-native";
 import React from "react";
+import { useDatabase } from "@/contexts/DatabaseContext";
 
 export default function TabsLayout() {
     const { theme } = useContext(ThemeContext);
     const [menuVisible, setMenuVisible] = useState(false);
+    const { initializeDatabase, isInitialized, isLoading } = useDatabase();
+
+    // Initialize database on component mount if not already initialized
+    useEffect(() => {
+        if (!isInitialized) {
+            console.log('Initializing database from home layout...');
+            initializeDatabase().catch(error => {
+                console.error('Failed to initialize database:', error);
+            });
+        }
+    }, [isInitialized]);
+
+    // If database is still loading, show a loading spinner
+    if (isLoading) {
+        return (
+            <View style={{
+                flex: 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: theme === "dark"
+                    ? colors.dark_theme.background
+                    : colors.light_theme.background,
+            }}>
+                <ActivityIndicator 
+                    size="large" 
+                    color={theme === "dark"
+                        ? colors.dark_theme.button_primary_bg
+                        : colors.light_theme.button_primary_bg
+                    } 
+                />
+                <Text style={{
+                    marginTop: 16,
+                    color: theme === "dark"
+                        ? colors.dark_theme.text_primary
+                        : colors.light_theme.text_primary,
+                }}>
+                    Loading data...
+                </Text>
+            </View>
+        );
+    }
 
     // Define header options with custom components
     const headerOptions = {

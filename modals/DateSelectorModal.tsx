@@ -33,6 +33,7 @@ export default function DateSelectorModal({
     isVisible, 
     onSelectDate = () => {},
     onClose,
+    onConfirm,
     title,
 }: Props) {
     if (!isVisible) return null;
@@ -117,8 +118,9 @@ export default function DateSelectorModal({
     };
     
     const handleConfirm = () => {
-        if (selectedDate) {
+        if (onSelectDate && selectedDate) {
             onSelectDate(selectedDate);
+            onConfirm(selectedDate);
         }
         safeCloseModal();
     };

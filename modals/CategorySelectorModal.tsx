@@ -32,6 +32,7 @@ export default function CategorySelectorModal({
     categories = [],
     onSelectCategory = () => { },
     onClose,
+    onConfirm,
     title,
 }: Props) {
     if (!isVisible) return null;
@@ -76,6 +77,7 @@ export default function CategorySelectorModal({
     const handleConfirm = () => {
         if (selectedCategory) {
             onSelectCategory(selectedCategory);
+            onConfirm(selectedCategory);
         }
         safeCloseModal();
     };

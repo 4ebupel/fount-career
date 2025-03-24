@@ -1,4 +1,3 @@
-// CustomModal.tsx
 import React from 'react';
 import AddGoalModal from '@/modals/AddGoalModal';
 import DefaultModal from '@/modals/DefaultModal';

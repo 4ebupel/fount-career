@@ -1,15 +1,25 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, SafeAreaView } from 'react-native';
 import Button from '@/components/Button';
 import SocialButton from '@/components/SocialButton';
 import { useRouter } from 'expo-router';
 import { ThemeContext } from '@/contexts/ThemeContext';
+import { useDatabase } from '@/contexts/DatabaseContext';
 import { colors } from '@/lib/colors';
 
 export default function Index() {
     const { theme } = useContext(ThemeContext);
-
+    const { initializeDatabase, isInitialized } = useDatabase();
     const router = useRouter();
+
+    // Initialize database on component mount
+    useEffect(() => {
+        if (!isInitialized) {
+            initializeDatabase().catch(error => {
+                console.error('Failed to initialize database:', error);
+            });
+        }
+    }, [isInitialized, initializeDatabase]);
 
     const handleSignUp = () => {
         router.push('/auth');

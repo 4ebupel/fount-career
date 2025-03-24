@@ -1,13 +1,13 @@
 import { colors } from "@/lib/colors";
 import { StyleSheet, View, Image, TextInput, Text, Platform } from "react-native";
 import { useState } from "react";
-
+import { Goal } from "@/types/database";
 const image = require('@/assets/goalCreationTutorialStepThree.png')
 
 interface Props {
     theme: 'dark' | 'light',
-    goal: string,
-    setGoal: (goal: string) => void,
+    goal: Goal,
+    setGoal: (goal: Goal) => void,
 }
 
 const inputPlaceholder = "e.g. 'Learn React Native and build 3 apps by end of 2025'";
@@ -35,8 +35,8 @@ export default function StepThree({ theme, goal, setGoal }: Props) {
                     multiline={true}
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
-                    value={goal}
-                    onChangeText={setGoal}
+                    value={goal.title}
+                    onChangeText={(text) => setGoal({ ...goal, title: text })}
                 />
             </View>
             <View style={styles.examplesContainer}>

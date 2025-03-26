@@ -6,7 +6,7 @@ export interface DefaultModalProps {
     secondaryCTA: string;
     theme: 'dark' | 'light';
     onClose: () => void;
-    onConfirm: () => void;
+    onConfirm: (data: any) => void;
     onCancel: () => void;
     // Additional optional props for CategorySelectorModal
     categories?: string[];

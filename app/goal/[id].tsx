@@ -11,7 +11,7 @@ export default function Goal() {
     const { id } = useLocalSearchParams();
     const { theme } = useContext(ThemeContext);
     const { getGoalById, getTasksByGoalId, getHabitsByGoalId, hasError, errorMessage, clearError } = useDatabase();
-    
+
     const [loading, setLoading] = useState(true);
     const [goal, setGoal] = useState<GoalType | null>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -31,19 +31,19 @@ export default function Goal() {
                 setLocalError(null);
                 clearError(); // Clear any previous database errors
                 console.log(`Fetching goal data for ID: ${id}`);
-                
+
                 // Fetch goal
                 const goalData = await getGoalById(id);
-                
+
                 if (!goalData) {
                     console.error('Goal not found');
                     setLocalError(`Goal with ID ${id} not found`);
                     setLoading(false);
                     return;
                 }
-                
+
                 setGoal(goalData);
-                
+
                 // Fetch tasks and habits
                 try {
                     const goalTasks = await getTasksByGoalId(id);
@@ -53,7 +53,7 @@ export default function Goal() {
                     // Continue with empty tasks
                     setTasks([]);
                 }
-                
+
                 try {
                     const goalHabits = await getHabitsByGoalId(id);
                     setHabits(goalHabits);
@@ -65,7 +65,7 @@ export default function Goal() {
             } catch (error) {
                 console.error('Failed to fetch goal data:', error);
                 setLocalError('Error loading goal data. Please try again.');
-                
+
                 // Show alert for database errors
                 Alert.alert(
                     'Error Loading Goal',
@@ -136,9 +136,9 @@ export default function Goal() {
     return (
         <View style={[styles.container, theme === 'light' ? styles.containerLight : styles.containerDark]}>
             <View style={styles.goalImageContainer}>
-                <Image 
-                    source={goal.image_large ? { uri: goal.image_large } : require('@/assets/goalCreationTutorialFinal.png')} 
-                    style={styles.goalImage} 
+                <Image
+                    source={goal.image_large ? { uri: goal.image_large } : require('@/assets/goalCreationTutorialFinal.png')}
+                    style={styles.goalImage}
                 />
                 <Pressable onPress={handleGoBack} style={[styles.backButton, theme === 'light' ? styles.backButtonLight : styles.backButtonDark]}>
                     <FontAwesome name="arrow-left" size={24} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
@@ -150,12 +150,12 @@ export default function Goal() {
             <View style={styles.contentContainer}>
                 <View style={styles.goalHeadingContainer}>
                     <View style={styles.goalTitleContainer}>
-                        <Text 
-                            numberOfLines={2} 
-                            ellipsizeMode="tail" 
+                        <Text
+                            numberOfLines={2}
+                            ellipsizeMode="tail"
                             style={[
-                                styles.goalTitle, 
-                                theme === 'light' ? styles.goalTitleLight : styles.goalTitleDark, 
+                                styles.goalTitle,
+                                theme === 'light' ? styles.goalTitleLight : styles.goalTitleDark,
                                 goal.title ? styles.goalTitle : styles.goalTitlePlaceholder
                             ]}
                         >
@@ -191,16 +191,16 @@ export default function Goal() {
                                     <FontAwesome name="info" size={12} color={theme === 'light' ? colors.light_theme.text_secondary : colors.dark_theme.text_secondary} />
                                 </Pressable>
                             </View>
-                            
-                            {tasks.length > 0 ? (
+
+                            {tasks.length > 0 && (
                                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tasksList}>
                                     {tasks.map((task) => (
-                                        <View 
-                                            key={task.id} 
+                                        <View
+                                            key={task.id}
                                             style={[styles.taskItem, theme === 'light' ? styles.taskItemLight : styles.taskItemDark]}
                                         >
                                             <Text style={[styles.taskEmoji]}>{task.selected_emoji}</Text>
-                                            <Text 
+                                            <Text
                                                 style={[styles.taskTitle, theme === 'light' ? styles.taskTitleLight : styles.taskTitleDark]}
                                                 numberOfLines={1}
                                             >
@@ -209,14 +209,10 @@ export default function Goal() {
                                         </View>
                                     ))}
                                 </ScrollView>
-                            ) : (
-                                <Text style={[styles.emptyStateText, theme === 'light' ? styles.textSecondaryLight : styles.textSecondaryDark]}>
-                                    No tasks added yet
-                                </Text>
                             )}
-                            
-                            <TouchableOpacity 
-                                style={[styles.addButton, styles.addTaskButtonBgColor]} 
+
+                            <TouchableOpacity
+                                style={[styles.addButton, styles.addTaskButtonBgColor]}
                                 onPress={() => router.push({
                                     pathname: '/addTask',
                                     params: { goalId: id }
@@ -236,16 +232,16 @@ export default function Goal() {
                                     <FontAwesome name="info" size={12} color={theme === 'light' ? colors.light_theme.text_secondary : colors.dark_theme.text_secondary} />
                                 </Pressable>
                             </View>
-                            
-                            {habits.length > 0 ? (
+
+                            {habits.length > 0 && (
                                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.habitsList}>
                                     {habits.map((habit) => (
-                                        <View 
-                                            key={habit.id} 
+                                        <View
+                                            key={habit.id}
                                             style={[styles.habitItem, theme === 'light' ? styles.habitItemLight : styles.habitItemDark]}
                                         >
                                             <Text style={[styles.habitEmoji]}>{habit.selected_emoji}</Text>
-                                            <Text 
+                                            <Text
                                                 style={[styles.habitTitle, theme === 'light' ? styles.habitTitleLight : styles.habitTitleDark]}
                                                 numberOfLines={1}
                                             >
@@ -254,12 +250,8 @@ export default function Goal() {
                                         </View>
                                     ))}
                                 </ScrollView>
-                            ) : (
-                                <Text style={[styles.emptyStateText, theme === 'light' ? styles.textSecondaryLight : styles.textSecondaryDark]}>
-                                    No habits added yet
-                                </Text>
                             )}
-                            
+
                             <TouchableOpacity style={[styles.addButton, styles.addHabitButtonBgColor]}>
                                 <FontAwesome name="plus" size={16} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
                                 <Text style={[styles.addButtonText, theme === 'light' ? styles.addButtonTextLight : styles.addButtonTextDark]}>Add Habit</Text>
@@ -478,10 +470,10 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     addTaskButtonBgColor: {
-        backgroundColor: '#FFF5E4',
+        backgroundColor: 'rgba(26, 153, 142, 0.08)',
     },
     addHabitButtonBgColor: {
-        backgroundColor: '#EAF4F4',
+        backgroundColor: "rgba(44, 1, 102, 0.08)",
     },
     addButtonText: {
         fontSize: 16,

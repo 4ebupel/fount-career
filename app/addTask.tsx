@@ -8,7 +8,7 @@ import { EMOJI_SELECTOR_MODAL } from '@/components/CustomModal';
 import Button from '@/components/Button';
 import { ThemeContext } from '@/contexts/ThemeContext';
 import { mockData } from '@/lib/mock-data';
-
+import { useDatabase } from '@/contexts/DatabaseContext';
 export default function AddTask() {
     const { goalId } = useLocalSearchParams();
     const { theme } = useContext(ThemeContext);
@@ -42,23 +42,31 @@ export default function AddTask() {
         });
     };
 
-    const handleSave = () => {
-        // In a real app, you would create a new task and add it to the goal
-        // This is just a mock implementation
-
-        // Create the new task object
-        const newTask = {
-            id: Date.now(), // Generate a temporary ID
-            title,
-            note,
-            emoji: selectedEmoji,
-            completed: false,
-            createdAt: new Date().toISOString(),
-        };
-
-        // In a real app with a backend, you would make an API call here
-        // For now, just go back to the goal details page
-        router.back();
+    const { createTask } = useDatabase();
+    
+    const handleSave = async () => {
+        if (!title.trim()) {
+            // Don't create tasks without a title
+            return;
+        }
+        
+        try {
+            // Create the new task using the database context
+            await createTask({
+                goal_id: goalId as string,
+                title: title.trim(),
+                description: note.trim(),
+                selected_emoji: selectedEmoji,
+                reminder_time: null,
+                due_date: null,
+            });
+            
+            // Navigate back to the goal details page after successful creation
+            router.back();
+        } catch (error) {
+            console.error('Error creating task:', error);
+            // In a production app, you would show an error message to the user
+        }
     };
 
     return (

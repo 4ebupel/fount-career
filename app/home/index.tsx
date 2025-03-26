@@ -1,16 +1,21 @@
 import { View, Text, SafeAreaView, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { colors } from "@/lib/colors";
 import { ThemeContext } from "@/contexts/ThemeContext";
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import React from "react";
 import GoalCard from "@/components/GoalCard";
 import { GoalCardPressProvider } from "@/contexts/GoalCardPressedContext";
-import { mockData } from "@/lib/mock-data";
-
+import { useDatabase } from "@/contexts/DatabaseContext";
+import { Goal } from "@/types/database";
 
 export default function Home() {
     const [selectedButton, setSelectedButton] = useState<'ongoing' | 'achieved'>('ongoing');
+    const { goals = [], isLoading, refreshData, getGoals } = useDatabase();
     const { theme } = useContext(ThemeContext);
+
+    useEffect(() => {
+        getGoals();
+    }, []);
 
     return (
         <SafeAreaView style={[styles.container, theme === 'light' ? styles.containerLight : styles.containerDark]}>
@@ -26,19 +31,19 @@ export default function Home() {
                 <GoalCardPressProvider>
                     {
                         selectedButton === 'ongoing' ? (
-                            mockData.filter((item) => !item.completed).map((item, index) => (
+                            goals.filter((item) => !item.achieved).map((item, index) => (
                                 <React.Fragment key={item.id}>
                                     <GoalCard goal={item} theme={theme} />
-                                    {index < mockData.length - 1 && (
+                                    {index < goals.length - 1 && (
                                         <View style={[styles.divider, theme === 'light' ? styles.dividerLight : styles.dividerDark]} />
                                     )}
                                 </React.Fragment>
                             ))
                         ) : (
-                            mockData.filter((item) => item.completed).map((item, index) => (
+                            goals.filter((item) => item.achieved).map((item, index) => (
                                 <React.Fragment key={item.id}>
                                     <GoalCard goal={item} theme={theme} />
-                                    {index < mockData.length - 1 && (
+                                    {index < goals.length - 1 && (
                                         <View style={[styles.divider, theme === 'light' ? styles.dividerLight : styles.dividerDark]} />
                                     )}
                                 </React.Fragment>

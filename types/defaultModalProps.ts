@@ -6,7 +6,7 @@ export interface DefaultModalProps {
     secondaryCTA: string;
     theme: 'dark' | 'light';
     onClose: () => void;
-    onConfirm: (data: any) => void;
+    onConfirm: (data?: any) => void;
     onCancel: () => void;
     // Additional optional props for CategorySelectorModal
     categories?: string[];
@@ -15,4 +15,8 @@ export interface DefaultModalProps {
     onSelectDate?: (date: string) => void;
     // Additional optional props for EmojiSelectorModal
     onSelectEmoji?: (emoji: string) => void;
+    // Additional optional props for TimePickerModal
+    initialHour?: string;
+    initialMinute?: string;
+    onTimeSelected?: (hour: string, minute: string) => void;
 };

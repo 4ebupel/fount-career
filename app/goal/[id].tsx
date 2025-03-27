@@ -252,7 +252,13 @@ export default function Goal() {
                                 </ScrollView>
                             )}
 
-                            <TouchableOpacity style={[styles.addButton, styles.addHabitButtonBgColor]}>
+                            <TouchableOpacity 
+                                style={[styles.addButton, styles.addHabitButtonBgColor]}
+                                onPress={() => router.push({
+                                    pathname: '/addHabit',
+                                    params: { goalId: id }
+                                })}
+                            >
                                 <FontAwesome name="plus" size={16} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
                                 <Text style={[styles.addButtonText, theme === 'light' ? styles.addButtonTextLight : styles.addButtonTextDark]}>Add Habit</Text>
                             </TouchableOpacity>

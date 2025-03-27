@@ -30,9 +30,9 @@ export const getDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
 export const initDatabase = async (): Promise<void> => {
   try {
     const db = await getDatabase();
-    
+
     console.log('Creating database tables if they don\'t exist...');
-    
+
     // Use execAsync for bulk operations
     await db.execAsync(`
       PRAGMA foreign_keys = ON;
@@ -58,6 +58,7 @@ export const initDatabase = async (): Promise<void> => {
         selected_emoji TEXT NOT NULL,
         reminder_days TEXT NOT NULL,
         reminder_time TEXT NOT NULL,
+        completed INTEGER NOT NULL DEFAULT 0,
         FOREIGN KEY (goal_id) REFERENCES goals (id) ON DELETE CASCADE
       );
       
@@ -75,7 +76,7 @@ export const initDatabase = async (): Promise<void> => {
         FOREIGN KEY (goal_id) REFERENCES goals (id) ON DELETE CASCADE
       );
     `);
-    
+
     console.log('Database tables created successfully');
   } catch (error) {
     console.error('Error initializing database:', error);
@@ -103,7 +104,7 @@ export const isDatabaseInitialized = async (): Promise<boolean> => {
  * Generate a UUID for primary keys
  */
 export const generateUUID = (): string => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
     const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
   });
@@ -155,7 +156,7 @@ export const getGoals = async (): Promise<Goal[]> => {
   try {
     const db = await getDatabase();
     const goals = await db.getAllAsync<Goal>('SELECT * FROM goals ORDER BY created_at DESC;');
-    
+
     // Convert SQLite integers to booleans
     return goals.map(goal => ({
       ...goal,
@@ -174,11 +175,11 @@ export const getGoalById = async (id: string): Promise<Goal | null> => {
   try {
     const db = await getDatabase();
     const goal = await db.getFirstAsync<Goal>('SELECT * FROM goals WHERE id = ?;', [id]);
-    
+
     if (!goal) {
       return null;
     }
-    
+
     return {
       ...goal,
       achieved: goal.achieved === true,
@@ -196,18 +197,18 @@ export const updateGoal = async (id: string, updates: Partial<Omit<Goal, 'id' | 
   try {
     const db = await getDatabase();
     const now = new Date().toISOString();
-    
+
     const existingGoal = await getGoalById(id);
     if (!existingGoal) {
       throw new Error('Goal not found');
     }
-    
+
     const updatedGoal = {
       ...existingGoal,
       ...updates,
       updated_at: now,
     };
-    
+
     await db.runAsync(
       `UPDATE goals 
        SET updated_at = ?, title = ?, category = ?, due_date = ?, achieved = ?, image_small = ?, image_large = ?
@@ -223,7 +224,7 @@ export const updateGoal = async (id: string, updates: Partial<Omit<Goal, 'id' | 
         id,
       ]
     );
-    
+
     return updatedGoal;
   } catch (error) {
     console.error(`Error updating goal with ID ${id}:`, error);
@@ -261,8 +262,8 @@ export const createHabit = async (habit: Omit<Habit, 'id' | 'created_at' | 'upda
     };
 
     await db.runAsync(
-      `INSERT INTO habits (id, goal_id, created_at, updated_at, title, selected_emoji, reminder_days, reminder_time)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
+      `INSERT INTO habits (id, goal_id, created_at, updated_at, title, selected_emoji, reminder_days, reminder_time, completed)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
       [
         newHabit.id,
         newHabit.goal_id,
@@ -272,6 +273,7 @@ export const createHabit = async (habit: Omit<Habit, 'id' | 'created_at' | 'upda
         newHabit.selected_emoji,
         newHabit.reminder_days,
         newHabit.reminder_time,
+        0,
       ]
     );
 
@@ -301,27 +303,29 @@ export const getHabitsByGoalId = async (goalId: string): Promise<Habit[]> => {
 /**
  * Update a habit
  */
-export const updateHabit = async (id: string, updates: Partial<Omit<Habit, 'id' | 'goal_id' | 'created_at'>>): Promise<Habit> => {
+export const updateHabit = async (id: string, updates: Partial<Omit<Habit, 'id' | 'created_at'>>): Promise<Habit> => {
   try {
     const db = await getDatabase();
     const now = new Date().toISOString();
-    
-    // First check if habit exists
+
+    // First check if habit exists and get its goal_id
     const existingHabit = await db.getFirstAsync<Habit>('SELECT * FROM habits WHERE id = ?;', [id]);
-    
+
     if (!existingHabit) {
       throw new Error('Habit not found');
     }
-    
+
+    // Ensure goal_id cannot be changed even if provided in updates
     const updatedHabit = {
       ...existingHabit,
       ...updates,
+      goal_id: existingHabit.goal_id, // Always keep the original goal_id
       updated_at: now,
     };
-    
+
     await db.runAsync(
       `UPDATE habits 
-       SET updated_at = ?, title = ?, selected_emoji = ?, reminder_days = ?, reminder_time = ?
+       SET updated_at = ?, title = ?, selected_emoji = ?, reminder_days = ?, reminder_time = ?, completed = ?
        WHERE id = ?;`,
       [
         updatedHabit.updated_at,
@@ -329,11 +333,12 @@ export const updateHabit = async (id: string, updates: Partial<Omit<Habit, 'id' 
         updatedHabit.selected_emoji,
         updatedHabit.reminder_days,
         updatedHabit.reminder_time,
+        updatedHabit.completed ? 1 : 0,
         id,
       ]
     );
-    
-    return updatedHabit;
+
+    return updatedHabit; // Returns complete habit with goal_id
   } catch (error) {
     console.error(`Error updating habit with ID ${id}:`, error);
     throw error;
@@ -404,7 +409,7 @@ export const getTasksByGoalId = async (goalId: string): Promise<Task[]> => {
       'SELECT * FROM tasks WHERE goal_id = ? ORDER BY created_at DESC;',
       [goalId]
     );
-    
+
     // Convert SQLite integers to booleans
     return tasks.map(task => ({
       ...task,
@@ -419,25 +424,25 @@ export const getTasksByGoalId = async (goalId: string): Promise<Task[]> => {
 /**
  * Update a task
  */
-export const updateTask = async (id: string, updates: Partial<Omit<Task, 'id' | 'goal_id' | 'created_at'>>): Promise<Task> => {
+export const updateTask = async (id: string, updates: Partial<Omit<Task, 'id' | 'created_at'>>): Promise<Task> => {
   try {
     const db = await getDatabase();
     const now = new Date().toISOString();
-    
-    // First check if task exists
+
     const existingTask = await db.getFirstAsync<Task>('SELECT * FROM tasks WHERE id = ?;', [id]);
-    
+
     if (!existingTask) {
       throw new Error('Task not found');
     }
-    
+
     const updatedTask = {
       ...existingTask,
       ...updates,
+      goal_id: existingTask.goal_id, // Always keep the original goal_id
       updated_at: now,
       completed: updates.completed !== undefined ? updates.completed : existingTask.completed === true,
     };
-    
+
     await db.runAsync(
       `UPDATE tasks 
        SET updated_at = ?, title = ?, selected_emoji = ?, reminder_time = ?, due_date = ?, description = ?, completed = ?
@@ -453,7 +458,7 @@ export const updateTask = async (id: string, updates: Partial<Omit<Task, 'id' | 
         id,
       ]
     );
-    
+
     return {
       ...updatedTask,
       completed: updatedTask.completed === true,
@@ -490,6 +495,42 @@ export const closeDatabase = async (): Promise<void> => {
       console.error('Error closing database:', error);
       throw error;
     }
+  }
+};
+
+/**
+ * Reset the entire database by dropping all tables and reinitializing
+ */
+export const resetDatabase = async (): Promise<void> => {
+  try {
+    const db = await getDatabase();
+    console.log('Dropping all tables and resetting database...');
+    
+    // First close the existing connection
+    await closeDatabase();
+    
+    // For Expo SQLite, delete the database file
+    if (Platform.OS === 'web') {
+      // Web implementation
+      const db = await getDatabase();
+      await db.execAsync(`
+        DROP TABLE IF EXISTS tasks;
+        DROP TABLE IF EXISTS habits;
+        DROP TABLE IF EXISTS goals;
+      `);
+    } else {
+      // Native implementation
+      await SQLite.deleteDatabaseAsync(DATABASE_NAME);
+    }
+    
+    // Reinitialize the database
+    dbInstance = null; // Reset the instance
+    await initDatabase();
+    
+    console.log('Database reset successfully');
+  } catch (error) {
+    console.error('Error resetting database:', error);
+    throw error;
   }
 };
 

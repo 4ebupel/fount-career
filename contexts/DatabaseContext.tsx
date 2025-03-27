@@ -23,12 +23,12 @@ interface DatabaseContextType {
   createHabit: typeof DB.createHabit;
   getHabitsByGoalId: typeof DB.getHabitsByGoalId;
   updateHabit: typeof DB.updateHabit;
-  deleteHabit: typeof DB.deleteHabit;
+  deleteHabit: (id: string, goal_id: string) => Promise<void>;
   // Task operations
   createTask: typeof DB.createTask;
   getTasksByGoalId: typeof DB.getTasksByGoalId;
   updateTask: typeof DB.updateTask;
-  deleteTask: typeof DB.deleteTask;
+  deleteTask: (id: string, goal_id: string) => Promise<void>;
   // Refresh data
   refreshData: () => Promise<void>;
   clearError: () => void;
@@ -64,7 +64,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     const message = error?.message || `An error occurred while ${context}`;
     setHasError(true);
     setErrorMessage(message);
-    
+
     // Show an alert for critical errors
     if (context === 'initializing database') {
       Alert.alert(
@@ -82,14 +82,14 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
       clearError();
 
       const isDbInitialized = await DB.isDatabaseInitialized();
-      
+
       if (!isDbInitialized) {
         console.log('Database not initialized, creating tables...');
         await DB.initDatabase();
       } else {
         console.log('Database already initialized');
       }
-      
+
       setIsInitialized(true);
       await refreshData();
     } catch (error) {
@@ -104,19 +104,19 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     try {
       setIsLoading(true);
       clearError();
-      
+
       // Get all goals
       console.log('Fetching goals from database...');
       const fetchedGoals = await DB.getGoals();
       setGoals(fetchedGoals);
-      
+
       // Get habits and tasks for each goal
       const habitsMap: Record<string, Habit[]> = {};
       const tasksMap: Record<string, Task[]> = {};
-      
+
       if (fetchedGoals.length > 0) {
         console.log(`Fetching habits and tasks for ${fetchedGoals.length} goals...`);
-        
+
         // Process goals sequentially to avoid potential database locks
         for (const goal of fetchedGoals) {
           try {
@@ -124,7 +124,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
               DB.getHabitsByGoalId(goal.id),
               DB.getTasksByGoalId(goal.id)
             ]);
-            
+
             habitsMap[goal.id] = goalHabits;
             tasksMap[goal.id] = goalTasks;
           } catch (error) {
@@ -135,7 +135,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
           }
         }
       }
-      
+
       setHabits(habitsMap);
       setTasks(tasksMap);
     } catch (error) {
@@ -150,12 +150,12 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     try {
       clearError();
       const newGoal = await DB.createGoal(goal);
-      
+
       // Update local state
       setGoals(prevGoals => [newGoal, ...prevGoals]);
       setHabits(prevHabits => ({ ...prevHabits, [newGoal.id]: [] }));
       setTasks(prevTasks => ({ ...prevTasks, [newGoal.id]: [] }));
-      
+
       return newGoal;
     } catch (error) {
       handleError(error, 'creating goal');
@@ -167,12 +167,12 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     try {
       clearError();
       const updatedGoal = await DB.updateGoal(id, updates);
-      
+
       // Update local state
-      setGoals(prevGoals => 
+      setGoals(prevGoals =>
         prevGoals.map(goal => goal.id === id ? updatedGoal : goal)
       );
-      
+
       return updatedGoal;
     } catch (error) {
       handleError(error, 'updating goal');
@@ -184,7 +184,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     try {
       clearError();
       await DB.deleteGoal(id);
-      
+
       // Update local state
       setGoals(prevGoals => prevGoals.filter(goal => goal.id !== id));
       setHabits(prevHabits => {
@@ -207,7 +207,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     try {
       clearError();
       const newHabit = await DB.createHabit(habit);
-      
+
       // Update local state
       setHabits(prevHabits => {
         const goalHabits = prevHabits[habit.goal_id] || [];
@@ -216,7 +216,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
           [habit.goal_id]: [newHabit, ...goalHabits],
         };
       });
-      
+
       return newHabit;
     } catch (error) {
       handleError(error, 'creating habit');
@@ -227,28 +227,19 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
   const updateHabitWithRefresh = async (id: string, updates: Parameters<typeof DB.updateHabit>[1]) => {
     try {
       clearError();
-      const updatedHabit = await DB.updateHabit(id, updates);
-      
-      // Update local state
-      setHabits(prevHabits => {
-        const newHabits = { ...prevHabits };
-        
-        // Find which goal this habit belongs to
-        for (const goalId in newHabits) {
-          const habitIndex = newHabits[goalId].findIndex(h => h.id === id);
-          if (habitIndex !== -1) {
-            newHabits[goalId] = [
-              ...newHabits[goalId].slice(0, habitIndex),
-              updatedHabit,
-              ...newHabits[goalId].slice(habitIndex + 1),
-            ];
-            break;
-          }
-        }
-        
-        return newHabits;
-      });
-      
+      // Explicitly remove goal_id from updates to prevent accidental modifications
+      const { goal_id, ...safeUpdates } = updates;
+
+      const updatedHabit = await DB.updateHabit(id, safeUpdates);
+
+      // Update local state with direct access to goal_id
+      setHabits(prevHabits => ({
+        ...prevHabits,
+        [updatedHabit.goal_id]: prevHabits[updatedHabit.goal_id].map(h =>
+          h.id === id ? updatedHabit : h
+        )
+      }));
+
       return updatedHabit;
     } catch (error) {
       handleError(error, 'updating habit');
@@ -256,29 +247,16 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     }
   };
 
-  const deleteHabitWithRefresh = async (id: string) => {
+  const deleteHabitWithRefresh = async (id: string, goal_id: string) => {
     try {
       clearError();
       await DB.deleteHabit(id);
-      
-      // Update local state
-      setHabits(prevHabits => {
-        const newHabits = { ...prevHabits };
-        
-        // Find which goal this habit belongs to
-        for (const goalId in newHabits) {
-          const habitIndex = newHabits[goalId].findIndex(h => h.id === id);
-          if (habitIndex !== -1) {
-            newHabits[goalId] = [
-              ...newHabits[goalId].slice(0, habitIndex),
-              ...newHabits[goalId].slice(habitIndex + 1),
-            ];
-            break;
-          }
-        }
-        
-        return newHabits;
-      });
+
+      // Update local state using provided goal_id
+      setHabits(prevHabits => ({
+        ...prevHabits,
+        [goal_id]: prevHabits[goal_id].filter(h => h.id !== id)
+      }));
     } catch (error) {
       handleError(error, 'deleting habit');
       throw error;
@@ -289,7 +267,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     try {
       clearError();
       const newTask = await DB.createTask(task);
-      
+
       // Update local state
       setTasks(prevTasks => {
         const goalTasks = prevTasks[task.goal_id] || [];
@@ -298,7 +276,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
           [task.goal_id]: [newTask, ...goalTasks],
         };
       });
-      
+
       return newTask;
     } catch (error) {
       handleError(error, 'creating task');
@@ -309,28 +287,18 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
   const updateTaskWithRefresh = async (id: string, updates: Parameters<typeof DB.updateTask>[1]) => {
     try {
       clearError();
-      const updatedTask = await DB.updateTask(id, updates);
-      
-      // Update local state
-      setTasks(prevTasks => {
-        const newTasks = { ...prevTasks };
-        
-        // Find which goal this task belongs to
-        for (const goalId in newTasks) {
-          const taskIndex = newTasks[goalId].findIndex(t => t.id === id);
-          if (taskIndex !== -1) {
-            newTasks[goalId] = [
-              ...newTasks[goalId].slice(0, taskIndex),
-              updatedTask,
-              ...newTasks[goalId].slice(taskIndex + 1),
-            ];
-            break;
-          }
-        }
-        
-        return newTasks;
-      });
-      
+      // Explicitly remove goal_id from updates
+      const { goal_id, ...safeUpdates } = updates;
+      const updatedTask = await DB.updateTask(id, safeUpdates);
+
+      // Update local state using goal_id from the response
+      setTasks(prevTasks => ({
+        ...prevTasks,
+        [updatedTask.goal_id]: prevTasks[updatedTask.goal_id].map(t =>
+          t.id === id ? updatedTask : t
+        )
+      }));
+
       return updatedTask;
     } catch (error) {
       handleError(error, 'updating task');
@@ -338,29 +306,16 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     }
   };
 
-  const deleteTaskWithRefresh = async (id: string) => {
+  const deleteTaskWithRefresh = async (id: string, goal_id: string) => {
     try {
       clearError();
       await DB.deleteTask(id);
-      
-      // Update local state
-      setTasks(prevTasks => {
-        const newTasks = { ...prevTasks };
-        
-        // Find which goal this task belongs to
-        for (const goalId in newTasks) {
-          const taskIndex = newTasks[goalId].findIndex(t => t.id === id);
-          if (taskIndex !== -1) {
-            newTasks[goalId] = [
-              ...newTasks[goalId].slice(0, taskIndex),
-              ...newTasks[goalId].slice(taskIndex + 1),
-            ];
-            break;
-          }
-        }
-        
-        return newTasks;
-      });
+
+      // Update local state using provided goal_id
+      setTasks(prevTasks => ({
+        ...prevTasks,
+        [goal_id]: prevTasks[goal_id].filter(t => t.id !== id)
+      }));
     } catch (error) {
       handleError(error, 'deleting task');
       throw error;
@@ -373,10 +328,10 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
       try {
         setIsLoading(true);
         clearError();
-        
+
         const isDbInitialized = await DB.isDatabaseInitialized();
         console.log('Database initialization check:', isDbInitialized ? 'Already initialized' : 'Needs initialization');
-        
+
         if (isDbInitialized) {
           setIsInitialized(true);
           await refreshData();
@@ -387,9 +342,9 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
         setIsLoading(false);
       }
     };
-    
+
     checkDatabase();
-    
+
     // Clean up database resources when component unmounts
     return () => {
       DB.closeDatabase().catch(error => console.error('Error closing database:', error));
@@ -436,10 +391,10 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
 // Custom hook to use the database context
 export const useDatabase = () => {
   const context = useContext(DatabaseContext);
-  
+
   if (context === undefined) {
     throw new Error('useDatabase must be used within a DatabaseProvider');
   }
-  
+
   return context;
 }; 

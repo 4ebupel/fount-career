@@ -10,7 +10,7 @@ import { ThemeContext } from '@/contexts/ThemeContext';
 import { useDatabase } from '@/contexts/DatabaseContext';
 
 // Days of the week for habit reminders
-const DAYS_OF_WEEK = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 export default function AddHabit() {
     const { goalId } = useLocalSearchParams();
@@ -99,6 +99,7 @@ export default function AddHabit() {
                 selected_emoji: selectedEmoji,
                 reminder_days: JSON.stringify(reminderDays), // Store as JSON string
                 reminder_time: reminderTime,
+                completed: false,
             });
             
             // Navigate back to the goal details page after successful creation
@@ -218,7 +219,7 @@ export default function AddHabit() {
                                                     ? { color: colors.dark_theme.text_primary }
                                                     : { color: colors.light_theme.text_primary }
                                         ]}>
-                                            {day}
+                                            {day.charAt(0)}
                                         </Text>
                                     </TouchableOpacity>
                                 ))}

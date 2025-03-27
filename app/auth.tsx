@@ -8,6 +8,7 @@ import AuthFooter from '@/components/AuthFooter';
 import { colors } from '@/lib/colors';
 import { ThemeContext } from '@/contexts/ThemeContext';
 import SocialButton from '@/components/SocialButton';
+import { resetDatabase } from '@/lib/database';
 
 export default function Auth() {
     const router = useRouter();
@@ -67,9 +68,12 @@ export default function Auth() {
         console.log('Email Sign In with:', email, password, 'Agreed:', agree);
     };
 
-    const handleAppleSignIn = () => {
-        // Handle Apple sign in logic here.
-        console.log('Continue with Apple');
+    const handleAppleSignIn = async () => {
+        try {
+            await resetDatabase();
+          } catch (error) {
+            console.error('Failed to reset database:', error);
+          }
     };
 
     const handleGoogleSignIn = () => {

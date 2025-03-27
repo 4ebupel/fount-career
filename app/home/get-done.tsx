@@ -6,38 +6,39 @@ import { ThemeContext } from "@/contexts/ThemeContext";
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useDatabase } from "@/contexts/DatabaseContext";
 import { Goal, Habit, Task } from "@/types/database";
+import { useModal } from "@/hooks/useModal";
 
 // Define an extended type that includes a completed status (not in the original)
 // This is a workaround since the actual Habit type doesn't have a completion property
-interface HabitWithStatus extends Habit {
-    isCompleted?: boolean; // Tracking status in our component
-}
+// interface HabitWithStatus extends Habit {
+//     isCompleted?: boolean; // Tracking status in our component
+// }
 
 export default function GetDone() {
     const [progressData, setProgressData] = useState([45, 20, 33, 40, 12, 90, 70]);
     const { theme } = useContext(ThemeContext);
-    const { goals = [], tasks = {}, habits: rawHabits = {}, isLoading, getGoals } = useDatabase();
+    const { goals = [], tasks = {}, habits = {}, isLoading, getGoals, updateHabit, createGoal } = useDatabase();
     const [dataLoaded, setDataLoaded] = useState(false);
     const [filterType, setFilterType] = useState<'all' | 'habits' | 'tasks'>('all');
     const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'pending'>('all');
-    
-    // For demo purposes, we'll simulate habit completion status
-    // In a real app, you'd retrieve this from your database
-    const [habitCompletionStatus, setHabitCompletionStatus] = useState<Record<string, boolean>>({});
-    
-    // Create habits with completion status
-    const habits = useMemo(() => {
-        const result: Record<string, HabitWithStatus[]> = {};
-        
-        Object.entries(rawHabits).forEach(([goalId, goalHabits]) => {
-            result[goalId] = goalHabits.map(habit => ({
-                ...habit,
-                isCompleted: habitCompletionStatus[habit.id] || false
-            }));
-        });
-        
-        return result;
-    }, [rawHabits, habitCompletionStatus]);
+    const { openModal } = useModal();
+
+    const handleFloatingButtonPress = () => {
+        openModal({
+            modalName: "GoalCreationTutorialModal",
+            props: {
+                theme,
+                title: "Goal Creation Tutorial",
+                content: "This is a tutorial for creating a goal.",
+                description: "This is a tutorial for creating a goal.",
+                primaryCTA: "Create Goal",
+                secondaryCTA: "Cancel",
+                onClose: () => {},
+                onConfirm: (data: any) => {createGoal(data)},
+                onCancel: () => {},
+            }
+        })
+    }
     
     // Get total tasks and habits
     const totalHabits = useMemo(() => 
@@ -52,7 +53,7 @@ export default function GetDone() {
     
     // Get completed tasks and habits
     const completedHabits = useMemo(() => 
-        Object.values(habits).flat().filter(habit => habit.isCompleted).length, 
+        Object.values(habits).flat().filter(habit => habit.completed).length, 
         [habits]
     );
     
@@ -66,11 +67,12 @@ export default function GetDone() {
     const completedItems = completedHabits + completedTasks;
     
     // Toggle habit completion
-    const toggleHabitCompletion = (habitId: string) => {
-        setHabitCompletionStatus(prevStatus => ({
-            ...prevStatus,
-            [habitId]: !prevStatus[habitId]
-        }));
+    const toggleHabitCompletion = async (habitId: string, goalId: string) => {
+        const habitList = habits[goalId] || [];
+        const habit = habitList.find(h => h.id === habitId);
+        if (habit) {
+            await updateHabit(habitId, { completed: !habit.completed });
+        }
     };
     
     // Use getGoals instead of refreshData since it's more reliable
@@ -82,14 +84,7 @@ export default function GetDone() {
                 console.log("Fetching goals directly...");
                 const fetchedGoals = await getGoals();
                 console.log(`Fetched ${fetchedGoals.length} goals successfully`);
-                
-                // Initialize habit completion status (for demo)
-                const initialStatus: Record<string, boolean> = {};
-                Object.values(rawHabits).flat().forEach(habit => {
-                    // Randomly set some habits as completed for demo purposes
-                    initialStatus[habit.id] = Math.random() > 0.5;
-                });
-                setHabitCompletionStatus(initialStatus);
+
                 
                 setDataLoaded(true);
             } catch (error) {
@@ -124,7 +119,7 @@ export default function GetDone() {
                         if (goalTasks.some(task => task.completed)) return true;
                     }
                     if (filterType === 'habits' || filterType === 'all') {
-                        if (goalHabits.some(habit => habit.isCompleted)) return true;
+                        if (goalHabits.some(habit => habit.completed)) return true;
                     }
                     return false;
                 }
@@ -134,7 +129,7 @@ export default function GetDone() {
                         if (goalTasks.some(task => !task.completed)) return true;
                     }
                     if (filterType === 'habits' || filterType === 'all') {
-                        if (goalHabits.some(habit => !habit.isCompleted)) return true;
+                        if (goalHabits.some(habit => !habit.completed)) return true;
                     }
                     return false;
                 }
@@ -161,8 +156,8 @@ export default function GetDone() {
             
             const filteredHabits = goalHabits.filter(habit => {
                 if (filterType === 'tasks') return false;
-                if (filterStatus === 'completed' && !habit.isCompleted) return false;
-                if (filterStatus === 'pending' && habit.isCompleted) return false;
+                if (filterStatus === 'completed' && !habit.completed) return false;
+                if (filterStatus === 'pending' && habit.completed) return false;
                 return true;
             });
             
@@ -192,14 +187,14 @@ export default function GetDone() {
                                 styles.itemCard,
                                 theme === 'dark' ? styles.itemCardDark : styles.itemCardLight
                             ]}
-                            onPress={() => toggleHabitCompletion(habit.id)}
+                            onPress={() => toggleHabitCompletion(habit.id, goal.id)}
                         >
                             {/* Checkbox */}
                             <View style={[
                                 styles.checkbox,
-                                habit.isCompleted ? styles.checkboxCompleted : styles.checkboxUncompleted
+                                habit.completed ? styles.checkboxCompleted : styles.checkboxUncompleted
                             ]}>
-                                {habit.isCompleted && (
+                                {habit.completed && (
                                     <Feather name="check" size={16} color="#FFFFFF" />
                                 )}
                             </View>
@@ -208,7 +203,7 @@ export default function GetDone() {
                             <View style={styles.itemContent}>
                                 <Text style={[
                                     styles.itemTitle,
-                                    habit.isCompleted ? styles.itemTitleCompleted : theme === 'dark' ? styles.textDark : styles.textLight
+                                    habit.completed ? styles.itemTitleCompleted : theme === 'dark' ? styles.textDark : styles.textLight
                                 ]}>
                                     {habit.title}
                                 </Text>
@@ -427,6 +422,7 @@ export default function GetDone() {
                     styles.button,
                     theme === 'light' ? styles.buttonLight : styles.buttonDark,
                 ]}
+                onPress={handleFloatingButtonPress}
             >
                 <Feather name="plus" size={24} color={theme === 'light' ? colors.light_theme.button_primary_text : colors.dark_theme.button_primary_text} />
             </Pressable>

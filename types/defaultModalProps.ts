@@ -19,4 +19,13 @@ export interface DefaultModalProps {
     initialHour?: string;
     initialMinute?: string;
     onTimeSelected?: (hour: string, minute: string) => void;
+    // Additional optional props for TutorialOverlayModal
+    highlightPosition?: {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+    };
+    tutorialContent?: string;
+    tutorialTitle?: string;
 };

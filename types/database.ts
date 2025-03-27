@@ -19,6 +19,7 @@ export interface Habit {
   selected_emoji: string;
   reminder_days: string; // Stored as JSON string of day names
   reminder_time: string; // Format: HH:MM
+  completed: boolean;
 }
 
 export interface Task {

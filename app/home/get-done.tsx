@@ -7,12 +7,7 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 import { useDatabase } from "@/contexts/DatabaseContext";
 import { Goal, Habit, Task } from "@/types/database";
 import { useModal } from "@/hooks/useModal";
-
-// Define an extended type that includes a completed status (not in the original)
-// This is a workaround since the actual Habit type doesn't have a completion property
-// interface HabitWithStatus extends Habit {
-//     isCompleted?: boolean; // Tracking status in our component
-// }
+import React from "react";
 
 export default function GetDone() {
     const [progressData, setProgressData] = useState([45, 20, 33, 40, 12, 90, 70]);
@@ -33,39 +28,39 @@ export default function GetDone() {
                 description: "This is a tutorial for creating a goal.",
                 primaryCTA: "Create Goal",
                 secondaryCTA: "Cancel",
-                onClose: () => {},
-                onConfirm: (data: any) => {createGoal(data)},
-                onCancel: () => {},
+                onClose: () => { },
+                onConfirm: (data: any) => { createGoal(data) },
+                onCancel: () => { },
             }
         })
     }
-    
+
     // Get total tasks and habits
-    const totalHabits = useMemo(() => 
-        Object.values(habits).flat().length, 
+    const totalHabits = useMemo(() =>
+        Object.values(habits).flat().length,
         [habits]
     );
-    
-    const totalTasks = useMemo(() => 
-        Object.values(tasks).flat().length, 
+
+    const totalTasks = useMemo(() =>
+        Object.values(tasks).flat().length,
         [tasks]
     );
-    
+
     // Get completed tasks and habits
-    const completedHabits = useMemo(() => 
-        Object.values(habits).flat().filter(habit => habit.completed).length, 
+    const completedHabits = useMemo(() =>
+        Object.values(habits).flat().filter(habit => habit.completed).length,
         [habits]
     );
-    
-    const completedTasks = useMemo(() => 
-        Object.values(tasks).flat().filter(task => task.completed).length, 
+
+    const completedTasks = useMemo(() =>
+        Object.values(tasks).flat().filter(task => task.completed).length,
         [tasks]
     );
-    
+
     // Total for today
     const totalItems = totalHabits + totalTasks;
     const completedItems = completedHabits + completedTasks;
-    
+
     // Toggle habit completion
     const toggleHabitCompletion = async (habitId: string, goalId: string) => {
         const habitList = habits[goalId] || [];
@@ -74,27 +69,27 @@ export default function GetDone() {
             await updateHabit(habitId, { completed: !habit.completed });
         }
     };
-    
+
     // Use getGoals instead of refreshData since it's more reliable
     useEffect(() => {
         console.log("Component mounted, starting async data loading");
-        
+
         const loadData = async () => {
             try {
                 console.log("Fetching goals directly...");
                 const fetchedGoals = await getGoals();
                 console.log(`Fetched ${fetchedGoals.length} goals successfully`);
 
-                
+
                 setDataLoaded(true);
             } catch (error) {
                 console.error("Error loading data:", error);
                 setDataLoaded(true); // Still mark as loaded to show content
             }
         };
-        
+
         loadData();
-        
+
         return () => {
             console.log("Component unmounting");
         };
@@ -102,18 +97,18 @@ export default function GetDone() {
 
     // Simplified progress indicator style
     const progressBarWidth = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
-    
+
     // Filtering and sorting logic
     const filteredGoals = useMemo(() => {
         return goals.filter(goal => {
             const goalTasks = tasks[goal.id] || [];
             const goalHabits = habits[goal.id] || [];
-            
+
             // Check if this goal has any items matching our filters
             const hasMatchingItems = (() => {
                 if (filterType === 'tasks' && goalTasks.length === 0) return false;
                 if (filterType === 'habits' && goalHabits.length === 0) return false;
-                
+
                 if (filterStatus === 'completed') {
                     if (filterType === 'tasks' || filterType === 'all') {
                         if (goalTasks.some(task => task.completed)) return true;
@@ -123,7 +118,7 @@ export default function GetDone() {
                     }
                     return false;
                 }
-                
+
                 if (filterStatus === 'pending') {
                     if (filterType === 'tasks' || filterType === 'all') {
                         if (goalTasks.some(task => !task.completed)) return true;
@@ -133,10 +128,10 @@ export default function GetDone() {
                     }
                     return false;
                 }
-                
+
                 return true;
             })();
-            
+
             return hasMatchingItems;
         });
     }, [goals, tasks, habits, filterType, filterStatus]);
@@ -145,7 +140,7 @@ export default function GetDone() {
         return filteredGoals.map(goal => {
             const goalTasks = tasks[goal.id] || [];
             const goalHabits = habits[goal.id] || [];
-            
+
             // Apply filters to tasks and habits
             const filteredTasks = goalTasks.filter(task => {
                 if (filterType === 'habits') return false;
@@ -153,36 +148,36 @@ export default function GetDone() {
                 if (filterStatus === 'pending' && task.completed) return false;
                 return true;
             });
-            
+
             const filteredHabits = goalHabits.filter(habit => {
                 if (filterType === 'tasks') return false;
                 if (filterStatus === 'completed' && !habit.completed) return false;
                 if (filterStatus === 'pending' && habit.completed) return false;
                 return true;
             });
-            
+
             // Skip rendering this section if there are no items to show
             if (filteredTasks.length === 0 && filteredHabits.length === 0) {
                 return null;
             }
-            
+
             return (
                 <View key={goal.id} style={styles.goalSection}>
                     {/* Section Header with Goal Title */}
                     <View style={styles.sectionHeader}>
                         <Text style={[
-                            styles.sectionTitle, 
+                            styles.sectionTitle,
                             theme === 'dark' ? styles.sectionTitleDark : styles.sectionTitleLight
                         ]}>
                             {goal.title}
                         </Text>
                         <View style={styles.divider} />
                     </View>
-                    
+
                     {/* Filtered Habits */}
                     {filteredHabits.map(habit => (
-                        <TouchableOpacity 
-                            key={`habit-${habit.id}`} 
+                        <TouchableOpacity
+                            key={`habit-${habit.id}`}
                             style={[
                                 styles.itemCard,
                                 theme === 'dark' ? styles.itemCardDark : styles.itemCardLight
@@ -198,9 +193,9 @@ export default function GetDone() {
                                     <Text>
                                         <Feather name="check" size={16} color="#FFFFFF" />
                                     </Text>
-                                ): ( null )}
+                                ) : (null)}
                             </View>
-                            
+
                             {/* Content */}
                             <View style={styles.itemContent}>
                                 <Text style={[
@@ -209,7 +204,7 @@ export default function GetDone() {
                                 ]}>
                                     {habit.title}
                                 </Text>
-                                
+
                                 {habit.reminder_time ? (
                                     <View style={styles.timeContainer}>
                                         <Text>
@@ -219,14 +214,14 @@ export default function GetDone() {
                                             {habit.reminder_time}
                                         </Text>
                                     </View>
-                                ): ( null )}
+                                ) : (null)}
                             </View>
-                            
+
                             {/* Colored stripe */}
                             <View style={[styles.colorStripe, { backgroundColor: '#2C0166' }]} />
                         </TouchableOpacity>
                     ))}
-                    
+
                     {/* Filtered Tasks */}
                     {filteredTasks.map(task => (
                         <View key={`task-${task.id}`} style={[
@@ -242,9 +237,9 @@ export default function GetDone() {
                                     <Text>
                                         <Feather name="check" size={16} color="#FFFFFF" />
                                     </Text>
-                                ): ( null )}
+                                ) : (null)}
                             </View>
-                            
+
                             {/* Content */}
                             <View style={styles.itemContent}>
                                 <Text style={[
@@ -253,7 +248,7 @@ export default function GetDone() {
                                 ]}>
                                     {task.title}
                                 </Text>
-                                
+
                                 {task.reminder_time ? (
                                     <View style={styles.timeContainer}>
                                         <Text>
@@ -263,9 +258,9 @@ export default function GetDone() {
                                             {task.reminder_time}
                                         </Text>
                                     </View>
-                                ): ( null )}
+                                ) : (null)}
                             </View>
-                            
+
                             {/* Colored stripe */}
                             <View style={[styles.colorStripe, { backgroundColor: '#1A96F0' }]} />
                         </View>
@@ -281,7 +276,7 @@ export default function GetDone() {
             theme === 'dark' ? styles.containerDark : styles.containerLight
         ]}>
             <WeeklyCalendarHeader progressData={progressData} />
-            
+
             {isLoading && !dataLoaded ? (
                 <View style={styles.backgroundImageContainer}>
                     <Image
@@ -295,9 +290,9 @@ export default function GetDone() {
                     <View style={styles.backgroundTitleContainer}>
                         <Text style={[styles.backgroundTitle, theme === 'dark' ? styles.backgroundTitleDark : styles.backgroundTitleLight]}>Loading data...</Text>
                         <Text style={[styles.backgroundDescription, theme === 'dark' ? styles.backgroundDescriptionDark : styles.backgroundDescriptionLight]}>Please wait while we fetch your goals.</Text>
-                        <ActivityIndicator 
-                            size="large" 
-                            color={theme === 'light' ? colors.light_theme.button_primary_bg : colors.dark_theme.button_primary_bg} 
+                        <ActivityIndicator
+                            size="large"
+                            color={theme === 'light' ? colors.light_theme.button_primary_bg : colors.dark_theme.button_primary_bg}
                             style={{ marginTop: 20 }}
                         />
                     </View>
@@ -329,102 +324,102 @@ export default function GetDone() {
                                 {completedItems} / {totalItems}
                             </Text>
                         </View>
-                        
+
                         <View style={styles.progressBarContainer}>
                             <View style={[styles.progressBar, { width: `${progressBarWidth}%` }]} />
                         </View>
                     </View>
-                    
+
                     {/* Filter controls */}
                     <View style={styles.filterContainer}>
                         <View style={styles.filterRow}>
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 style={[
-                                    styles.filterButton, 
+                                    styles.filterButton,
                                     filterType === 'all' && styles.filterButtonActive
                                 ]}
                                 onPress={() => setFilterType('all')}
                             >
                                 <Text style={[
-                                    styles.filterButtonText, 
+                                    styles.filterButtonText,
                                     filterType === 'all' ? styles.filterButtonTextActive : styles.filterButtonTextInactive
                                 ]}>All</Text>
                             </TouchableOpacity>
-                            
-                            <TouchableOpacity 
+
+                            <TouchableOpacity
                                 style={[
-                                    styles.filterButton, 
+                                    styles.filterButton,
                                     filterType === 'habits' && styles.filterButtonActive
                                 ]}
                                 onPress={() => setFilterType('habits')}
                             >
                                 <Text style={[
-                                    styles.filterButtonText, 
+                                    styles.filterButtonText,
                                     filterType === 'habits' ? styles.filterButtonTextActive : styles.filterButtonTextInactive
                                 ]}>Habits</Text>
                             </TouchableOpacity>
-                            
-                            <TouchableOpacity 
+
+                            <TouchableOpacity
                                 style={[
-                                    styles.filterButton, 
+                                    styles.filterButton,
                                     filterType === 'tasks' && styles.filterButtonActive
                                 ]}
                                 onPress={() => setFilterType('tasks')}
                             >
                                 <Text style={[
-                                    styles.filterButtonText, 
+                                    styles.filterButtonText,
                                     filterType === 'tasks' ? styles.filterButtonTextActive : styles.filterButtonTextInactive
                                 ]}>Tasks</Text>
                             </TouchableOpacity>
                         </View>
-                        
+
                         <View style={styles.filterRow}>
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 style={[
-                                    styles.filterButton, 
+                                    styles.filterButton,
                                     filterStatus === 'all' && styles.filterButtonActive
                                 ]}
                                 onPress={() => setFilterStatus('all')}
                             >
                                 <Text style={[
-                                    styles.filterButtonText, 
+                                    styles.filterButtonText,
                                     filterStatus === 'all' ? styles.filterButtonTextActive : styles.filterButtonTextInactive
                                 ]}>All</Text>
                             </TouchableOpacity>
-                            
-                            <TouchableOpacity 
+
+                            <TouchableOpacity
                                 style={[
-                                    styles.filterButton, 
+                                    styles.filterButton,
                                     filterStatus === 'completed' && styles.filterButtonActive
                                 ]}
                                 onPress={() => setFilterStatus('completed')}
                             >
                                 <Text style={[
-                                    styles.filterButtonText, 
+                                    styles.filterButtonText,
                                     filterStatus === 'completed' ? styles.filterButtonTextActive : styles.filterButtonTextInactive
                                 ]}>Completed</Text>
                             </TouchableOpacity>
-                            
-                            <TouchableOpacity 
+
+                            <TouchableOpacity
                                 style={[
-                                    styles.filterButton, 
+                                    styles.filterButton,
                                     filterStatus === 'pending' && styles.filterButtonActive
                                 ]}
                                 onPress={() => setFilterStatus('pending')}
                             >
                                 <Text style={[
-                                    styles.filterButtonText, 
+                                    styles.filterButtonText,
                                     filterStatus === 'pending' ? styles.filterButtonTextActive : styles.filterButtonTextInactive
                                 ]}>Pending</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
-                    
+
                     {/* Goals sections with tasks and habits */}
                     {renderItemsList()}
                 </ScrollView>
             )}
-            
+
             <Pressable
                 style={[
                     styles.button,

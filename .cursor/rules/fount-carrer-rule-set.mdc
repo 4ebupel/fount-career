@@ -7,6 +7,7 @@ alwaysApply: false
 
 const reactNativeExpoBestPractices = [
   "Use functional components.",
+  "use ternary ? () : () when rendering components conditionally"
   "Leverage Expo SDK features and APIs.",
   "Implement navigation using Expo Router.",
   "Manage assets with Expo's asset system for images and fonts.",

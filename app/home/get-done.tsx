@@ -194,9 +194,11 @@ export default function GetDone() {
                                 styles.checkbox,
                                 habit.completed ? styles.checkboxCompleted : styles.checkboxUncompleted
                             ]}>
-                                {habit.completed && (
-                                    <Feather name="check" size={16} color="#FFFFFF" />
-                                )}
+                                {habit.completed ? (
+                                    <Text>
+                                        <Feather name="check" size={16} color="#FFFFFF" />
+                                    </Text>
+                                ): ( null )}
                             </View>
                             
                             {/* Content */}
@@ -208,14 +210,16 @@ export default function GetDone() {
                                     {habit.title}
                                 </Text>
                                 
-                                {habit.reminder_time && (
+                                {habit.reminder_time ? (
                                     <View style={styles.timeContainer}>
-                                        <Feather name="clock" size={12} color={theme === 'dark' ? '#9E9E9E' : '#616161'} />
+                                        <Text>
+                                            <Feather name="clock" size={12} color={theme === 'dark' ? '#9E9E9E' : '#616161'} />
+                                        </Text>
                                         <Text style={styles.timeText}>
                                             {habit.reminder_time}
                                         </Text>
                                     </View>
-                                )}
+                                ): ( null )}
                             </View>
                             
                             {/* Colored stripe */}
@@ -234,9 +238,11 @@ export default function GetDone() {
                                 styles.checkbox,
                                 task.completed ? styles.checkboxCompleted : styles.checkboxUncompleted
                             ]}>
-                                {task.completed && (
-                                    <Feather name="check" size={16} color="#FFFFFF" />
-                                )}
+                                {task.completed ? (
+                                    <Text>
+                                        <Feather name="check" size={16} color="#FFFFFF" />
+                                    </Text>
+                                ): ( null )}
                             </View>
                             
                             {/* Content */}
@@ -248,14 +254,16 @@ export default function GetDone() {
                                     {task.title}
                                 </Text>
                                 
-                                {task.reminder_time && (
+                                {task.reminder_time ? (
                                     <View style={styles.timeContainer}>
-                                        <Feather name="clock" size={12} color={theme === 'dark' ? '#9E9E9E' : '#616161'} />
+                                        <Text>
+                                            <Feather name="clock" size={12} color={theme === 'dark' ? '#9E9E9E' : '#616161'} />
+                                        </Text>
                                         <Text style={styles.timeText}>
                                             {task.reminder_time}
                                         </Text>
                                     </View>
-                                )}
+                                ): ( null )}
                             </View>
                             
                             {/* Colored stripe */}
@@ -424,7 +432,9 @@ export default function GetDone() {
                 ]}
                 onPress={handleFloatingButtonPress}
             >
-                <Feather name="plus" size={24} color={theme === 'light' ? colors.light_theme.button_primary_text : colors.dark_theme.button_primary_text} />
+                <Text>
+                    <Feather name="plus" size={24} color={theme === 'light' ? colors.light_theme.button_primary_text : colors.dark_theme.button_primary_text} />
+                </Text>
             </Pressable>
         </SafeAreaView>
     );

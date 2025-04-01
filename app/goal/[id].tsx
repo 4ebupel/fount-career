@@ -176,7 +176,7 @@ export default function Goal() {
                         <View style={styles.goalHeadingDateContainer}>
                             <FontAwesome name="calendar" size={14} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
                             <Text style={[styles.dueDateText, theme === 'light' ? styles.dueDateTextLight : styles.dueDateTextDark]}>
-                                {goal.due_date ? new Date(goal.due_date).toLocaleDateString() : 'No due date'}
+                                {goal.due_date || 'No due date'}
                             </Text>
                         </View>
                     </View>

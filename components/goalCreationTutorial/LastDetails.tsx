@@ -5,15 +5,17 @@ import { useModal } from "@/hooks/useModal";
 import { CATEGORY_SELECTOR_MODAL, DATE_SELECTOR_MODAL } from "@/components/CustomModal";
 import { AntDesign } from '@expo/vector-icons';
 import { Goal } from "@/types/database";
+import React from "react";
 
 interface Props {
     theme: 'dark' | 'light',
     goal: Goal,
+    isTitleEditable?: boolean,
     setGoal: (goal: Goal) => void,
 }
 
-export default function LastDetails({ theme, goal, setGoal }: Props) {
-    const [isFocused, setIsFocused] = useState(false);
+export default function LastDetails({ theme, goal, isTitleEditable = false, setGoal }: Props) {
+    const [title, setTitle] = useState(goal.title);
     const [category, setCategory] = useState('Select a category');
     const [dueDate, setDueDate] = useState('Select a due date');
     const { openModal, closeModal } = useModal();
@@ -46,7 +48,7 @@ export default function LastDetails({ theme, goal, setGoal }: Props) {
                 title: 'Choose Goal Category',
                 primaryCTA: '',
                 secondaryCTA: '',
-                onConfirm: () => {
+                onConfirm: (category: string) => {
                     setGoal({ ...goal, category: category });
                 },
                 onCancel: () => {},
@@ -73,7 +75,7 @@ export default function LastDetails({ theme, goal, setGoal }: Props) {
                 title: 'Choose Due Date',
                 primaryCTA: '',
                 secondaryCTA: '',
-                onConfirm: () => {
+                onConfirm: (dueDate: string) => {
                     setGoal({ ...goal, due_date: dueDate });
                 },
                 onCancel: () => {},
@@ -93,9 +95,18 @@ export default function LastDetails({ theme, goal, setGoal }: Props) {
                     Goal
                 </Text>
                 <View style={styles.goalTextContainer}>
-                    <Text style={styles.text}>
-                        {goal.title}
-                    </Text>
+                    {isTitleEditable ? (
+                        <TextInput
+                            style={styles.text}
+                            value={title}
+                            onChangeText={(text) => setTitle(text)}
+                            onBlur={() => setGoal({ ...goal, title: title })}
+                        />
+                    ) : (
+                        <Text style={styles.text}>
+                            {goal.title}
+                        </Text>
+                    )}
                 </View>
             </View>
             <View style={styles.columnContainer}>

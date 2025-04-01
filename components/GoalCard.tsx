@@ -14,6 +14,7 @@ interface GoalCardProps {
 }
 
 const daysRemaining = (dueDate: string) => {
+    if (!dueDate) return 'No due date';
     const today = new Date();
     const dueDateObj = new Date(dueDate);
     const diffTime = Math.abs(dueDateObj.getTime() - today.getTime());
@@ -88,7 +89,7 @@ export default function GoalCard({ goal, theme }: GoalCardProps) {
                 </View>
                 <View style={styles.goalContainerInfoDueDate}>
                     <Ionicons name="calendar-outline" size={16} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
-                    <Text style={[styles.goalContainerInfoDueDateText, theme === 'light' ? styles.goalContainerInfoDueDateTextLight : styles.goalContainerInfoDueDateTextDark]}>{daysRemaining(goal.dueDate)} days remaining</Text>
+                    <Text style={[styles.goalContainerInfoDueDateText, theme === 'light' ? styles.goalContainerInfoDueDateTextLight : styles.goalContainerInfoDueDateTextDark]}>{daysRemaining(goal.due_date)} {goal.due_date ? 'days remaining' : ''}</Text>
                 </View>
             </View>
         </AnimatedPressable>

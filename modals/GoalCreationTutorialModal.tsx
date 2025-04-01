@@ -221,7 +221,32 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
   };
 
   const handleConfirm = () => {
-    props.onConfirm({ title: goal.title, category: goal.category, dueDate: goal.due_date });
+    // Format the date to ensure it's in a SQLite-compatible format (YYYY-MM-DD)
+    let formattedDueDate = goal.due_date;
+    
+    // If the date is in a human-readable format (e.g., "January 15, 2024"), convert it to YYYY-MM-DD
+    if (goal.due_date && !goal.due_date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      try {
+        const date = new Date(goal.due_date);
+        if (!isNaN(date.getTime())) {
+          formattedDueDate = date.toISOString().split('T')[0]; // Get YYYY-MM-DD format
+        }
+      } catch (error) {
+        console.error('Error formatting date:', error);
+      }
+    }
+    
+    console.log({ 
+      title: goal.title, 
+      category: goal.category, 
+      dueDate: formattedDueDate 
+    });
+
+    props.onConfirm({ 
+      title: goal.title, 
+      category: goal.category, 
+      due_date: formattedDueDate 
+    });
     animateClose();
   };
 

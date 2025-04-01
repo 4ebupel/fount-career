@@ -6,6 +6,8 @@ import { colors } from "@/lib/colors";
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useDatabase } from "@/contexts/DatabaseContext";
 import { Goal as GoalType, Task, Habit } from "@/types/database";
+import React from "react";
+import ItemCard from "@/components/ItemCard";
 
 export default function Goal() {
     const { id } = useLocalSearchParams();
@@ -192,21 +194,19 @@ export default function Goal() {
                                 </Pressable>
                             </View>
 
+                            {/* Tasks List */}
+
                             {tasks.length > 0 && (
-                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tasksList}>
+                                <ScrollView showsVerticalScrollIndicator={false} style={styles.tasksList}>
                                     {tasks.map((task) => (
-                                        <View
+                                        <ItemCard
                                             key={task.id}
-                                            style={[styles.taskItem, theme === 'light' ? styles.taskItemLight : styles.taskItemDark]}
-                                        >
-                                            <Text style={[styles.taskEmoji]}>{task.selected_emoji}</Text>
-                                            <Text
-                                                style={[styles.taskTitle, theme === 'light' ? styles.taskTitleLight : styles.taskTitleDark]}
-                                                numberOfLines={1}
-                                            >
-                                                {task.title}
-                                            </Text>
-                                        </View>
+                                            item={task}
+                                            theme={theme}
+                                            displayCheckbox={false}
+                                            displayBorders={true}
+                                            onPress={() => {}}
+                                        />
                                     ))}
                                 </ScrollView>
                             )}
@@ -233,21 +233,19 @@ export default function Goal() {
                                 </Pressable>
                             </View>
 
+                            {/* Habits List */}
+
                             {habits.length > 0 && (
-                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.habitsList}>
+                                <ScrollView showsVerticalScrollIndicator={false} style={styles.habitsList}>
                                     {habits.map((habit) => (
-                                        <View
+                                        <ItemCard
                                             key={habit.id}
-                                            style={[styles.habitItem, theme === 'light' ? styles.habitItemLight : styles.habitItemDark]}
-                                        >
-                                            <Text style={[styles.habitEmoji]}>{habit.selected_emoji}</Text>
-                                            <Text
-                                                style={[styles.habitTitle, theme === 'light' ? styles.habitTitleLight : styles.habitTitleDark]}
-                                                numberOfLines={1}
-                                            >
-                                                {habit.title}
-                                            </Text>
-                                        </View>
+                                            item={habit}
+                                            theme={theme}
+                                            displayCheckbox={false}
+                                            displayBorders={true}
+                                            onPress={() => {}}
+                                        />
                                     ))}
                                 </ScrollView>
                             )}

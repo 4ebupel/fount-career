@@ -8,11 +8,12 @@ import { useDatabase } from "@/contexts/DatabaseContext";
 import { Goal, Habit, Task } from "@/types/database";
 import { useModal } from "@/hooks/useModal";
 import React from "react";
+import ItemCard from "@/components/ItemCard";
 
 export default function GetDone() {
     const [progressData, setProgressData] = useState([45, 20, 33, 40, 12, 90, 70]);
     const { theme } = useContext(ThemeContext);
-    const { goals = [], tasks = {}, habits = {}, isLoading, getGoals, updateHabit, createGoal } = useDatabase();
+    const { goals = [], tasks = {}, habits = {}, isLoading, getGoals, updateHabit, updateTask, createGoal } = useDatabase();
     const [dataLoaded, setDataLoaded] = useState(false);
     const [filterType, setFilterType] = useState<'all' | 'habits' | 'tasks'>('all');
     const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'pending'>('all');
@@ -67,6 +68,14 @@ export default function GetDone() {
         const habit = habitList.find(h => h.id === habitId);
         if (habit) {
             await updateHabit(habitId, { completed: !habit.completed });
+        }
+    };
+
+    const toggleTaskCompletion = async (taskId: string, goalId: string) => {
+        const taskList = tasks[goalId] || [];
+        const task = taskList.find(t => t.id === taskId);
+        if (task) {
+            await updateTask(taskId, { completed: !task.completed });
         }
     };
 
@@ -176,94 +185,26 @@ export default function GetDone() {
 
                     {/* Filtered Habits */}
                     {filteredHabits.map(habit => (
-                        <TouchableOpacity
+                        <ItemCard
                             key={`habit-${habit.id}`}
-                            style={[
-                                styles.itemCard,
-                                theme === 'dark' ? styles.itemCardDark : styles.itemCardLight
-                            ]}
+                            item={habit}
+                            theme={theme}
+                            displayCheckbox={true}
+                            displayBorders={false}
                             onPress={() => toggleHabitCompletion(habit.id, goal.id)}
-                        >
-                            {/* Checkbox */}
-                            <View style={[
-                                styles.checkbox,
-                                habit.completed ? styles.checkboxCompleted : styles.checkboxUncompleted
-                            ]}>
-                                {habit.completed ? (
-                                    <Text>
-                                        <Feather name="check" size={16} color="#FFFFFF" />
-                                    </Text>
-                                ) : (null)}
-                            </View>
-
-                            {/* Content */}
-                            <View style={styles.itemContent}>
-                                <Text style={[
-                                    styles.itemTitle,
-                                    habit.completed ? styles.itemTitleCompleted : theme === 'dark' ? styles.textDark : styles.textLight
-                                ]}>
-                                    {habit.title}
-                                </Text>
-
-                                {habit.reminder_time ? (
-                                    <View style={styles.timeContainer}>
-                                        <Text>
-                                            <Feather name="clock" size={12} color={theme === 'dark' ? '#9E9E9E' : '#616161'} />
-                                        </Text>
-                                        <Text style={styles.timeText}>
-                                            {habit.reminder_time}
-                                        </Text>
-                                    </View>
-                                ) : (null)}
-                            </View>
-
-                            {/* Colored stripe */}
-                            <View style={[styles.colorStripe, { backgroundColor: '#2C0166' }]} />
-                        </TouchableOpacity>
+                        />
                     ))}
 
                     {/* Filtered Tasks */}
                     {filteredTasks.map(task => (
-                        <View key={`task-${task.id}`} style={[
-                            styles.itemCard,
-                            theme === 'dark' ? styles.itemCardDark : styles.itemCardLight
-                        ]}>
-                            {/* Checkbox */}
-                            <View style={[
-                                styles.checkbox,
-                                task.completed ? styles.checkboxCompleted : styles.checkboxUncompleted
-                            ]}>
-                                {task.completed ? (
-                                    <Text>
-                                        <Feather name="check" size={16} color="#FFFFFF" />
-                                    </Text>
-                                ) : (null)}
-                            </View>
-
-                            {/* Content */}
-                            <View style={styles.itemContent}>
-                                <Text style={[
-                                    styles.itemTitle,
-                                    task.completed ? styles.itemTitleCompleted : theme === 'dark' ? styles.textDark : styles.textLight
-                                ]}>
-                                    {task.title}
-                                </Text>
-
-                                {task.reminder_time ? (
-                                    <View style={styles.timeContainer}>
-                                        <Text>
-                                            <Feather name="clock" size={12} color={theme === 'dark' ? '#9E9E9E' : '#616161'} />
-                                        </Text>
-                                        <Text style={styles.timeText}>
-                                            {task.reminder_time}
-                                        </Text>
-                                    </View>
-                                ) : (null)}
-                            </View>
-
-                            {/* Colored stripe */}
-                            <View style={[styles.colorStripe, { backgroundColor: '#1A96F0' }]} />
-                        </View>
+                        <ItemCard
+                            key={`task-${task.id}`}
+                            item={task}
+                            theme={theme}
+                            displayCheckbox={true}
+                            displayBorders={false}
+                            onPress={() => toggleTaskCompletion(task.id, goal.id)}
+                        />
                     ))}
                 </View>
             );

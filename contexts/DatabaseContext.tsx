@@ -229,7 +229,6 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
       clearError();
       // Explicitly remove goal_id from updates to prevent accidental modifications
       const { goal_id, ...safeUpdates } = updates;
-
       const updatedHabit = await DB.updateHabit(id, safeUpdates);
 
       // Update local state with direct access to goal_id

@@ -160,7 +160,7 @@ export const getGoals = async (): Promise<Goal[]> => {
     // Convert SQLite integers to booleans
     return goals.map(goal => ({
       ...goal,
-      achieved: goal.achieved === true,
+      achieved: Boolean(goal.achieved),
     }));
   } catch (error) {
     console.error('Error getting goals:', error);
@@ -182,7 +182,7 @@ export const getGoalById = async (id: string): Promise<Goal | null> => {
 
     return {
       ...goal,
-      achieved: goal.achieved === true,
+      achieved: Boolean(goal.achieved),
     };
   } catch (error) {
     console.error(`Error getting goal with ID ${id}:`, error);
@@ -413,7 +413,7 @@ export const getTasksByGoalId = async (goalId: string): Promise<Task[]> => {
     // Convert SQLite integers to booleans
     return tasks.map(task => ({
       ...task,
-      completed: task.completed === true,
+      completed: Boolean(task.completed),
     }));
   } catch (error) {
     console.error(`Error getting tasks for goal ID ${goalId}:`, error);
@@ -440,7 +440,6 @@ export const updateTask = async (id: string, updates: Partial<Omit<Task, 'id' | 
       ...updates,
       goal_id: existingTask.goal_id, // Always keep the original goal_id
       updated_at: now,
-      completed: updates.completed !== undefined ? updates.completed : existingTask.completed === true,
     };
 
     await db.runAsync(
@@ -459,10 +458,7 @@ export const updateTask = async (id: string, updates: Partial<Omit<Task, 'id' | 
       ]
     );
 
-    return {
-      ...updatedTask,
-      completed: updatedTask.completed === true,
-    };
+    return updatedTask;
   } catch (error) {
     console.error(`Error updating task with ID ${id}:`, error);
     throw error;

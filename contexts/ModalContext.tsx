@@ -1,5 +1,4 @@
 import React, { createContext, useState } from 'react';
-import { DEFAULT_MODAL } from '@/components/CustomModal';
 import { DefaultModalProps } from '@/types/defaultModalProps';
 
 // Default props for modals

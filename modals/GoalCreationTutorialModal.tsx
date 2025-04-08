@@ -235,12 +235,6 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
         console.error('Error formatting date:', error);
       }
     }
-    
-    console.log({ 
-      title: goal.title, 
-      category: goal.category, 
-      dueDate: formattedDueDate 
-    });
 
     props.onConfirm({ 
       title: goal.title, 

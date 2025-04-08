@@ -1,10 +1,13 @@
+import { Goal } from "./database";
+
 export interface DefaultModalProps {
-    content: string;
-    description: string;
-    title: string;
-    primaryCTA: string;
-    secondaryCTA: string;
+    content?: string;
+    description?: string;
+    title?: string;
+    primaryCTA?: string;
+    secondaryCTA?: string;
     theme: 'dark' | 'light';
+    goal?: Goal;
     onClose: () => void;
     onConfirm: (data?: any) => void;
     onCancel: () => void;

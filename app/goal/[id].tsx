@@ -5,6 +5,7 @@ import { useContext, useEffect, useState } from "react";
 import { colors } from "@/lib/colors";
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useDatabase } from "@/contexts/DatabaseContext";
+import { useModal } from "@/hooks/useModal";
 import { Goal as GoalType, Task, Habit } from "@/types/database";
 import React from "react";
 import ItemCard from "@/components/ItemCard";
@@ -12,14 +13,14 @@ import ItemCard from "@/components/ItemCard";
 export default function Goal() {
     const { id } = useLocalSearchParams();
     const { theme } = useContext(ThemeContext);
-    const { getGoalById, getTasksByGoalId, getHabitsByGoalId, hasError, errorMessage, clearError } = useDatabase();
+    const { getGoalById, getTasksByGoalId, getHabitsByGoalId, updateGoal, hasError, errorMessage, clearError } = useDatabase();
 
     const [loading, setLoading] = useState(true);
     const [goal, setGoal] = useState<GoalType | null>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [habits, setHabits] = useState<Habit[]>([]);
     const [localError, setLocalError] = useState<string | null>(null);
-
+    const { openModal, closeModal } = useModal();
     useEffect(() => {
         const fetchGoalData = async () => {
             if (!id || typeof id !== 'string') {
@@ -85,6 +86,23 @@ export default function Goal() {
         fetchGoalData();
     }, [id]);
 
+    const handleEditGoal = () => {
+        console.log('goal', goal);
+        if (goal) {  // Only open modal if goal exists
+            openModal({
+                modalName: "EditGoalModal",
+                props: {
+                    goal: goal,
+                    theme: theme,
+                    onClose: () => closeModal(),
+                    onConfirm: (data: any) => {
+                        updateGoal(goal.id, data);
+                    },
+                    onCancel: () => closeModal(),
+                }
+            });
+        }
+    };
     // Handle back navigation
     const handleGoBack = () => {
         router.back();
@@ -163,9 +181,10 @@ export default function Goal() {
                         >
                             {goal.title || 'Add a Goal Title'}
                         </Text>
-                        <Pressable style={[styles.editGoalTitleButton, theme === 'light' ? styles.editGoalTitleButtonLight : styles.editGoalTitleButtonDark]}>
+                        {/* Edit Goal button */}
+                        <TouchableOpacity onPress={handleEditGoal} style={[styles.editGoalTitleButton, theme === 'light' ? styles.editGoalTitleButtonLight : styles.editGoalTitleButtonDark]}>
                             <FontAwesome name="pencil" size={18} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
-                        </Pressable>
+                        </TouchableOpacity>
                     </View>
                     <View style={styles.goalHeadingSubContainer}>
                         <View style={[styles.goalHeadingCategoryContainer, theme === 'light' ? styles.goalHeadingCategoryContainerLight : styles.goalHeadingCategoryContainerDark]}>

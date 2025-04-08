@@ -16,8 +16,8 @@ interface Props {
 
 export default function LastDetails({ theme, goal, isTitleEditable = false, setGoal }: Props) {
     const [title, setTitle] = useState(goal.title);
-    const [category, setCategory] = useState('Select a category');
-    const [dueDate, setDueDate] = useState('Select a due date');
+    const [category, setCategory] = useState(goal.category || 'Select a category');
+    const [dueDate, setDueDate] = useState(goal.due_date || 'Select a due date');
     const { openModal, closeModal } = useModal();
     
     // Sample categories

@@ -21,6 +21,7 @@ export default function Goal() {
     const [habits, setHabits] = useState<Habit[]>([]);
     const [localError, setLocalError] = useState<string | null>(null);
     const { openModal, closeModal } = useModal();
+
     useEffect(() => {
         const fetchGoalData = async () => {
             if (!id || typeof id !== 'string') {
@@ -95,7 +96,14 @@ export default function Goal() {
                     goal: goal,
                     theme: theme,
                     onClose: () => closeModal(),
-                    onConfirm: (data: any) => {
+                    onConfirm: (data: Partial<GoalType>) => {
+                        if (data) {
+                            const newGoal = {
+                                ...goal,
+                                ...data,
+                            }
+                            setGoal(newGoal);
+                        }
                         updateGoal(goal.id, data);
                     },
                     onCancel: () => closeModal(),
@@ -224,7 +232,7 @@ export default function Goal() {
                                             theme={theme}
                                             displayCheckbox={false}
                                             displayBorders={true}
-                                            onPress={() => {}}
+                                            onPress={() => { }}
                                         />
                                     ))}
                                 </ScrollView>
@@ -263,13 +271,13 @@ export default function Goal() {
                                             theme={theme}
                                             displayCheckbox={false}
                                             displayBorders={true}
-                                            onPress={() => {}}
+                                            onPress={() => { }}
                                         />
                                     ))}
                                 </ScrollView>
                             )}
 
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 style={[styles.addButton, styles.addHabitButtonBgColor]}
                                 onPress={() => router.push({
                                     pathname: '/addHabit',

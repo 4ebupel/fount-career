@@ -2,6 +2,7 @@ import { colors } from "@/lib/colors";
 import { StyleSheet, View, Image, TextInput, Text, Platform } from "react-native";
 import { useState } from "react";
 import { Goal } from "@/types/database";
+import React from "react";
 
 const image = require('@/assets/goalCreationTutorialStepZero.png')
 

@@ -276,13 +276,13 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
 
   // Safe wrapper function to handle navigation
   const safeGoNext = () => {
-    if (currentStep < steps.length - 1) {
+    if (currentStep < steps.length - 1 && goal.title.length > 0) {
       goNext();
     }
   };
 
   const safeGoBack = () => {
-    if (currentStep > 0) {
+    if (currentStep > 0 && goal.title.length > 0) {
       goBack();
     }
   };
@@ -304,6 +304,9 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
       }
       else if (currentStep === steps.length - 1 && event.translationX < 0) {
         // Last step - prevent dragging left
+        horizontalSwipeOffset.value = 0;
+      } else if (goal.title.length <= 0) {
+        // Any step - prevent dragging if the input is empty
         horizontalSwipeOffset.value = 0;
       }
       else {

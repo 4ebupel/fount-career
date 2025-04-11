@@ -1,4 +1,4 @@
-import { View, Text, SafeAreaView, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, SafeAreaView, StyleSheet, TouchableOpacity, ScrollView, Pressable } from "react-native";
 import { colors } from "@/lib/colors";
 import { ThemeContext } from "@/contexts/ThemeContext";
 import { useContext, useState, useEffect } from "react";
@@ -6,25 +6,45 @@ import React from "react";
 import GoalCard from "@/components/GoalCard";
 import { GoalCardPressProvider } from "@/contexts/GoalCardPressedContext";
 import { useDatabase } from "@/contexts/DatabaseContext";
-import { Goal } from "@/types/database";
+import { useModal } from "@/hooks/useModal";
+import { Feather } from '@expo/vector-icons';
 
 export default function Home() {
     const [selectedButton, setSelectedButton] = useState<'ongoing' | 'achieved'>('ongoing');
-    const { goals = [], habits = {}, tasks = {}, getGoals } = useDatabase();
+    const { goals = [], habits = {}, tasks = {}, getGoals, createGoal } = useDatabase();
     const { theme } = useContext(ThemeContext);
+    const { openModal } = useModal();
+
 
     useEffect(() => {
         getGoals();
     }, []);
 
+    const handleFloatingButtonPress = () => {
+        openModal({
+            modalName: "GoalCreationTutorialModal",
+            props: {
+                theme,
+                title: "Goal Creation Tutorial",
+                content: "This is a tutorial for creating a goal.",
+                description: "This is a tutorial for creating a goal.",
+                primaryCTA: "Create Goal",
+                secondaryCTA: "Cancel",
+                onClose: () => { },
+                onConfirm: (data: any) => { createGoal(data) },
+                onCancel: () => { },
+            }
+        })
+    }
+
     return (
         <SafeAreaView style={[styles.container, theme === 'light' ? styles.containerLight : styles.containerDark]}>
             <View style={[styles.buttonsContainer, theme === 'light' ? styles.buttonsContainerLight : styles.buttonsContainerDark]}>
                 <TouchableOpacity style={[styles.button, theme === 'light' ? styles.buttonLight : styles.buttonDark, selectedButton !== 'ongoing' && styles.buttonInactive]} onPress={() => setSelectedButton('ongoing')}>
-                    <Text style={[styles.buttonText, selectedButton === 'ongoing' ? (theme === 'light' ? styles.buttonTextLight : styles.buttonTextDark) : {color: theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary}]}>Ongoing</Text>
+                    <Text style={[styles.buttonText, selectedButton === 'ongoing' ? (theme === 'light' ? styles.buttonTextLight : styles.buttonTextDark) : { color: theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary }]}>Ongoing</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.button, theme === 'light' ? styles.buttonLight : styles.buttonDark, selectedButton !== 'achieved' && styles.buttonInactive]} onPress={() => setSelectedButton('achieved')}>
-                    <Text style={[styles.buttonText, selectedButton === 'achieved' ? (theme === 'light' ? styles.buttonTextLight : styles.buttonTextDark) : {color: theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary}]}>Achieved</Text>
+                    <Text style={[styles.buttonText, selectedButton === 'achieved' ? (theme === 'light' ? styles.buttonTextLight : styles.buttonTextDark) : { color: theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary }]}>Achieved</Text>
                 </TouchableOpacity>
             </View>
             <ScrollView style={styles.goalsContainer}>
@@ -33,7 +53,7 @@ export default function Home() {
                         selectedButton === 'ongoing' ? (
                             goals.filter((item) => !item.achieved).map((item, index) => (
                                 <React.Fragment key={item.id}>
-                                    <GoalCard goal={item} theme={theme} habits={habits[item.id]} tasks={tasks[item.id]} />
+                                    <GoalCard goal={item} theme={theme} habits={habits[item.id]} tasks={tasks[item.id]} lastCard={index === goals.length - 1} />
                                     {index < goals.length - 1 && (
                                         <View style={[styles.divider, theme === 'light' ? styles.dividerLight : styles.dividerDark]} />
                                     )}
@@ -42,7 +62,7 @@ export default function Home() {
                         ) : (
                             goals.filter((item) => item.achieved).map((item, index) => (
                                 <React.Fragment key={item.id}>
-                                    <GoalCard goal={item} theme={theme} habits={habits[item.id]} tasks={tasks[item.id]} />
+                                    <GoalCard goal={item} theme={theme} habits={habits[item.id]} tasks={tasks[item.id]} lastCard={index === goals.length - 1} />
                                     {index < goals.length - 1 && (
                                         <View style={[styles.divider, theme === 'light' ? styles.dividerLight : styles.dividerDark]} />
                                     )}
@@ -52,6 +72,17 @@ export default function Home() {
                     }
                 </GoalCardPressProvider>
             </ScrollView>
+            <Pressable
+                style={[
+                    styles.floatingButton,
+                    theme === 'light' ? styles.buttonLight : styles.buttonDark,
+                ]}
+                onPress={handleFloatingButtonPress}
+            >
+                <Text>
+                    <Feather name="plus" size={24} color={theme === 'light' ? colors.light_theme.button_primary_text : colors.dark_theme.button_primary_text} />
+                </Text>
+            </Pressable>
         </SafeAreaView>
     )
 }
@@ -93,6 +124,17 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
     },
+    floatingButton: {
+        position: 'absolute',
+        bottom: 20,
+        right: 20,
+        padding: 14,
+        borderRadius: 100,
+        width: 50,
+        height: 50,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     buttonLight: {
         backgroundColor: colors.light_theme.button_primary_bg,
     },
@@ -129,5 +171,6 @@ const styles = StyleSheet.create({
         flex: 1,
         gap: 16,
         marginHorizontal: 24,
+        // marginBottom: 60,
     },
 })

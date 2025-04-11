@@ -14,6 +14,7 @@ interface GoalCardProps {
     habits: Habit[];
     tasks: Task[];
     theme: 'light' | 'dark';
+    lastCard?: boolean;
 }
 
 const daysRemaining = (dueDate: string) => {
@@ -26,7 +27,7 @@ const daysRemaining = (dueDate: string) => {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export default function GoalCard({ goal, habits, tasks, theme }: GoalCardProps) {
+export default function GoalCard({ goal, habits, tasks, theme, lastCard = false }: GoalCardProps) {
     // Calculate completed habits and tasks
     const completedHabits = habits?.filter((habit: Habit) => habit.completed).length || 0;
     const completedTasks = tasks?.filter((task: Task) => task.completed).length || 0;
@@ -71,7 +72,7 @@ export default function GoalCard({ goal, habits, tasks, theme }: GoalCardProps) 
                 pressed.value = withTiming(0, { duration: 200 });
                 setActiveCardId(null);
             }}
-            style={[styles.goalContainer, animatedStyle]}
+            style={[styles.goalContainer, animatedStyle, lastCard ? styles.lastCard : null]}
         >
             <Image source={{ uri: goal.image_small || goal.image_large || undefined }} style={styles.goalContainerImage} />
             <View style={styles.goalContainerInfo}>
@@ -176,5 +177,8 @@ const styles = StyleSheet.create({
     },
     goalContainerInfoDueDateTextDark: {
         color: colors.dark_theme.text_primary,
+    },
+    lastCard: {
+        marginBottom: 60,
     },
 })

@@ -10,7 +10,7 @@ import { Goal } from "@/types/database";
 
 export default function Home() {
     const [selectedButton, setSelectedButton] = useState<'ongoing' | 'achieved'>('ongoing');
-    const { goals = [], isLoading, refreshData, getGoals } = useDatabase();
+    const { goals = [], habits = {}, tasks = {}, getGoals } = useDatabase();
     const { theme } = useContext(ThemeContext);
 
     useEffect(() => {
@@ -33,7 +33,7 @@ export default function Home() {
                         selectedButton === 'ongoing' ? (
                             goals.filter((item) => !item.achieved).map((item, index) => (
                                 <React.Fragment key={item.id}>
-                                    <GoalCard goal={item} theme={theme} />
+                                    <GoalCard goal={item} theme={theme} habits={habits[item.id]} tasks={tasks[item.id]} />
                                     {index < goals.length - 1 && (
                                         <View style={[styles.divider, theme === 'light' ? styles.dividerLight : styles.dividerDark]} />
                                     )}
@@ -42,7 +42,7 @@ export default function Home() {
                         ) : (
                             goals.filter((item) => item.achieved).map((item, index) => (
                                 <React.Fragment key={item.id}>
-                                    <GoalCard goal={item} theme={theme} />
+                                    <GoalCard goal={item} theme={theme} habits={habits[item.id]} tasks={tasks[item.id]} />
                                     {index < goals.length - 1 && (
                                         <View style={[styles.divider, theme === 'light' ? styles.dividerLight : styles.dividerDark]} />
                                     )}

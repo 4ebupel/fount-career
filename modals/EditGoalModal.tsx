@@ -60,13 +60,22 @@ export default function EditGoalModal({
         }
     };
 
+    // Function to animate modal closure
+    const animateClose = () => {
+        translateY.value = withTiming(height, { duration: 300 }, (finished) => {
+            if (finished) {
+                runOnJS(safeCloseModal)();
+            }
+        });
+    };
+
     const handleConfirm = () => {
         onConfirm(editedGoal);
-        safeCloseModal();
+        animateClose();
     };
 
     const handleCancel = () => {
-        safeCloseModal();
+        animateClose();
     };
 
     // Define the vertical pan gesture for the header area - EXACTLY like in GoalCreationTutorialModal

@@ -74,19 +74,28 @@ export default function CategorySelectorModal({
         }
     };
 
+    // Function to animate modal closure
+    const animateClose = () => {
+        translateY.value = withTiming(height, { duration: 300 }, (finished) => {
+            if (finished) {
+                runOnJS(safeCloseModal)();
+            }
+        });
+    };
+
     const handleConfirm = () => {
         if (selectedCategory) {
             onSelectCategory(selectedCategory);
             onConfirm(selectedCategory);
         }
-        safeCloseModal();
+        animateClose();
     };
 
     const handleCancel = () => {
         if (selectedCategory) {
             onSelectCategory(selectedCategory);
         }
-        safeCloseModal();
+        animateClose();
     };
 
     // Define the vertical pan gesture for the header area - EXACTLY like in GoalCreationTutorialModal

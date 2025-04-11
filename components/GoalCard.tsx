@@ -6,10 +6,13 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-na
 import { Pressable } from "react-native";
 import React, { useContext } from "react";
 import { GoalCardPressContext } from "@/contexts/GoalCardPressedContext";
+import { Goal, Habit, Task } from "@/types/database";
 
 
 interface GoalCardProps {
-    goal: any;
+    goal: Goal;
+    habits: Habit[];
+    tasks: Task[];
     theme: 'light' | 'dark';
 }
 
@@ -23,12 +26,12 @@ const daysRemaining = (dueDate: string) => {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export default function GoalCard({ goal, theme }: GoalCardProps) {
+export default function GoalCard({ goal, habits, tasks, theme }: GoalCardProps) {
     // Calculate completed habits and tasks
-    const completedHabits = goal.habits?.filter((habit: any) => habit.completed).length || 0;
-    const completedTasks = goal.tasks?.filter((task: any) => task.completed).length || 0;
-    const totalHabits = goal.habits?.length || 0;
-    const totalTasks = goal.tasks?.length || 0;
+    const completedHabits = habits?.filter((habit: Habit) => habit.completed).length || 0;
+    const completedTasks = tasks?.filter((task: Task) => task.completed).length || 0;
+    const totalHabits = habits?.length || 0;
+    const totalTasks = tasks?.length || 0;
     
     // Access the context to track active cards
     const { activeCardId, setActiveCardId } = useContext(GoalCardPressContext);
@@ -70,7 +73,7 @@ export default function GoalCard({ goal, theme }: GoalCardProps) {
             }}
             style={[styles.goalContainer, animatedStyle]}
         >
-            <Image source={{ uri: goal.imageSmall }} style={styles.goalContainerImage} />
+            <Image source={{ uri: goal.image_small || goal.image_large || undefined }} style={styles.goalContainerImage} />
             <View style={styles.goalContainerInfo}>
                 <Text 
                     numberOfLines={2} 
@@ -89,7 +92,7 @@ export default function GoalCard({ goal, theme }: GoalCardProps) {
                 </View>
                 <View style={styles.goalContainerInfoDueDate}>
                     <Ionicons name="calendar-outline" size={16} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
-                    <Text style={[styles.goalContainerInfoDueDateText, theme === 'light' ? styles.goalContainerInfoDueDateTextLight : styles.goalContainerInfoDueDateTextDark]}>{daysRemaining(goal.due_date)} {goal.due_date ? 'days remaining' : ''}</Text>
+                    <Text style={[styles.goalContainerInfoDueDateText, theme === 'light' ? styles.goalContainerInfoDueDateTextLight : styles.goalContainerInfoDueDateTextDark]}>{daysRemaining(goal.due_date || '')} {goal.due_date ? 'days remaining' : ''}</Text>
                 </View>
             </View>
         </AnimatedPressable>

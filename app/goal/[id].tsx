@@ -1,5 +1,6 @@
-import { View, Text, SafeAreaView, StyleSheet, Image, Pressable, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
+import { View, Text, StyleSheet, Image, Pressable, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import { useLocalSearchParams, router } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { ThemeContext } from "@/contexts/ThemeContext";
 import { useContext, useEffect, useState } from "react";
 import { colors } from "@/lib/colors";
@@ -87,6 +88,26 @@ export default function Goal() {
         fetchGoalData();
     }, [id]);
 
+    const pickImageAsync = async () => {
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            quality: 1,
+        });
+        if (!result.canceled) {
+            if (goal) {  // Check if goal exists before updating
+                setGoal({
+                    ...goal,
+                    image_large: result.assets[0].uri,
+                    image_small: result.assets[0].uri,
+                });
+                updateGoal(goal.id, { image_large: result.assets[0].uri, image_small: result.assets[0].uri  });
+            }
+        } else {
+            // Alert.alert('No image selected');
+        }
+    };
+
     const handleEditGoal = () => {
         console.log('goal', goal);
         if (goal) {  // Only open modal if goal exists
@@ -168,10 +189,12 @@ export default function Goal() {
                     source={goal.image_large ? { uri: goal.image_large } : require('@/assets/goalCreationTutorialFinal.png')}
                     style={styles.goalImage}
                 />
+                {/* Back button */}
                 <Pressable onPress={handleGoBack} style={[styles.backButton, theme === 'light' ? styles.backButtonLight : styles.backButtonDark]}>
                     <FontAwesome name="arrow-left" size={24} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
                 </Pressable>
-                <Pressable style={[styles.imageButton, theme === 'light' ? styles.imageButtonLight : styles.imageButtonDark]}>
+                {/* Edit image button */}
+                <Pressable onPress={pickImageAsync} style={[styles.imageButton, theme === 'light' ? styles.imageButtonLight : styles.imageButtonDark]}>
                     <FontAwesome name="image" size={24} color={theme === 'light' ? colors.light_theme.button_primary_text : colors.dark_theme.button_primary_text} />
                 </Pressable>
             </View>

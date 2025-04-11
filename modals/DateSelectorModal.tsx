@@ -122,11 +122,11 @@ export default function DateSelectorModal({
             onSelectDate(selectedDate);
             onConfirm(selectedDate);
         }
-        safeCloseModal();
+        animateClose();
     };
     
     const handleCancel = () => {
-        safeCloseModal();
+        animateClose();
     };
     
     return (

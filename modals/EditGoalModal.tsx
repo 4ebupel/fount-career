@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Dimensions, Keyboard, TouchableWithoutFeedback } from "react-native";
+import React, { useState } from 'react';
+import { View, StyleSheet, Dimensions, Keyboard, TouchableWithoutFeedback } from "react-native";
 import { colors } from '@/lib/colors';
 import { DefaultModalProps } from '@/types/defaultModalProps';
 import Button from '@/components/Button';
-import { AntDesign } from '@expo/vector-icons';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,

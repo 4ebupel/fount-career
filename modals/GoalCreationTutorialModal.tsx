@@ -369,7 +369,7 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
           return (
             <View
               key={index}
-              style={[styles.dot, isActive && styles.activeDot]}
+              style={[styles.dot, theme === 'light' ? styles.dotLight : styles.dotDark, isActive && (theme === 'light' ? styles.activeDotLight : styles.activeDotDark)]}
             />
           );
         })}
@@ -379,7 +379,7 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
 
   return (
     <Animated.View style={styles.overlay} exiting={FadeOut.duration(200)} entering={FadeIn.duration(200)}>
-      <AnimatedSafeAreaView style={[styles.container, gestureAnimatedStyle, containerAnimatedStyle]} entering={SlideInDown.duration(300)}>
+      <AnimatedSafeAreaView style={[styles.container, gestureAnimatedStyle, containerAnimatedStyle, theme === 'light' ? styles.containerLight : styles.containerDark]} entering={SlideInDown.duration(300)}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -390,9 +390,9 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
               <GestureDetector gesture={headerPanGesture}>
                 <View style={styles.header}>
                   <View style={styles.headerCloseIcon} />
-                  <View style={styles.headerBar} />
+                  <View style={[styles.headerBar, theme === 'light' ? styles.headerBarLight : styles.headerBarDark]} />
                   <Pressable onPress={animateClose}>
-                    <AntDesign name="closesquareo" size={24} color={colors.light_theme.text_tertiary} style={styles.headerCloseIcon} />
+                    <AntDesign name="closesquareo" size={24} color={theme === 'light' ? colors.light_theme.text_tertiary : colors.dark_theme.text_tertiary} style={styles.headerCloseIcon} />
                   </Pressable>
                 </View>
               </GestureDetector>
@@ -416,7 +416,7 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
                 {renderStepDots()}
 
                 <View style={styles.dividerContainer}>
-                  <View style={styles.divider} />
+                  <View style={[styles.divider, theme === 'light' ? styles.dividerLight : styles.dividerDark]} />
                 </View>
 
                 <View style={styles.buttonRow}>
@@ -438,7 +438,7 @@ export default function GoalCreationTutorialModal({ theme = 'dark', ...props }: 
                     ]}
                     onPress={confirmCloseTutorial}
                   >
-                    <Text style={styles.closeTutorialText}>
+                    <Text style={[styles.closeTutorialText, theme === 'light' ? styles.textLight : styles.textDark]}>
                       Set Goal manually
                     </Text>
                   </TouchableOpacity>
@@ -470,14 +470,25 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     justifyContent: 'flex-start',
     alignItems: 'center',
-    backgroundColor: colors.light_theme.background,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     alignSelf: 'flex-end',
   },
+  containerLight: {
+    backgroundColor: colors.light_theme.background,
+  },
+  containerDark: {
+    backgroundColor: colors.dark_theme.background,
+  },
   keyboardAvoiding: {
     flex: 1,
     width: '100%',
+  },
+  textLight: {
+    color: colors.light_theme.text_primary,
+  },
+  textDark: {
+    color: colors.dark_theme.text_primary,
   },
   header: {
     minHeight: 24,
@@ -493,7 +504,12 @@ const styles = StyleSheet.create({
     width: '15%',
     height: 3,
     borderRadius: 32,
+  },
+  headerBarLight: {
     backgroundColor: colors.light_theme.tertiary_background,
+  },
+  headerBarDark: {
+    backgroundColor: colors.dark_theme.tertiary_background,
   },
   headerCloseIcon: {
     width: 24,
@@ -546,17 +562,32 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.light_theme.text_disabled,
     marginHorizontal: 4,
+  },
+  dotLight: {
+    backgroundColor: colors.light_theme.text_disabled,
+  },
+  dotDark: {
+    backgroundColor: colors.dark_theme.text_disabled,
   },
   activeDot: {
     width: 24,
+  },
+  activeDotLight: {
     backgroundColor: colors.light_theme.text_accent,
+  },
+  activeDotDark: {
+    backgroundColor: colors.dark_theme.text_accent,
   },
   divider: {
     maxWidth: '100%',
     height: 1,
+  },
+  dividerLight: {
     backgroundColor: colors.light_theme.tertiary_background,
+  },
+  dividerDark: {
+    backgroundColor: colors.dark_theme.tertiary_background,
   },
   dividerContainer: {
     width: '100%',

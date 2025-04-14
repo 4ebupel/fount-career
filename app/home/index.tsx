@@ -8,12 +8,12 @@ import { GoalCardPressProvider } from "@/contexts/GoalCardPressedContext";
 import { useDatabase } from "@/contexts/DatabaseContext";
 import { useModal } from "@/hooks/useModal";
 import { Feather } from '@expo/vector-icons';
-
+import { Goal } from "@/types/database";
 export default function Home() {
     const [selectedButton, setSelectedButton] = useState<'ongoing' | 'achieved'>('ongoing');
     const { goals = [], habits = {}, tasks = {}, getGoals, createGoal } = useDatabase();
     const { theme } = useContext(ThemeContext);
-    const { openModal } = useModal();
+    const { openModal, closeModal } = useModal();
 
 
     useEffect(() => {
@@ -22,19 +22,22 @@ export default function Home() {
 
     const handleFloatingButtonPress = () => {
         openModal({
-            modalName: "GoalCreationTutorialModal",
+            modalName: "EditGoalModal",
             props: {
-                theme,
-                title: "Goal Creation Tutorial",
-                content: "This is a tutorial for creating a goal.",
-                description: "This is a tutorial for creating a goal.",
-                primaryCTA: "Create Goal",
-                secondaryCTA: "Cancel",
-                onClose: () => { },
-                onConfirm: (data: any) => { createGoal(data) },
-                onCancel: () => { },
+                goal: undefined,
+                theme: theme,
+                onClose: () => closeModal(),
+                onConfirm: (data: { title: string, category: string, due_date: string }) => {
+                    createGoal({
+                        ...data,
+                        achieved: false,
+                        image_small: '',
+                        image_large: '',
+                    });
+                },
+                onCancel: () => closeModal(),
             }
-        })
+        });
     }
 
     return (
@@ -171,6 +174,5 @@ const styles = StyleSheet.create({
         flex: 1,
         gap: 16,
         marginHorizontal: 24,
-        // marginBottom: 60,
     },
 })

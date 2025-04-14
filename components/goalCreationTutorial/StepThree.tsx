@@ -2,6 +2,7 @@ import { colors } from "@/lib/colors";
 import { StyleSheet, View, Image, TextInput, Text, Platform } from "react-native";
 import { useState } from "react";
 import { Goal } from "@/types/database";
+import React from "react";
 const image = require('@/assets/goalCreationTutorialStepThree.png')
 
 interface Props {
@@ -18,19 +19,19 @@ export default function StepThree({ theme, goal, setGoal }: Props) {
     return (
         <View style={styles.container}>
             <View style={styles.headingContainer}>
-                <Text style={styles.title}>
+                <Text style={[styles.title, theme === 'light' ? styles.textLight : styles.textDark]}>
                     Step 3: Achievable
                 </Text>
-                <Text style={styles.description}>
+                <Text style={[styles.description, theme === 'light' ? styles.textLight : styles.textDark]}>
                     Is your goal realistic and within reach?
                 </Text>
             </View>
-            <View style={styles.divider} />
+            <View style={[styles.divider, theme === 'light' ? styles.dividerLight : styles.dividerDark]} />
             <Image style={styles.picture} source={image} />
-            <View style={styles.divider} />
+            <View style={[styles.divider, theme === 'light' ? styles.dividerLight : styles.dividerDark]} />
             <View style={styles.inputContainer}>
                 <TextInput
-                    style={[styles.input, isFocused && styles.inputFocused]}
+                    style={[styles.input, theme === 'light' ? styles.inputLight : styles.inputDark, isFocused && (styles.inputFocused, theme === 'light' ? styles.inputFocusedLight : styles.inputFocusedDark)]}
                     placeholder={inputPlaceholder}
                     multiline={true}
                     onFocus={() => setIsFocused(true)}
@@ -40,13 +41,13 @@ export default function StepThree({ theme, goal, setGoal }: Props) {
                 />
             </View>
             <View style={styles.examplesContainer}>
-                <Text style={styles.examplesTitle}>
+                <Text style={[styles.examplesTitle, theme === 'light' ? styles.textLight : styles.textDark]}>
                     Examples:
                 </Text>
-                <Text style={styles.examplesText}>
+                <Text style={[styles.examplesText, theme === 'light' ? styles.textLight : styles.textDark]}>
                     ❌ "Become CEO in 1 month"
                 </Text>
-                <Text style={styles.examplesText}>
+                <Text style={[styles.examplesText, theme === 'light' ? styles.textLight : styles.textDark]}>
                     ✅ "Get promoted to team lead by end of the year"
                 </Text>
             </View>
@@ -72,6 +73,12 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         textAlign: 'center',
     },
+    textLight: {
+        color: colors.light_theme.text_primary,
+    },
+    textDark: {
+        color: colors.dark_theme.text_primary,
+    },
     description: {
         fontSize: 16,
         fontWeight: '400',
@@ -80,7 +87,12 @@ const styles = StyleSheet.create({
     divider: {
         width: '100%',
         height: 1,
+    },
+    dividerLight: {
         backgroundColor: colors.light_theme.tertiary_background,
+    },
+    dividerDark: {
+        backgroundColor: colors.dark_theme.tertiary_background,
     },
     picture: {
         maxHeight: '35%',
@@ -100,9 +112,22 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         borderRadius: 8,
     },
+    inputLight: {
+        backgroundColor: colors.light_theme.secondary_background,
+        color: colors.light_theme.text_primary,
+    },
+    inputDark: {
+        backgroundColor: colors.dark_theme.secondary_background,
+        color: colors.dark_theme.text_primary,
+    },
     inputFocused: {
         borderWidth: 2,
+    },
+    inputFocusedLight: {
         borderColor: colors.light_theme.text_accent,
+    },
+    inputFocusedDark: {
+        borderColor: colors.dark_theme.text_accent,
     },
     examplesContainer: {
         width: '100%',

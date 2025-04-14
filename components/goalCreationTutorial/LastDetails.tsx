@@ -15,7 +15,7 @@ interface Props {
 }
 
 export default function LastDetails({ theme, goal, isTitleEditable = false, setGoal }: Props) {
-    const [title, setTitle] = useState(goal.title);
+    const [title, setTitle] = useState(goal.title || '');
     const [category, setCategory] = useState(goal.category || 'Select a category');
     const [dueDate, setDueDate] = useState(goal.due_date || 'Select a due date');
     const { openModal, closeModal } = useModal();
@@ -86,40 +86,41 @@ export default function LastDetails({ theme, goal, isTitleEditable = false, setG
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>
+            <Text style={[styles.title, theme === 'light' ? styles.textLight : styles.textDark]}>
                 Let's see the last details
             </Text>
-            <View style={styles.divider} />
+            <View style={[styles.divider, theme === 'light' ? styles.dividerLight : styles.dividerDark]} />
             <View style={styles.columnContainer}>
-                <Text style={styles.text}>
+                <Text style={[styles.text, theme === 'light' ? styles.textLight : styles.textDark]}>
                     Goal
                 </Text>
-                <View style={styles.goalTextContainer}>
+                <View style={[styles.goalTextContainer, theme === 'light' ? styles.containerLight : styles.containerDark]}>
                     {isTitleEditable ? (
                         <TextInput
-                            style={styles.text}
+                            style={[styles.input, theme === 'light' ? styles.textLight : styles.textDark]}
                             value={title}
                             onChangeText={(text) => setTitle(text)}
                             onBlur={() => setGoal({ ...goal, title: title })}
                         />
                     ) : (
-                        <Text style={styles.text}>
+                        <Text style={[styles.text, theme === 'light' ? styles.textLight : styles.textDark]}>
                             {goal.title}
                         </Text>
                     )}
                 </View>
             </View>
             <View style={styles.columnContainer}>
-                <Text style={styles.text}>
+                <Text style={[styles.text, theme === 'light' ? styles.textLight : styles.textDark]}>
                     Category
                 </Text>
                 <TouchableOpacity 
-                    style={styles.categoryContainer}
+                    style={[styles.categoryContainer, theme === 'light' ? styles.containerLight : styles.containerDark]}
                     onPress={handleCategoryPress}
                 >
                     <Text style={[
-                        styles.text, 
-                        category === 'Select a category' && styles.placeholderText
+                        styles.text,
+                        theme === 'light' ? styles.textLight : styles.textDark,
+                        category === 'Select a category' && (theme === 'light' ? styles.placeholderTextLight : styles.placeholderTextDark)
                     ]}>
                         {category}
                     </Text>
@@ -135,16 +136,17 @@ export default function LastDetails({ theme, goal, isTitleEditable = false, setG
                 </TouchableOpacity>
             </View>
             <View style={styles.columnContainer}>
-                <Text style={styles.text}>
+                <Text style={[styles.text, theme === 'light' ? styles.textLight : styles.textDark]}>
                     Due Date
                 </Text>
                 <TouchableOpacity 
-                    style={styles.categoryContainer}
+                    style={[styles.categoryContainer, theme === 'light' ? styles.containerLight : styles.containerDark]}
                     onPress={handleDueDatePress}
                 >
                     <Text style={[
-                        styles.text, 
-                        dueDate === 'Select a due date' && styles.placeholderText
+                        styles.text,
+                        theme === 'light' ? styles.textLight : styles.textDark,
+                        dueDate === 'Select a due date' && (theme === 'light' ? styles.placeholderTextLight : styles.placeholderTextDark)
                     ]}>
                         {dueDate}
                     </Text>
@@ -181,8 +183,25 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         textAlign: 'center',
     },
-    placeholderText: {
+    textLight: {
+        color: colors.light_theme.text_primary,
+    },
+    textDark: {
+        color: colors.dark_theme.text_primary,
+    },
+    input: {
+        width: '100%',
+        height: 50,
+        fontSize: 18,
+        fontWeight: '600',
+        textAlign: 'center',
+    },
+    placeholderTextLight: {
         color: colors.light_theme.text_secondary,
+        fontWeight: '400',
+    },
+    placeholderTextDark: {
+        color: colors.dark_theme.text_secondary,
         fontWeight: '400',
     },
     divider: {
@@ -190,10 +209,11 @@ const styles = StyleSheet.create({
         height: 1,
         backgroundColor: colors.light_theme.tertiary_background,
     },
-    picture: {
-        maxHeight: '35%',
-        maxWidth: '40%',
-        resizeMode: 'contain',
+    dividerLight: {
+        backgroundColor: colors.light_theme.tertiary_background,
+    },
+    dividerDark: {
+        backgroundColor: colors.dark_theme.tertiary_background,
     },
     columnContainer: {
         alignItems: 'flex-start',
@@ -206,17 +226,21 @@ const styles = StyleSheet.create({
         width: '100%',
         paddingHorizontal: 20,
         paddingVertical: 8,
-        backgroundColor: colors.light_theme.secondary_background,
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: 10,
+    },
+    containerLight: {
+        backgroundColor: colors.light_theme.secondary_background,
+    },
+    containerDark: {
+        backgroundColor: colors.dark_theme.secondary_background,
     },
     categoryContainer: {
         minHeight: 70,
         width: '100%',
         paddingHorizontal: 20,
         paddingVertical: 8,
-        backgroundColor: colors.light_theme.secondary_background,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',

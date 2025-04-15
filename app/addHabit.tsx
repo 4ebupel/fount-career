@@ -13,20 +13,20 @@ import { useDatabase } from '@/contexts/DatabaseContext';
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 export default function AddHabit() {
-    const { goalId } = useLocalSearchParams();
+    const { goalId, habitId, title, emoji, reminder_days, reminder_time } = useLocalSearchParams();
     const { theme } = useContext(ThemeContext);
-    const [title, setTitle] = useState<string>('');
-    const [selectedEmoji, setSelectedEmoji] = useState<string>('🔄');
-    const [reminderDays, setReminderDays] = useState<string[]>([]);
+    const [habitTitle, setHabitTitle] = useState<string>(title as string || '');
+    const [selectedEmoji, setSelectedEmoji] = useState<string>(emoji as string || '🔄');
+    const [habitReminderDays, setHabitReminderDays] = useState<string[]>(reminder_days as string[] || []);
     const [hour, setHour] = useState<string>('10');
     const [minute, setMinute] = useState<string>('00');
     const [period, setPeriod] = useState<string>('AM');
     const router = useRouter();
     const { openModal } = useModal();
-    const { createHabit } = useDatabase();
+    const { createHabit, updateHabit } = useDatabase();
 
     // Format the time for display and storage
-    const reminderTime = `${hour}:${minute} ${period}`;
+    const habitReminderTime = `${hour}:${minute} ${period}`;
 
     // Handle emoji selection
     const handleEmojiSelect = () => {
@@ -36,14 +36,13 @@ export default function AddHabit() {
             props: {
                 theme,
                 title: 'Select Emoji',
-                content: '',
+                content: selectedEmoji,
                 description: '',
                 primaryCTA: 'Select',
                 secondaryCTA: 'Cancel',
-                onSelectEmoji: (emoji: string) => {
+                onConfirm: (emoji: string) => {
                     setSelectedEmoji(emoji);
-                },
-                onConfirm: () => { },
+                 },
                 onCancel: () => { },
                 onClose: () => { },
             }
@@ -52,10 +51,10 @@ export default function AddHabit() {
 
     // Toggle reminder day selection
     const toggleReminderDay = (day: string) => {
-        if (reminderDays.includes(day)) {
-            setReminderDays(reminderDays.filter(d => d !== day));
+        if (habitReminderDays.includes(day)) {
+            setHabitReminderDays(habitReminderDays.filter(d => d !== day));
         } else {
-            setReminderDays([...reminderDays, day]);
+            setHabitReminderDays([...habitReminderDays, day]);
         }
     };
 
@@ -86,7 +85,7 @@ export default function AddHabit() {
 
     // Save the habit
     const handleSave = async () => {
-        if (!title.trim()) {
+        if (!habitTitle.trim()) {
             // Don't create habits without a title
             return;
         }
@@ -95,15 +94,42 @@ export default function AddHabit() {
             // Create the new habit using the database context
             await createHabit({
                 goal_id: goalId as string,
-                title: title.trim(),
+                title: habitTitle.trim(),
                 selected_emoji: selectedEmoji,
-                reminder_days: JSON.stringify(reminderDays), // Store as JSON string
-                reminder_time: reminderTime,
+                reminder_days: JSON.stringify(habitReminderDays), // Store as JSON string
+                reminder_time: habitReminderTime,
                 completed: false,
             });
             
             // Navigate back to the goal details page after successful creation
-            router.back();
+            router.replace(`/goal/${goalId}`);
+        } catch (error) {
+            console.error('Error creating habit:', error);
+            // In a production app, you would show an error message to the user
+        }
+    };
+
+    const handleUpdate = async () => {
+        if (!habitTitle.trim()) {
+            // Don't update habits without a title
+            return;
+        }
+        
+        try {
+            // Prepare the updated habit data
+            const updatedHabit = {
+                title: habitTitle.trim(),
+                selected_emoji: selectedEmoji,
+                reminder_days: JSON.stringify(habitReminderDays),
+                reminder_time: habitReminderTime,
+            };
+            
+            if (habitId) {
+                await updateHabit(habitId as string, updatedHabit);
+            }
+
+            // Navigate back to the goal details page after successful creation
+            router.replace(`/goal/${goalId}`);
         } catch (error) {
             console.error('Error creating habit:', error);
             // In a production app, you would show an error message to the user
@@ -169,8 +195,8 @@ export default function AddHabit() {
                                     ]}
                                     placeholder="What habit will you build?"
                                     placeholderTextColor={theme === 'dark' ? colors.dark_theme.text_secondary : colors.light_theme.text_secondary}
-                                    value={title}
-                                    onChangeText={setTitle}
+                                    value={habitTitle}
+                                    onChangeText={setHabitTitle}
                                 />
                             </View>
                         </View>
@@ -190,7 +216,7 @@ export default function AddHabit() {
                                         key={index}
                                         style={[
                                             styles.dayButton,
-                                            reminderDays.includes(day) && (
+                                            habitReminderDays.includes(day) && (
                                                 theme === 'dark'
                                                     ? { 
                                                         backgroundColor: colors.dark_theme.button_primary_bg,
@@ -201,7 +227,7 @@ export default function AddHabit() {
                                                         borderColor: colors.light_theme.button_primary_bg
                                                     }
                                             ),
-                                            !reminderDays.includes(day) && (
+                                            !habitReminderDays.includes(day) && (
                                                 theme === 'dark'
                                                     ? { borderColor: colors.dark_theme.border_input }
                                                     : { borderColor: colors.light_theme.border_input }
@@ -211,7 +237,7 @@ export default function AddHabit() {
                                     >
                                         <Text style={[
                                             styles.dayText,
-                                            reminderDays.includes(day)
+                                            habitReminderDays.includes(day)
                                                 ? theme === 'dark'
                                                     ? { color: colors.dark_theme.button_primary_text }
                                                     : { color: colors.light_theme.button_primary_text }
@@ -256,7 +282,7 @@ export default function AddHabit() {
                                         ? { color: colors.dark_theme.text_primary }
                                         : { color: colors.light_theme.text_primary }
                                 ]}>
-                                    {reminderTime}
+                                    {habitReminderTime}
                                 </Text>
                                 <AntDesign 
                                     name="clockcircleo" 
@@ -269,11 +295,11 @@ export default function AddHabit() {
 
                     <View style={styles.buttonContainer}>
                         <Button
-                            label="Save Habit"
+                            label={habitId ? 'Update Habit' : 'Save Habit'}
                             variant="primary"
                             theme={theme}
-                            onPress={handleSave}
-                            disabled={!title.trim()}
+                            onPress={habitId ? handleUpdate : handleSave}
+                            disabled={!habitTitle.trim()}
                         />
                     </View>
                 </View>

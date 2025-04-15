@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { colors } from '@/lib/colors';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
@@ -10,16 +10,22 @@ import { ThemeContext } from '@/contexts/ThemeContext';
 import { mockData } from '@/lib/mock-data';
 import { useDatabase } from '@/contexts/DatabaseContext';
 export default function AddTask() {
-    const { goalId } = useLocalSearchParams();
+    // Will be undefined if nothing is passed (why is it typed as string | string[] then?)
+    const { goalId, taskId, title, description, emoji, due_date, reminder_time } = useLocalSearchParams();
     const { theme } = useContext(ThemeContext);
-    const [title, setTitle] = useState<string>('');
-    const [note, setNote] = useState<string>('');
-    const [selectedEmoji, setSelectedEmoji] = useState<string>('📝');
+    const [selectedEmoji, setSelectedEmoji] = useState<string>(emoji as string || '🔄');
+    const [taskTitle, setTaskTitle] = useState<string>(title as string || '');
+    const [taskDescription, setTaskDescription] = useState<string>(description as string || '');
     const router = useRouter();
     const { openModal } = useModal();
+    const { createTask, updateTask } = useDatabase();
 
     // Find the goal that this task belongs to
-    const goal = mockData.find((item) => item.id === parseInt(goalId as string));
+    // const goal = mockData.find((item) => item.id === parseInt(goalId as string));
+
+    useEffect(() => {
+        console.log('taskId', taskId);
+    }, [taskId]);
 
     const handleEmojiSelect = () => {
         Keyboard.dismiss();
@@ -28,24 +34,21 @@ export default function AddTask() {
             props: {
                 theme,
                 title: 'Select Emoji',
-                content: '',
+                content: selectedEmoji,
                 description: '',
                 primaryCTA: 'Select',
                 secondaryCTA: 'Cancel',
-                onSelectEmoji: (emoji: string) => {
+                onConfirm: (emoji: string) => {
                     setSelectedEmoji(emoji);
                 },
-                onConfirm: () => { },
                 onCancel: () => { },
                 onClose: () => { },
             }
         });
     };
-
-    const { createTask } = useDatabase();
     
     const handleSave = async () => {
-        if (!title.trim()) {
+        if (!taskTitle.trim()) {
             // Don't create tasks without a title
             return;
         }
@@ -54,18 +57,44 @@ export default function AddTask() {
             // Create the new task using the database context
             await createTask({
                 goal_id: goalId as string,
-                title: title.trim(),
-                description: note.trim(),
+                title: taskTitle.trim(),
+                description: taskDescription.trim(),
                 selected_emoji: selectedEmoji,
                 reminder_time: null,
                 due_date: null,
             });
             
             // Navigate back to the goal details page after successful creation
-            router.back();
+            router.replace(`/goal/${goalId}`);
         } catch (error) {
             console.error('Error creating task:', error);
             // In a production app, you would show an error message to the user
+        }
+    };
+
+    const handleUpdate = async () => {
+        if (!taskTitle.trim()) {
+            // Don't save tasks without a title
+            return;
+        }
+        
+        try {
+            // Update the task using the database context
+
+            const updatedTask = {
+                title: taskTitle.trim(),
+                description: taskDescription.trim(),
+                selected_emoji: selectedEmoji || '',
+                // Since we are not using those fields yet, we don't need to update them
+                // reminder_time: typeof reminder_time === 'string' ? reminder_time : null,
+                // due_date: typeof due_date === 'string' ? due_date : null,
+            };
+
+            await updateTask(taskId as string, updatedTask);
+            // Navigate back to the goal details page after successful update
+            router.replace(`/goal/${goalId}`);
+        } catch (error) {
+            console.error('Error updating task:', error);
         }
     };
 
@@ -128,8 +157,8 @@ export default function AddTask() {
                                     ]}
                                     placeholder="Enter task title"
                                     placeholderTextColor={theme === 'dark' ? colors.dark_theme.text_secondary : colors.light_theme.text_secondary}
-                                    value={title}
-                                    onChangeText={setTitle}
+                                    value={taskTitle}
+                                    onChangeText={setTaskTitle}
                                 />
                             </View>
                         </View>
@@ -160,8 +189,8 @@ export default function AddTask() {
                                 ]}
                                 placeholder="Add note..."
                                 placeholderTextColor={theme === 'dark' ? colors.dark_theme.text_secondary : colors.light_theme.text_secondary}
-                                value={note}
-                                onChangeText={setNote}
+                                value={taskDescription}
+                                onChangeText={setTaskDescription}
                                 multiline
                                 numberOfLines={4}
                                 textAlignVertical="top"
@@ -173,11 +202,11 @@ export default function AddTask() {
                         styles.buttonContainer
                     ]}>
                         <Button
-                            label="Save Task"
+                            label={taskId ? 'Update Task' : 'Save Task'}
                             variant="primary"
                             theme={theme}
-                            onPress={handleSave}
-                            disabled={!title.trim()}
+                            onPress={taskId ? handleUpdate : handleSave}
+                            disabled={!taskTitle.trim()}
                         />
                     </View>
                 </View>

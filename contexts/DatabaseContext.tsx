@@ -14,20 +14,59 @@ interface DatabaseContextType {
   habits: Record<string, Habit[]>;
   tasks: Record<string, Task[]>;
   // Goal operations
+  /**
+   * Create a new goal
+   */
   createGoal: typeof DB.createGoal;
+  /**
+   * Get all goals
+   */
   getGoals: typeof DB.getGoals;
+  /**
+   * Get a goal by id
+   */
   getGoalById: typeof DB.getGoalById;
+  /**
+   * Update a goal
+   */
   updateGoal: typeof DB.updateGoal;
+  /**
+   * Delete a goal
+   */
   deleteGoal: typeof DB.deleteGoal;
   // Habit operations
+  /**
+   * Create a new habit
+   */
   createHabit: typeof DB.createHabit;
+  /**
+   * Get habits by goal id
+   */
   getHabitsByGoalId: typeof DB.getHabitsByGoalId;
+  /**
+   * Update a habit
+   */
   updateHabit: typeof DB.updateHabit;
+  /**
+   * Delete a habit
+   */
   deleteHabit: (id: string, goal_id: string) => Promise<void>;
   // Task operations
+  /**
+   * Create a new task
+   */
   createTask: typeof DB.createTask;
+  /**
+   * Get tasks by goal id
+   */
   getTasksByGoalId: typeof DB.getTasksByGoalId;
+  /**
+   * Update a task
+   */
   updateTask: typeof DB.updateTask;
+  /**
+   * Delete a task
+   */
   deleteTask: (id: string, goal_id: string) => Promise<void>;
   // Refresh data
   refreshData: () => Promise<void>;
@@ -74,8 +113,9 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
       );
     }
   };
-
-  // Initialize the database
+  /**
+   * Initialize the database
+   */
   const initializeDatabase = async () => {
     try {
       setIsLoading(true);
@@ -99,7 +139,9 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     }
   };
 
-  // Refresh all data
+  /**
+   * NOT WORKING: Refresh all data
+   */
   const refreshData = async () => {
     try {
       setIsLoading(true);
@@ -146,6 +188,9 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
   };
 
   // Wrap database operations to update state after changes
+  /**
+  * Create a new goal and update local state
+  */
   const createGoalWithRefresh = async (goal: Parameters<typeof DB.createGoal>[0]) => {
     try {
       clearError();
@@ -163,6 +208,9 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     }
   };
 
+  /**
+   * Update a goal and update local state
+   */
   const updateGoalWithRefresh = async (id: string, updates: Parameters<typeof DB.updateGoal>[1]) => {
     try {
       clearError();
@@ -180,6 +228,9 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     }
   };
 
+  /**
+   * Delete a goal and update local state
+   */
   const deleteGoalWithRefresh = async (id: string) => {
     try {
       clearError();
@@ -203,6 +254,9 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     }
   };
 
+  /**
+   * Create a new habit and update local state
+   */
   const createHabitWithRefresh = async (habit: Parameters<typeof DB.createHabit>[0]) => {
     try {
       clearError();
@@ -224,6 +278,9 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     }
   };
 
+  /**
+   * Update a habit and update local state
+   */
   const updateHabitWithRefresh = async (id: string, updates: Parameters<typeof DB.updateHabit>[1]) => {
     try {
       clearError();
@@ -246,6 +303,9 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     }
   };
 
+  /**
+   * Delete a habit and update local state
+   */
   const deleteHabitWithRefresh = async (id: string, goal_id: string) => {
     try {
       clearError();
@@ -262,6 +322,9 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     }
   };
 
+  /**
+   * Create a new task and update local state
+   */
   const createTaskWithRefresh = async (task: Parameters<typeof DB.createTask>[0]) => {
     try {
       clearError();
@@ -283,6 +346,9 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     }
   };
 
+  /**
+   * Update a task and update local state
+   */
   const updateTaskWithRefresh = async (id: string, updates: Parameters<typeof DB.updateTask>[1]) => {
     try {
       clearError();
@@ -305,6 +371,9 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     }
   };
 
+  /**
+   * Delete a task and update local state
+   */
   const deleteTaskWithRefresh = async (id: string, goal_id: string) => {
     try {
       clearError();
@@ -396,4 +465,4 @@ export const useDatabase = () => {
   }
 
   return context;
-}; 
+};

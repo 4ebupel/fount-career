@@ -101,7 +101,7 @@ export default function Goal() {
                     image_large: result.assets[0].uri,
                     image_small: result.assets[0].uri,
                 });
-                updateGoal(goal.id, { image_large: result.assets[0].uri, image_small: result.assets[0].uri  });
+                updateGoal(goal.id, { image_large: result.assets[0].uri, image_small: result.assets[0].uri });
             }
         } else {
             // Alert.alert('No image selected');
@@ -255,7 +255,18 @@ export default function Goal() {
                                             theme={theme}
                                             displayCheckbox={false}
                                             displayBorders={true}
-                                            onPress={() => { }}
+                                            onPress={() => router.push({
+                                                pathname: '/addTask',
+                                                params: { 
+                                                    goalId: id, 
+                                                    taskId: task.id, 
+                                                    title: task.title, 
+                                                    description: task.description, 
+                                                    emoji: task.selected_emoji, 
+                                                    due_date: task.due_date, 
+                                                    reminder_time: task.reminder_time 
+                                                }
+                                            })}
                                         />
                                     ))}
                                 </ScrollView>
@@ -294,7 +305,17 @@ export default function Goal() {
                                             theme={theme}
                                             displayCheckbox={false}
                                             displayBorders={true}
-                                            onPress={() => { }}
+                                            onPress={() => router.push({
+                                                pathname: '/addHabit',
+                                                params: { 
+                                                    goalId: id, 
+                                                    habitId: habit.id, 
+                                                    title: habit.title, 
+                                                    emoji: habit.selected_emoji, 
+                                                    reminder_days: habit.reminder_days, 
+                                                    reminder_time: habit.reminder_time 
+                                                }
+                                            })}
                                         />
                                     ))}
                                 </ScrollView>

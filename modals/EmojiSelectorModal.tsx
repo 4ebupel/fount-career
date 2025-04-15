@@ -51,23 +51,21 @@ const emojis = {
 
 interface Props extends DefaultModalProps {
     isVisible: boolean;
-    onSelectEmoji?: (emoji: string) => void;
-    initialEmoji?: string; // Added to support pre-selected emoji
 }
 
 export default function EmojiSelectorModal({
     theme = 'dark',
     isVisible,
-    onSelectEmoji = () => { },
+    onConfirm,
     onClose,
     title = 'Select Emoji',
-    initialEmoji = '',
+    content = '',
 }: Props) {
     if (!isVisible) return null;
 
-    const [selectedEmoji, setSelectedEmoji] = useState<string>(initialEmoji);
+    const [selectedEmoji, setSelectedEmoji] = useState<string>(content);
     const [activeCategory, setActiveCategory] = useState('smileys');
-    const floatingOpacity = useSharedValue(initialEmoji ? 1 : 0); // Show preview immediately if initialEmoji is provided
+    const floatingOpacity = useSharedValue(content ? 1 : 0); // Show preview immediately if initialEmoji is provided
     const categoryScrollRef = useRef<ScrollView>(null);
     const [scrollPosition, setScrollPosition] = useState(0);
     const [contentWidth, setContentWidth] = useState(0);
@@ -85,11 +83,11 @@ export default function EmojiSelectorModal({
 
     // If initial emoji is provided, show it immediately
     useEffect(() => {
-        if (initialEmoji) {
-            setSelectedEmoji(initialEmoji);
+        if (content.length > 0) {
+            setSelectedEmoji(content);
             floatingOpacity.value = 1;
         }
-    }, [initialEmoji]);
+    }, [content]);
 
     // Center the active category when component mounts
     useEffect(() => {
@@ -168,7 +166,7 @@ export default function EmojiSelectorModal({
 
     const handleConfirm = () => {
         if (selectedEmoji) {
-            onSelectEmoji(selectedEmoji);
+            onConfirm(selectedEmoji);
         }
         safeCloseModal();
     };

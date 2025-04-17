@@ -14,7 +14,7 @@ import ItemCard from "@/components/ItemCard";
 export default function Goal() {
     const { id } = useLocalSearchParams();
     const { theme } = useContext(ThemeContext);
-    const { getGoalById, getTasksByGoalId, getHabitsByGoalId, updateGoal, hasError, errorMessage, clearError } = useDatabase();
+    const { getGoalById, getTasksByGoalId, getHabitsByGoalId, updateGoal, hasError, errorMessage, clearError, deleteGoal } = useDatabase();
 
     const [loading, setLoading] = useState(true);
     const [goal, setGoal] = useState<GoalType | null>(null);
@@ -132,6 +132,29 @@ export default function Goal() {
             });
         }
     };
+
+    const handleDeleteGoal = () => {
+        if (goal) {
+            openModal({
+                modalName: "DefaultModal",
+                props: {
+                    title: "Delete Goal",
+                    description: "Are you sure you want to delete this goal?",
+                    primaryCTA: "Delete",
+                    secondaryCTA: "Cancel",
+                    theme: theme,
+                    onClose: () => closeModal(),
+                    onConfirm: () => {
+                        closeModal();
+                        deleteGoal(goal.id);
+                        router.back();
+                    },
+                    onCancel: () => closeModal(),
+                }
+            });
+        }
+    };
+
     // Handle back navigation
     const handleGoBack = () => {
         router.back();
@@ -192,6 +215,10 @@ export default function Goal() {
                 {/* Back button */}
                 <Pressable onPress={handleGoBack} style={[styles.backButton, theme === 'light' ? styles.backButtonLight : styles.backButtonDark]}>
                     <FontAwesome name="arrow-left" size={24} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
+                </Pressable>
+                {/* Delete button */}
+                <Pressable onPress={handleDeleteGoal} style={[styles.deleteButton, theme === 'light' ? styles.deleteButtonLight : styles.deleteButtonDark]}>
+                    <FontAwesome name="trash" size={24} color={theme === 'light' ? colors.light_theme.button_primary_text : colors.dark_theme.button_primary_text} />
                 </Pressable>
                 {/* Edit image button */}
                 <Pressable onPress={pickImageAsync} style={[styles.imageButton, theme === 'light' ? styles.imageButtonLight : styles.imageButtonDark]}>
@@ -257,14 +284,14 @@ export default function Goal() {
                                             displayBorders={true}
                                             onPress={() => router.push({
                                                 pathname: '/addTask',
-                                                params: { 
-                                                    goalId: id, 
-                                                    taskId: task.id, 
-                                                    title: task.title, 
-                                                    description: task.description, 
-                                                    emoji: task.selected_emoji, 
-                                                    due_date: task.due_date, 
-                                                    reminder_time: task.reminder_time 
+                                                params: {
+                                                    goalId: id,
+                                                    taskId: task.id,
+                                                    title: task.title,
+                                                    description: task.description,
+                                                    emoji: task.selected_emoji,
+                                                    due_date: task.due_date,
+                                                    reminder_time: task.reminder_time
                                                 }
                                             })}
                                         />
@@ -307,13 +334,13 @@ export default function Goal() {
                                             displayBorders={true}
                                             onPress={() => router.push({
                                                 pathname: '/addHabit',
-                                                params: { 
-                                                    goalId: id, 
-                                                    habitId: habit.id, 
-                                                    title: habit.title, 
-                                                    emoji: habit.selected_emoji, 
-                                                    reminder_days: habit.reminder_days, 
-                                                    reminder_time: habit.reminder_time 
+                                                params: {
+                                                    goalId: id,
+                                                    habitId: habit.id,
+                                                    title: habit.title,
+                                                    emoji: habit.selected_emoji,
+                                                    reminder_days: habit.reminder_days,
+                                                    reminder_time: habit.reminder_time
                                                 }
                                             })}
                                         />
@@ -394,6 +421,24 @@ const styles = StyleSheet.create({
         borderRadius: 100,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    deleteButton: {
+        position: 'absolute',
+        top: 44,
+        right: 24,
+        width: 45,
+        height: 45,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        borderRadius: 100,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    deleteButtonLight: {
+        backgroundColor: colors.light_theme.button_primary_bg,
+    },
+    deleteButtonDark: {
+        backgroundColor: colors.dark_theme.button_primary_bg,
     },
     backButtonLight: {
         backgroundColor: colors.light_theme.background,

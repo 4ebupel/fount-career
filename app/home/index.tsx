@@ -27,12 +27,12 @@ export default function Home() {
                 goal: undefined,
                 theme: theme,
                 onClose: () => closeModal(),
-                onConfirm: (data: { title: string, category: string, due_date: string }) => {
+                onConfirm: (data: { title: string, category: string, due_date: string } = { title: '', category: 'Other', due_date: '' }) => {
                     createGoal({
                         ...data,
                         achieved: false,
-                        image_small: '',
-                        image_large: '',
+                        image_small: null,
+                        image_large: null,
                     });
                 },
                 onCancel: () => closeModal(),

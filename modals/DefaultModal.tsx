@@ -17,12 +17,12 @@ export default function DefaultModal({ theme = 'dark', isVisible, ...props }: Pr
             {/* <Modal visible={isVisible} animationType='fade'> */}
                 <View style={styles.contentContainer}>
                     <TouchableOpacity style={[styles.button, theme === 'light' ? styles.buttonLight : styles.buttonDark]} onPress={() => { props.onConfirm() }}>
-                        <Feather name='file-text' size={24} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
+                        <Feather name='check' size={24} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
                         <Text style={[styles.modalText, theme === 'light' ? styles.modalTextLight : styles.modalTextDark]}>{props.primaryCTA}</Text>
                     </TouchableOpacity>
                     <View style={styles.modalDivider} />
                     <TouchableOpacity style={[styles.button, theme === 'light' ? styles.buttonLight : styles.buttonDark]} onPress={() => { props.onCancel() }}>
-                        <FontAwesome5 name={theme === 'light' ? 'user' : 'user-alt'} size={24} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
+                        <Feather name='x' size={24} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
                         <Text style={[styles.modalText, theme === 'light' ? styles.modalTextLight : styles.modalTextDark]}>{props.secondaryCTA}</Text>
                     </TouchableOpacity>
                 </View>

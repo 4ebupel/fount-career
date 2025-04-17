@@ -99,8 +99,7 @@ export default function LastDetails({ theme, goal, isTitleEditable = false, setG
                         <TextInput
                             style={[styles.input, theme === 'light' ? styles.textLight : styles.textDark]}
                             value={title}
-                            onChangeText={(text) => setTitle(text)}
-                            onBlur={() => setGoal({ ...goal, title: title })}
+                            onChangeText={(text) => {setTitle(text); setGoal({ ...goal, title: text })}}
                         />
                     ) : (
                         <Text style={[styles.text, theme === 'light' ? styles.textLight : styles.textDark]}>

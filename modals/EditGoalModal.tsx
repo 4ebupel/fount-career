@@ -149,6 +149,7 @@ export default function EditGoalModal({
                                         theme={theme}
                                         onPress={handleConfirm}
                                         variant="primary"
+                                        disabled={!editedGoal.title || !editedGoal.category}
                                     />
                                 </View>
                                 <View style={styles.buttonContainer}>

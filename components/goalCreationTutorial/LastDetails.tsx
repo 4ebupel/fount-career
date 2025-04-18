@@ -19,6 +19,7 @@ export default function LastDetails({ theme, goal, isTitleEditable = false, setG
     const [category, setCategory] = useState(goal.category || 'Select a category');
     const [dueDate, setDueDate] = useState(goal.due_date || 'Select a due date');
     const { openModal, closeModal } = useModal();
+    const isCreatingNewGoal = React.useMemo(() => !goal.title, []);
     
     // Sample categories
     const categories = [
@@ -87,7 +88,7 @@ export default function LastDetails({ theme, goal, isTitleEditable = false, setG
     return (
         <View style={styles.container}>
             <Text style={[styles.title, theme === 'light' ? styles.textLight : styles.textDark]}>
-                Let's see the last details
+                {isCreatingNewGoal ? 'Create a new goal' : 'Let\'s see the last details'}
             </Text>
             <View style={[styles.divider, theme === 'light' ? styles.dividerLight : styles.dividerDark]} />
             <View style={styles.columnContainer}>

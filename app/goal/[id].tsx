@@ -139,7 +139,7 @@ export default function Goal() {
                 modalName: "DefaultModal",
                 props: {
                     title: "Delete Goal",
-                    description: "Are you sure you want to delete this goal?",
+                    description: "Are you sure you want to delete this goal? This action cannot be undone.\nAll associated tasks and habits will also be deleted.",
                     primaryCTA: "Delete",
                     secondaryCTA: "Cancel",
                     theme: theme,

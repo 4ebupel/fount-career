@@ -1,9 +1,11 @@
 import React from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Pressable, Modal } from "react-native";
-import { FontAwesome5, Feather } from '@expo/vector-icons';
+import { View, StyleSheet, Text, TouchableOpacity, Pressable } from "react-native";
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import { Feather } from '@expo/vector-icons';
 import { colors } from '../lib/colors';
 import { DefaultModalProps } from '../types/defaultModalProps';
 import { useModal } from '@/hooks/useModal';
+import Button from '@/components/Button';
 interface Props extends DefaultModalProps {
     isVisible: boolean;
 }
@@ -13,21 +15,41 @@ export default function DefaultModal({ theme = 'dark', isVisible, ...props }: Pr
     const { closeModal } = useModal();
 
     return (
-        <Pressable style={styles.container} onPress={() => { props.onClose() }}>
-            {/* <Modal visible={isVisible} animationType='fade'> */}
-                <View style={styles.contentContainer}>
-                    <TouchableOpacity style={[styles.button, theme === 'light' ? styles.buttonLight : styles.buttonDark]} onPress={() => { props.onConfirm() }}>
-                        <Feather name='check' size={24} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
-                        <Text style={[styles.modalText, theme === 'light' ? styles.modalTextLight : styles.modalTextDark]}>{props.primaryCTA}</Text>
-                    </TouchableOpacity>
-                    <View style={styles.modalDivider} />
-                    <TouchableOpacity style={[styles.button, theme === 'light' ? styles.buttonLight : styles.buttonDark]} onPress={() => { props.onCancel() }}>
-                        <Feather name='x' size={24} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
-                        <Text style={[styles.modalText, theme === 'light' ? styles.modalTextLight : styles.modalTextDark]}>{props.secondaryCTA}</Text>
-                    </TouchableOpacity>
-                </View>
-            {/* </Modal> */}
-        </Pressable>
+        <Animated.View
+            style={styles.container}
+            entering={FadeIn.duration(200)}
+            exiting={FadeOut.duration(200)}
+        >
+            <Pressable style={styles.overlay} onPress={() => { props.onClose() }}>
+                <Animated.View
+                    style={[styles.contentContainer, theme === 'light' ? styles.modalLight : styles.modalDark]}
+                    entering={FadeIn.duration(200).delay(100)}
+                    exiting={FadeOut.duration(200)}
+                >
+                    <Text style={styles.modalTitle}>{props.title || 'Are you sure?'}</Text>
+                    <Text style={styles.modalDescription}>{props.description || 'Some serious stuff here'}</Text>
+                    <View style={styles.buttonRow}>
+                        <View style={styles.buttonContainer}>
+                            <Button
+                                label={props.primaryCTA || 'Confirm'}
+                                theme={theme}
+                                onPress={props.onConfirm}
+                                variant="primary"
+                                disabled={!props.primaryCTA}
+                            />
+                        </View>
+                        <View style={styles.buttonContainer}>
+                            <Button
+                                label={props.secondaryCTA || 'Cancel'}
+                                theme={theme}
+                                onPress={props.onCancel}
+                                variant="secondary"
+                            />
+                        </View>
+                    </View>
+                </Animated.View>
+            </Pressable>
+        </Animated.View>
     )
 }
 
@@ -42,18 +64,32 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     contentContainer: {
-        // height: 150,
+        flex: 1,
+        flexGrow: 1,
         position: 'absolute',
-        // bottom: 0,
-        // left: 0,
-        // right: 0,
         padding: 16,
         justifyContent: 'center',
         alignItems: 'center',
+        width: 350,
+        gap: 16,
         backgroundColor: colors.light_theme.background,
         borderRadius: 16,
     },
+    buttonRow: {
+        width: '100%',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        gap: 16,
+        marginTop: 10,
+    },
+    buttonContainer: {
+        maxWidth: '100%',
+        width: 'auto',
+        flexGrow: 1,
+        flex: 1,
+    },
     button: {
+        width: 100,
         flexDirection: 'row',
         gap: 10,
         padding: 14,
@@ -78,31 +114,20 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    modal1: {
-        position: 'absolute',
-        gap: 16,
-        padding: 24,
-        borderRadius: 16,
-        width: 250,
-        elevation: 5,
-    },
-    modal: {
-        gap: 16,
-        padding: 24,
-        borderRadius: 16,
-        width: 250,
-        height: 150,
-        elevation: 5,
-    },
     modalLight: {
         backgroundColor: colors.light_theme.background,
     },
     modalDark: {
         backgroundColor: colors.dark_theme.background,
     },
-    modalText: {
-        fontSize: 18,
-        fontWeight: '600'
+    modalTitle: {
+        fontSize: 24,
+        fontWeight: '600',
+    },
+    modalDescription: {
+        fontSize: 16,
+        fontWeight: '400',
+        textAlign: 'center',
     },
     modalTextLight: {
         color: colors.light_theme.text_primary,

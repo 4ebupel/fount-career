@@ -4,26 +4,32 @@
     "slug": "fount.career",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/icons/splash-icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "scheme": "fountcareer",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/icons/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "icon": {
+        "dark": "./assets/icons/ios-dark.png",
+        "light": "./assets/icons/ios-light.png",
+        "tinted": "./assets/icons/ios-tinted.png"
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/icons/adaptive-icon.png",
+        "monochromeImage": "./assets/icons/ios-tinted.png",
         "backgroundColor": "#ffffff"
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/icons/splash-icon.png"
     },
     "plugins": [
       [
@@ -39,6 +45,14 @@
               "-DSQLITE_ENABLE_DBSTAT_VTAB=1 -DSQLITE_ENABLE_SNAPSHOT=1"
             ]
           }
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#2C0166",
+          "image": "./assets/icons/splash-icon.png",
+          "imageWidth": 200
         }
       ]
     ]

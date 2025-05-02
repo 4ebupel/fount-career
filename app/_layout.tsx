@@ -6,6 +6,7 @@ import { ThemeProvider, ThemeContext } from '@/contexts/ThemeContext';
 import { ModalProvider } from '@/contexts/ModalContext';
 import { DatabaseProvider } from '@/contexts/DatabaseContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 // Status bar component to change the color of the status bar based on the theme since default 'auto' option doesn't work
 function AppStatusBar() {
@@ -53,23 +54,25 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
-      <ThemeProvider>
-        <DatabaseProvider>
-          <ModalProvider>
-            <Stack>
-              <Stack.Screen name="index" options={{ headerShown: false }} />
-              <Stack.Screen name="home" options={{ headerShown: false }} />
-              <Stack.Screen name="goal/[id]" options={{ headerShown: false }} />
-              <Stack.Screen name="addTask" options={{ headerShown: false }} />
-              <Stack.Screen name="addHabit" options={{ headerShown: false }} />
-              <Stack.Screen name="auth" options={{ headerShown: false }} />
-              <Stack.Screen name="+not-found" />
-            </Stack>
-            <CustomModal />
-            <AppStatusBar />
-          </ModalProvider>
-        </DatabaseProvider>
-      </ThemeProvider>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <DatabaseProvider>
+            <ModalProvider>
+              <Stack>
+                <Stack.Screen name="index" options={{ headerShown: false }} />
+                <Stack.Screen name="home" options={{ headerShown: false }} />
+                <Stack.Screen name="goal/[id]" options={{ headerShown: false }} />
+                <Stack.Screen name="addTask" options={{ headerShown: false }} />
+                <Stack.Screen name="addHabit" options={{ headerShown: false }} />
+                <Stack.Screen name="auth" options={{ headerShown: false }} />
+                <Stack.Screen name="+not-found" />
+              </Stack>
+              <CustomModal />
+              <AppStatusBar />
+            </ModalProvider>
+          </DatabaseProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }

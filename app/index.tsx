@@ -1,5 +1,6 @@
 import React, { useContext, useEffect } from 'react';
-import { View, Text, Image, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, Image, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '@/components/Button';
 import SocialButton from '@/components/SocialButton';
 import { useRouter } from 'expo-router';

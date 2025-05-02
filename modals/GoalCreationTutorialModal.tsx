@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -36,6 +36,7 @@ import StepFive from '@/components/goalCreationTutorial/StepFive';
 import LastDetails from '@/components/goalCreationTutorial/LastDetails';
 import GoodJob from '@/components/goalCreationTutorial/GoodJob';
 import { Goal } from '@/types/database';
+
 // Create an Animated version of SafeAreaView
 const AnimatedSafeAreaView = Animated.createAnimatedComponent(SafeAreaView);
 

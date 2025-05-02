@@ -1,5 +1,6 @@
 import { useState, useContext, useEffect, useMemo } from "react";
-import { View, Text, StyleSheet, Image, SafeAreaView, Pressable, ActivityIndicator, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, Image, Pressable, ActivityIndicator, ScrollView, TouchableOpacity } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import WeeklyCalendarHeader from "@/components/WeeklyCalendarHeader";
 import { colors } from "@/lib/colors";
 import { ThemeContext } from "@/contexts/ThemeContext";

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Dimensions, SafeAreaView, ScrollView, FlatList, Keyboard, TouchableWithoutFeedback } from "react-native";
+import { View, StyleSheet, Text, TouchableOpacity, Dimensions, ScrollView, FlatList, Keyboard, TouchableWithoutFeedback } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from '@/lib/colors';
 import { DefaultModalProps } from '@/types/defaultModalProps';
 import Button from '@/components/Button';

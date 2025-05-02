@@ -1,10 +1,11 @@
 import React, { useState, useContext } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, ScrollView, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/lib/colors';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { AntDesign, Ionicons } from '@expo/vector-icons';
 import { useModal } from '@/hooks/useModal';
-import { EMOJI_SELECTOR_MODAL, TIME_PICKER_MODAL } from '@/components/CustomModal';
+import { EMOJI_SELECTOR_MODAL, TIME_PICKER_MODAL } from '@/lib/modals';
 import Button from '@/components/Button';
 import { ThemeContext } from '@/contexts/ThemeContext';
 import { useDatabase } from '@/contexts/DatabaseContext';

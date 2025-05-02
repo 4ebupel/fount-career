@@ -1,6 +1,7 @@
 import { TouchableOpacity, StyleSheet } from "react-native";
 import Feather from '@expo/vector-icons/Feather';
 import { colors } from "../lib/colors";
+import React from "react";
 
 type Props = {
     onPress: () => void;

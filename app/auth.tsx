@@ -1,5 +1,6 @@
 import React, { useState, useRef, useContext } from 'react';
-import { View, Text, TextInput, Alert, StyleSheet, Pressable, Keyboard, TouchableWithoutFeedback, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, Alert, StyleSheet, Pressable, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Checkbox from 'expo-checkbox';
 import { supabase } from '@/lib/supabase';
 import FontAwesome from '@expo/vector-icons/FontAwesome';

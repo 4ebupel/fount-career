@@ -2,7 +2,6 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useContext, useEffect, useState } from "react";
 import CustomModal from "@/components/CustomModal";
-import { PaperProvider } from 'react-native-paper';
 import { ThemeProvider, ThemeContext } from '@/contexts/ThemeContext';
 import { ModalProvider } from '@/contexts/ModalContext';
 import { DatabaseProvider } from '@/contexts/DatabaseContext';
@@ -27,7 +26,7 @@ export default function RootLayout() {
   useEffect(() => {
     async function prepare() {
       try {
-        
+
       } catch (error) {
         console.warn(error);
       } finally {
@@ -54,25 +53,23 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
-      <PaperProvider>
-        <ThemeProvider>
-          <DatabaseProvider>
-            <ModalProvider>
-              <Stack>
-                <Stack.Screen name="index" options={{ headerShown: false }} />
-                <Stack.Screen name="home" options={{ headerShown: false }} />
-                <Stack.Screen name="goal/[id]" options={{ headerShown: false }} />
-                <Stack.Screen name="addTask" options={{ headerShown: false }} />
-                <Stack.Screen name="addHabit" options={{ headerShown: false }} />
-                <Stack.Screen name="auth" options={{ headerShown: false }} />
-                <Stack.Screen name="+not-found" />
-              </Stack>
-              <CustomModal />
-              <AppStatusBar />
-            </ModalProvider>
-          </DatabaseProvider>
-        </ThemeProvider>
-      </PaperProvider>
+      <ThemeProvider>
+        <DatabaseProvider>
+          <ModalProvider>
+            <Stack>
+              <Stack.Screen name="index" options={{ headerShown: false }} />
+              <Stack.Screen name="home" options={{ headerShown: false }} />
+              <Stack.Screen name="goal/[id]" options={{ headerShown: false }} />
+              <Stack.Screen name="addTask" options={{ headerShown: false }} />
+              <Stack.Screen name="addHabit" options={{ headerShown: false }} />
+              <Stack.Screen name="auth" options={{ headerShown: false }} />
+              <Stack.Screen name="+not-found" />
+            </Stack>
+            <CustomModal />
+            <AppStatusBar />
+          </ModalProvider>
+        </DatabaseProvider>
+      </ThemeProvider>
     </GestureHandlerRootView>
   );
 }

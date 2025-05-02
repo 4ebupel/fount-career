@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, StyleSheet, Text, TouchableOpacity } from "react-native";
+import { View, StyleSheet, Text, TouchableOpacity, Pressable } from "react-native";
 import { FontAwesome5, Feather } from '@expo/vector-icons';
-import { Modal } from 'react-native-paper';
 import { colors } from '../lib/colors';
 import { DefaultModalProps } from '../types/defaultModalProps';
 import { useModal } from '@/hooks/useModal';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 interface Props extends DefaultModalProps {
     isVisible: boolean;
 }
@@ -38,19 +38,31 @@ export default function AddGoalModal({ theme = 'dark', isVisible, ...props }: Pr
     }
 
     return (
-        <Modal visible={isVisible} onDismiss={() => { closeModal() }} contentContainerStyle={styles.modal} style={{ marginTop: 0 }}>
-            <View style={[styles.container, theme === 'light' ? { backgroundColor: colors.light_theme.background } : { backgroundColor: colors.dark_theme.background }]}>
-                <TouchableOpacity style={[styles.button, theme === 'light' ? styles.buttonLight : styles.buttonDark]} onPress={() => { console.log('Goal Templates Pressed') }}>
-                    <Feather name='file-text' size={24} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
-                    <Text style={[styles.modalText, theme === 'light' ? styles.modalTextLight : styles.modalTextDark]}>Goal Templates</Text>
-                </TouchableOpacity>
-                <View style={styles.modalDivider} />
-                <TouchableOpacity style={[styles.button, theme === 'light' ? styles.buttonLight : styles.buttonDark]} onPress={handleSelfMadeGoalPress}>
-                    <FontAwesome5 name={theme === 'light' ? 'user' : 'user-alt'} size={24} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
-                    <Text style={[styles.modalText, theme === 'light' ? styles.modalTextLight : styles.modalTextDark]}>Self-made Goal</Text>
-                </TouchableOpacity>
-            </View>
-        </Modal>
+        <Animated.View
+            style={styles.container}
+            entering={FadeIn.duration(200)}
+            exiting={FadeOut.duration(200)}
+        >
+            <Pressable style={styles.overlay} onPress={() => { props.onClose() }}>
+                <Animated.View
+                    style={[styles.contentContainer, theme === 'light' ? styles.modalLight : styles.modalDark]}
+                    entering={FadeIn.duration(200).delay(100)}
+                    exiting={FadeOut.duration(200)}
+                >
+                    <View style={[styles.container, theme === 'light' ? { backgroundColor: colors.light_theme.background } : { backgroundColor: colors.dark_theme.background }]}>
+                        <TouchableOpacity style={[styles.button, theme === 'light' ? styles.buttonLight : styles.buttonDark]} onPress={() => { console.log('Goal Templates Pressed') }}>
+                            <Feather name='file-text' size={24} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
+                            <Text style={[styles.modalText, theme === 'light' ? styles.modalTextLight : styles.modalTextDark]}>Goal Templates</Text>
+                        </TouchableOpacity>
+                        <View style={styles.modalDivider} />
+                        <TouchableOpacity style={[styles.button, theme === 'light' ? styles.buttonLight : styles.buttonDark]} onPress={handleSelfMadeGoalPress}>
+                            <FontAwesome5 name={theme === 'light' ? 'user' : 'user-alt'} size={24} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
+                            <Text style={[styles.modalText, theme === 'light' ? styles.modalTextLight : styles.modalTextDark]}>Self-made Goal</Text>
+                        </TouchableOpacity>
+                    </View>
+                </Animated.View>
+            </Pressable>
+        </Animated.View>
     )
 }
 
@@ -67,6 +79,18 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         paddingHorizontal: 24,
         paddingVertical: 18,
+    },
+    contentContainer: {
+        flex: 1,
+        flexGrow: 1,
+        position: 'absolute',
+        padding: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: 350,
+        gap: 16,
+        backgroundColor: colors.light_theme.background,
+        borderRadius: 16,
     },
     button: {
         flexDirection: 'row',

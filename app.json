@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "fount.career",
-    "slug": "fount.career",
+    "slug": "fountcareer",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icons/splash-icon.png",
@@ -55,6 +55,12 @@
           "imageWidth": 200
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "94b29537-926b-498b-a4d7-b8cb1bb5df77"
+      }
+    },
+    "owner": "mf_shoom"
   }
 }

@@ -8,14 +8,7 @@ import EmojiSelectorModal from '@/modals/EmojiSelectorModal';
 import TimePickerModal from '@/modals/TimePickerModal';
 import { useModal } from '@/hooks/useModal';
 import EditGoalModal from '@/modals/EditGoalModal';
-export const DEFAULT_MODAL = 'DefaultModal';
-export const ADD_GOAL_MODAL = 'AddGoalModal';
-export const GOAL_CREATION_TUTORIAL_MODAL = 'GoalCreationTutorialModal';
-export const CATEGORY_SELECTOR_MODAL = 'CategorySelectorModal';
-export const DATE_SELECTOR_MODAL = 'DateSelectorModal';
-export const EMOJI_SELECTOR_MODAL = 'EmojiSelectorModal';
-export const TIME_PICKER_MODAL = 'TimePickerModal';
-export const EDIT_GOAL_MODAL = 'EditGoalModal';
+import { ADD_GOAL_MODAL, DEFAULT_MODAL, GOAL_CREATION_TUTORIAL_MODAL, CATEGORY_SELECTOR_MODAL, DATE_SELECTOR_MODAL, EMOJI_SELECTOR_MODAL, TIME_PICKER_MODAL, EDIT_GOAL_MODAL } from '@/lib/modals';
 
 export const MODAL_LIST = {
     [DEFAULT_MODAL]: DefaultModal,

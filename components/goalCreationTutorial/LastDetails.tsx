@@ -2,7 +2,7 @@ import { colors } from "@/lib/colors";
 import { StyleSheet, View, Image, TextInput, Text, Platform, TouchableOpacity } from "react-native";
 import { useState } from "react";
 import { useModal } from "@/hooks/useModal";
-import { CATEGORY_SELECTOR_MODAL, DATE_SELECTOR_MODAL } from "@/components/CustomModal";
+import { CATEGORY_SELECTOR_MODAL, DATE_SELECTOR_MODAL } from "@/lib/modals";
 import { AntDesign } from '@expo/vector-icons';
 import { Goal } from "@/types/database";
 import React from "react";

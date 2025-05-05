@@ -1,3 +1,9 @@
+import 'react-native-gesture-handler';
+import { enableScreens } from 'react-native-screens';
+
+// Enable screens for better navigation performance
+enableScreens();
+
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useContext, useEffect, useState } from "react";

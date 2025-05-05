@@ -1,5 +1,5 @@
 import React, { useState, useRef, useContext } from 'react';
-import { View, Text, TextInput, Alert, StyleSheet, Pressable, Keyboard, TouchableWithoutFeedback, ScrollView } from 'react-native';
+import { View, Text, TextInput, Alert, StyleSheet, Pressable, Keyboard, TouchableWithoutFeedback, ScrollView, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Checkbox from 'expo-checkbox';
 import { supabase } from '@/lib/supabase';
@@ -22,6 +22,7 @@ export default function Auth() {
 
     // Create a ref for the password TextInput
     const passwordRef = useRef<TextInput>(null);
+    const { width } = useWindowDimensions();
 
     async function signInWithEmail() {
         // Validate input fields to ensure they're not empty
@@ -88,6 +89,11 @@ export default function Auth() {
         router.back();
     };
 
+    const termsAndConditionsStyle = [
+        styles.checkboxContainer,
+        width < 390 ? { flexDirection: 'column' as const } : { flexDirection: 'row' as const }
+    ]
+
     return (
         <SafeAreaView style={[styles.container, theme === 'light' ? styles.container_light : styles.container_dark]}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 25 }}>
@@ -109,6 +115,9 @@ export default function Auth() {
                             <Text style={[styles.title, theme === 'dark' ? styles.title_dark : styles.title_light]}>{isSignUp ? 'Join fount.one Today✨' : 'Welcome Back! 👋'}</Text>
                             <Text style={[styles.description, theme === 'dark' ? styles.description_dark : styles.description_light]}>
                                 {isSignUp ? 'Create your account and unlock a world of productivity.' : 'Sign in to access your goals, habits, and progress.'}
+                            </Text>
+                            <Text>
+                                {width}
                             </Text>
                         </View>
                         <View style={styles.form}>
@@ -150,7 +159,7 @@ export default function Auth() {
                                     />
                                 </View>
                             </View>
-                            <View style={styles.checkboxContainer}>
+                            <View style={termsAndConditionsStyle}>
                                 <Pressable onPress={() => setAgree(!agree)} style={styles.checkboxContainer}>
                                     <Checkbox
                                         value={agree}
@@ -171,8 +180,8 @@ export default function Auth() {
                                 Already have an account?
                             </Text>
                             <Pressable
-                                // onPress={() => setIsSignUp(!isSignUp)}
-                                onPress={() => handleGoogleSignIn()}
+                                onPress={() => setIsSignUp(!isSignUp)}
+                                // onPress={() => handleGoogleSignIn()}
                             >
                                 <Text style={[styles.link, theme === 'dark' ? styles.link_dark : styles.link_light]}> {isSignUp ? 'Sign in' : 'Sign up'}</Text>
                             </Pressable>
@@ -192,11 +201,9 @@ export default function Auth() {
                 </TouchableWithoutFeedback>
             </ScrollView>
 
-            {/* <View style={{ position: 'absolute', bottom: 12, left: 0, right: 0, backgroundColor: '#181A20' }}> */}
             <AuthFooter isSignUp={isSignUp} onClick={
                 isSignUp ? signUpWithEmail : signInWithEmail
             } />
-            {/* </View> */}
         </SafeAreaView>
     );
 }
@@ -216,6 +223,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingBottom: 20,
         justifyContent: 'center',
+        overflow: 'hidden'
     },
     backButtonContainer: {
         // position: 'absolute',

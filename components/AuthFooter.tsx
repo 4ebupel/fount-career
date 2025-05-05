@@ -20,6 +20,9 @@ export default function AuthFooter({ isSignUp, onClick }: AuthFooterProps) {
 
 const styles = StyleSheet.create({
     footer: {
+        flex: 1,
+        minHeight: 90,
+        width: '100%',
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',

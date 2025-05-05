@@ -112,7 +112,7 @@ export default function Button({ label, icon, onPress, variant = 'secondary', th
 
 const styles = StyleSheet.create({
     buttonContainer: {
-        // width: '100%',
+        width: '100%',
         height: 58,
         alignItems: 'center',
         justifyContent: 'center',

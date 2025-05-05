@@ -1,5 +1,5 @@
 import React, { useState, useRef, useContext } from 'react';
-import { View, Text, TextInput, Alert, StyleSheet, Pressable, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, TextInput, Alert, StyleSheet, Pressable, Keyboard, TouchableWithoutFeedback, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Checkbox from 'expo-checkbox';
 import { supabase } from '@/lib/supabase';
@@ -72,9 +72,9 @@ export default function Auth() {
     const handleAppleSignIn = async () => {
         try {
             await resetDatabase();
-          } catch (error) {
+        } catch (error) {
             console.error('Failed to reset database:', error);
-          }
+        }
     };
 
     const handleGoogleSignIn = () => {
@@ -90,107 +90,113 @@ export default function Auth() {
 
     return (
         <SafeAreaView style={[styles.container, theme === 'light' ? styles.container_light : styles.container_dark]}>
-            <View style={styles.backButtonContainer}>
-                <Pressable onPress={handleGoBack} style={styles.backButton}>
-                    <FontAwesome name="arrow-left" size={24} color={theme === 'dark' ? colors.dark_theme.text_primary : colors.light_theme.text_primary} />
-                </Pressable>
-            </View>
-            <View style={styles.themeButtonContainer}>
-                <Pressable onPress={() => changeThemeMode(themeMode === 'dark' ? 'light' : 'dark')} style={styles.themeButton}>
-                    <FontAwesome name={themeMode === 'dark' ? 'moon-o' : 'sun-o'} size={24} color={theme === 'dark' ? colors.dark_theme.text_primary : colors.light_theme.text_primary} />
-                </Pressable>
-            </View>
-            <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()} accessible={false}>
-                <View style={styles.contentContainer}>
-                    <View style={styles.header}>
-                        <Text style={[styles.title, theme === 'dark' ? styles.title_dark : styles.title_light]}>{isSignUp ? 'Join fount.one Today✨' : 'Welcome Back! 👋'}</Text>
-                        <Text style={[styles.description, theme === 'dark' ? styles.description_dark : styles.description_light]}>
-                            {isSignUp ? 'Create your account and unlock a world of productivity.' : 'Sign in to access your goals, habits, and progress.'}
-                        </Text>
-                    </View>
-                    <View style={styles.form}>
-                        <View style={{ gap: 8 }}>
-                            <Text style={{ color: theme === 'dark' ? colors.dark_theme.text_primary : colors.light_theme.text_primary, fontSize: 18, fontWeight: '600' }}>
-                                Email
-                            </Text>
-                            <View style={[styles.inputContainer, theme === 'dark' ? styles.inputContainer_dark : styles.inputContainer_light]}>
-                                <FontAwesome name="envelope" size={20} color={theme === 'dark' ? colors.dark_theme.text_secondary : colors.light_theme.text_secondary} style={styles.inputIcon} />
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Email"
-                                    value={email}
-                                    onChangeText={setEmail}
-                                    keyboardType="email-address"
-                                    autoCapitalize="none"
-                                    placeholderTextColor={theme === 'dark' ? colors.dark_theme.text_secondary : colors.light_theme.text_secondary}
-                                    returnKeyType="next"
-                                    onSubmitEditing={() => passwordRef.current?.focus()}
-                                />
-                            </View>
-                        </View>
-                        <View style={{ gap: 8 }}>
-                            <Text style={{ color: theme === 'dark' ? colors.dark_theme.text_primary : colors.light_theme.text_primary, fontSize: 18, fontWeight: '600' }}>
-                                Password
-                            </Text>
-                            <View style={[styles.inputContainer, theme === 'dark' ? styles.inputContainer_dark : styles.inputContainer_light]}>
-                                <FontAwesome name="lock" size={20} color={theme === 'dark' ? colors.dark_theme.text_secondary : colors.light_theme.text_secondary} style={styles.inputIcon} />
-                                <TextInput
-                                    ref={passwordRef}
-                                    style={[styles.input, theme === 'dark' ? styles.input_dark : styles.input_light]}
-                                    placeholder="Password"
-                                    value={password}
-                                    onChangeText={setPassword}
-                                    secureTextEntry
-                                    placeholderTextColor={theme === 'dark' ? colors.dark_theme.text_secondary : colors.light_theme.text_secondary}
-                                    returnKeyType="done"
-                                    onSubmitEditing={handleEmailSignIn}
-                                />
-                            </View>
-                        </View>
-                        <View style={styles.checkboxContainer}>
-                            <Pressable onPress={() => setAgree(!agree)} style={styles.checkboxContainer}>
-                                <Checkbox
-                                    value={agree}
-                                    onValueChange={setAgree}
-                                    color={agree ? theme === 'dark' ? colors.dark_theme.text_accent : colors.light_theme.text_accent : undefined}
-                                    style={[{ borderColor: theme === 'dark' ? colors.dark_theme.text_accent : colors.light_theme.text_accent }, { borderRadius: 4 }]}
-                                />
-                                <Text style={[styles.checkboxLabel, theme === 'dark' ? styles.checkboxLabel_dark : styles.checkboxLabel_light]}>
-                                    I agree to fount.one
-                                </Text>
-                            </Pressable>
-                            <Link href="/terms" style={[styles.linkTermsAndConditions, theme === 'dark' ? styles.link_dark : styles.link_light]}>Terms & Conditions</Link>
-                        </View>
-                    </View>
-
-                    <View style={styles.signInContainer}>
-                        <Text style={{ color: theme === 'dark' ? colors.dark_theme.text_primary : colors.light_theme.text_primary, fontSize: 18 }}>
-                            Already have an account?
-                        </Text>
-                        <Pressable onPress={() => setIsSignUp(!isSignUp)}>
-                            <Text style={[styles.link, theme === 'dark' ? styles.link_dark : styles.link_light]}> {isSignUp ? 'Sign in' : 'Sign up'}</Text>
-                        </Pressable>
-                    </View>
-
-                    <View style={styles.dividerContainer}>
-                        <View style={[styles.divider, theme === 'dark' ? styles.divider_dark : styles.divider_light]}></View>
-                        <Text style={[styles.dividerText, theme === 'dark' ? styles.dividerText_dark : styles.dividerText_light]}>Or</Text>
-                        <View style={[styles.divider, theme === 'dark' ? styles.divider_dark : styles.divider_light]}></View>
-                    </View>
-
-                    <View style={styles.socialSection}>
-                        <SocialButton label="Continue with Apple" icon="apple" onPress={handleAppleSignIn} theme={theme} />
-                        <SocialButton label="Continue with Google" icon="google" onPress={handleGoogleSignIn} theme={theme} />
-                    </View>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 25 }}>
+                <View style={styles.backButtonContainer}>
+                    <Pressable onPress={handleGoBack} style={styles.backButton}>
+                        <FontAwesome name="arrow-left" size={24} color={theme === 'dark' ? colors.dark_theme.text_primary : colors.light_theme.text_primary} />
+                    </Pressable>
                 </View>
-            </TouchableWithoutFeedback>
-
-            <View style={{ position: 'absolute', bottom: 12, left: 0, right: 0, backgroundColor: '#181A20' }}>
-                <AuthFooter isSignUp={isSignUp} onClick={
-                    isSignUp ? signUpWithEmail : signInWithEmail
-                } />
+                <View style={styles.themeButtonContainer}>
+                    <Pressable onPress={() => changeThemeMode(themeMode === 'dark' ? 'light' : 'dark')} style={styles.themeButton}>
+                        <FontAwesome name={themeMode === 'dark' ? 'moon-o' : 'sun-o'} size={24} color={theme === 'dark' ? colors.dark_theme.text_primary : colors.light_theme.text_primary} />
+                    </Pressable>
+                </View>
             </View>
+            <ScrollView>
+                <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()} accessible={false}>
+                    <View style={styles.contentContainer}>
+                        <View style={styles.header}>
+                            <Text style={[styles.title, theme === 'dark' ? styles.title_dark : styles.title_light]}>{isSignUp ? 'Join fount.one Today✨' : 'Welcome Back! 👋'}</Text>
+                            <Text style={[styles.description, theme === 'dark' ? styles.description_dark : styles.description_light]}>
+                                {isSignUp ? 'Create your account and unlock a world of productivity.' : 'Sign in to access your goals, habits, and progress.'}
+                            </Text>
+                        </View>
+                        <View style={styles.form}>
+                            <View style={{ gap: 8 }}>
+                                <Text style={{ color: theme === 'dark' ? colors.dark_theme.text_primary : colors.light_theme.text_primary, fontSize: 18, fontWeight: '600' }}>
+                                    Email
+                                </Text>
+                                <View style={[styles.inputContainer, theme === 'dark' ? styles.inputContainer_dark : styles.inputContainer_light]}>
+                                    <FontAwesome name="envelope" size={20} color={theme === 'dark' ? colors.dark_theme.text_secondary : colors.light_theme.text_secondary} style={styles.inputIcon} />
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder="Email"
+                                        value={email}
+                                        onChangeText={setEmail}
+                                        keyboardType="email-address"
+                                        autoCapitalize="none"
+                                        placeholderTextColor={theme === 'dark' ? colors.dark_theme.text_secondary : colors.light_theme.text_secondary}
+                                        returnKeyType="next"
+                                        onSubmitEditing={() => passwordRef.current?.focus()}
+                                    />
+                                </View>
+                            </View>
+                            <View style={{ gap: 8 }}>
+                                <Text style={{ color: theme === 'dark' ? colors.dark_theme.text_primary : colors.light_theme.text_primary, fontSize: 18, fontWeight: '600' }}>
+                                    Password
+                                </Text>
+                                <View style={[styles.inputContainer, theme === 'dark' ? styles.inputContainer_dark : styles.inputContainer_light]}>
+                                    <FontAwesome name="lock" size={20} color={theme === 'dark' ? colors.dark_theme.text_secondary : colors.light_theme.text_secondary} style={styles.inputIcon} />
+                                    <TextInput
+                                        ref={passwordRef}
+                                        style={[styles.input, theme === 'dark' ? styles.input_dark : styles.input_light]}
+                                        placeholder="Password"
+                                        value={password}
+                                        onChangeText={setPassword}
+                                        secureTextEntry
+                                        placeholderTextColor={theme === 'dark' ? colors.dark_theme.text_secondary : colors.light_theme.text_secondary}
+                                        returnKeyType="done"
+                                        onSubmitEditing={handleEmailSignIn}
+                                    />
+                                </View>
+                            </View>
+                            <View style={styles.checkboxContainer}>
+                                <Pressable onPress={() => setAgree(!agree)} style={styles.checkboxContainer}>
+                                    <Checkbox
+                                        value={agree}
+                                        onValueChange={setAgree}
+                                        color={agree ? theme === 'dark' ? colors.dark_theme.text_accent : colors.light_theme.text_accent : undefined}
+                                        style={[{ borderColor: theme === 'dark' ? colors.dark_theme.text_accent : colors.light_theme.text_accent }, { borderRadius: 4 }]}
+                                    />
+                                    <Text style={[styles.checkboxLabel, theme === 'dark' ? styles.checkboxLabel_dark : styles.checkboxLabel_light]}>
+                                        I agree to fount.one
+                                    </Text>
+                                </Pressable>
+                                <Link href="/terms" style={[styles.linkTermsAndConditions, theme === 'dark' ? styles.link_dark : styles.link_light]}>Terms & Conditions</Link>
+                            </View>
+                        </View>
 
+                        <View style={styles.signInContainer}>
+                            <Text style={{ color: theme === 'dark' ? colors.dark_theme.text_primary : colors.light_theme.text_primary, fontSize: 18 }}>
+                                Already have an account?
+                            </Text>
+                            <Pressable
+                                // onPress={() => setIsSignUp(!isSignUp)}
+                                onPress={() => handleGoogleSignIn()}
+                            >
+                                <Text style={[styles.link, theme === 'dark' ? styles.link_dark : styles.link_light]}> {isSignUp ? 'Sign in' : 'Sign up'}</Text>
+                            </Pressable>
+                        </View>
+
+                        <View style={styles.dividerContainer}>
+                            <View style={[styles.divider, theme === 'dark' ? styles.divider_dark : styles.divider_light]}></View>
+                            <Text style={[styles.dividerText, theme === 'dark' ? styles.dividerText_dark : styles.dividerText_light]}>Or</Text>
+                            <View style={[styles.divider, theme === 'dark' ? styles.divider_dark : styles.divider_light]}></View>
+                        </View>
+
+                        <View style={styles.socialSection}>
+                            <SocialButton label="Continue with Apple" icon="apple" onPress={handleAppleSignIn} theme={theme} />
+                            <SocialButton label="Continue with Google" icon="google" onPress={handleGoogleSignIn} theme={theme} />
+                        </View>
+                    </View>
+                </TouchableWithoutFeedback>
+            </ScrollView>
+
+            {/* <View style={{ position: 'absolute', bottom: 12, left: 0, right: 0, backgroundColor: '#181A20' }}> */}
+            <AuthFooter isSignUp={isSignUp} onClick={
+                isSignUp ? signUpWithEmail : signInWithEmail
+            } />
+            {/* </View> */}
         </SafeAreaView>
     );
 }
@@ -207,25 +213,26 @@ const styles = StyleSheet.create({
     },
     contentContainer: {
         flex: 1,
-        padding: 20,
+        paddingHorizontal: 20,
+        paddingBottom: 20,
         justifyContent: 'center',
     },
     backButtonContainer: {
-        position: 'absolute',
-        top: 20,
-        left: 0,
-        right: 0,
-        paddingTop: 20,
-        paddingHorizontal: 20,
-        zIndex: 1
+        // position: 'absolute',
+        // top: 20,
+        // left: 0,
+        // right: 0,
+        // paddingTop: 20,
+        // paddingHorizontal: 20,
+        // zIndex: 1
     },
     themeButtonContainer: {
-        position: 'absolute',
-        top: 20,
-        right: 0,
-        paddingTop: 25,
-        paddingHorizontal: 20,
-        zIndex: 1
+        // position: 'absolute',
+        // top: 20,
+        // right: 0,
+        // paddingTop: 25,
+        // paddingHorizontal: 20,
+        // zIndex: 1
     },
     header: {
         marginBottom: 30,

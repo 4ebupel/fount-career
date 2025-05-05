@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { View, Text as RNText, StyleSheet } from 'react-native';
+import { View, Text as RNText, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
 import Svg, { Circle, Text as SvgText } from 'react-native-svg';
 import { format, startOfWeek, addDays } from 'date-fns';
 import { colors } from '@/lib/colors';
@@ -11,11 +11,17 @@ const circumference = 2 * Math.PI * radius;
 
 const WeeklyCalendarHeader = ({ progressData = [0, 0, 0, 0, 0, 0, 0] }) => {
   const { theme } = useContext(ThemeContext);
+  const { width } = useWindowDimensions();
   // Calculate the start of the week (Monday)
   const start = startOfWeek(new Date(), { weekStartsOn: 1 });
 
   return (
-    <View style={[styles.container, theme === 'dark' ? styles.containerDark : styles.containerLight]}>
+    <ScrollView 
+      style={[theme === 'dark' ? styles.containerDark : styles.containerLight]}
+      contentContainerStyle={{ flexDirection: 'row', justifyContent: 'space-around', padding: 10, height: 100 }}
+      scrollEnabled={width < 390}
+      horizontal={true}
+    >
       {Array.from({ length: 7 }).map((_, index) => {
         const currentDate = addDays(start, index);
         const dayNumber = format(currentDate, 'd');
@@ -72,7 +78,7 @@ const WeeklyCalendarHeader = ({ progressData = [0, 0, 0, 0, 0, 0, 0] }) => {
           </View>
         );
       })}
-    </View>
+    </ScrollView>
   );
 };
 

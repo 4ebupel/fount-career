@@ -217,7 +217,9 @@ export default function GetDone() {
             styles.container,
             theme === 'dark' ? styles.containerDark : styles.containerLight
         ]}>
-            <WeeklyCalendarHeader progressData={progressData} />
+            <View style={{ maxHeight: 150 }}>
+                <WeeklyCalendarHeader progressData={progressData} />
+            </View>
 
             {isLoading && !dataLoaded ? (
                 <View style={styles.backgroundImageContainer}>

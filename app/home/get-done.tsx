@@ -213,7 +213,7 @@ export default function GetDone() {
     };
 
     return (
-        <SafeAreaView style={[
+        <View style={[
             styles.container,
             theme === 'dark' ? styles.containerDark : styles.containerLight
         ]}>
@@ -373,7 +373,7 @@ export default function GetDone() {
                     <Feather name="plus" size={24} color={theme === 'light' ? colors.light_theme.button_primary_text : colors.dark_theme.button_primary_text} />
                 </Text>
             </Pressable>
-        </SafeAreaView>
+        </View>
     );
 }
 

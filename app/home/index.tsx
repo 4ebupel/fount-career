@@ -42,7 +42,7 @@ export default function Home() {
     }
 
     return (
-        <SafeAreaView style={[styles.container, theme === 'light' ? styles.containerLight : styles.containerDark]}>
+        <View style={[styles.container, theme === 'light' ? styles.containerLight : styles.containerDark]}>
             <View style={[styles.buttonsContainer, theme === 'light' ? styles.buttonsContainerLight : styles.buttonsContainerDark]}>
                 <TouchableOpacity style={[styles.button, theme === 'light' ? styles.buttonLight : styles.buttonDark, selectedButton !== 'ongoing' && styles.buttonInactive]} onPress={() => setSelectedButton('ongoing')}>
                     <Text style={[styles.buttonText, selectedButton === 'ongoing' ? (theme === 'light' ? styles.buttonTextLight : styles.buttonTextDark) : { color: theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary }]}>Ongoing</Text>
@@ -87,7 +87,7 @@ export default function Home() {
                     <Feather name="plus" size={24} color={theme === 'light' ? colors.light_theme.button_primary_text : colors.dark_theme.button_primary_text} />
                 </Text>
             </Pressable>
-        </SafeAreaView>
+        </View>
     )
 }
 

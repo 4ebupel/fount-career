@@ -5,7 +5,7 @@ import { useContext, useState, useEffect } from "react";
 import { ThemeContext } from "@/contexts/ThemeContext";
 import { TouchableOpacity, Image, View, Text, ActivityIndicator } from "react-native";
 import React from "react";
-import { useDatabase } from "@/contexts/DatabaseContext";
+import { useDatabase } from "@/hooks/useDatabase";
 
 export default function TabsLayout() {
     const { theme } = useContext(ThemeContext);

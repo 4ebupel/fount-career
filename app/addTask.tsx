@@ -9,7 +9,7 @@ import { EMOJI_SELECTOR_MODAL } from '@/lib/modals';
 import Button from '@/components/Button';
 import { ThemeContext } from '@/contexts/ThemeContext';
 import { mockData } from '@/lib/mock-data';
-import { useDatabase } from '@/contexts/DatabaseContext';
+import { useDatabase } from '@/hooks/useDatabase';
 export default function AddTask() {
     // Will be undefined if nothing is passed (why is it typed as string | string[] then?)
     const { goalId, taskId, title, description, emoji, due_date, reminder_time } = useLocalSearchParams();

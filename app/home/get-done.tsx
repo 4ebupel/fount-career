@@ -5,7 +5,7 @@ import WeeklyCalendarHeader from "@/components/WeeklyCalendarHeader";
 import { colors } from "@/lib/colors";
 import { ThemeContext } from "@/contexts/ThemeContext";
 import { Feather, Ionicons } from '@expo/vector-icons';
-import { useDatabase } from "@/contexts/DatabaseContext";
+import { useDatabase } from "@/hooks/useDatabase";
 import { Goal, Habit, Task } from "@/types/database";
 import { useModal } from "@/hooks/useModal";
 import React from "react";

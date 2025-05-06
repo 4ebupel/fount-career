@@ -5,7 +5,7 @@ import { ThemeContext } from "@/contexts/ThemeContext";
 import { useContext, useEffect, useState } from "react";
 import { colors } from "@/lib/colors";
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { useDatabase } from "@/contexts/DatabaseContext";
+import { useDatabase } from "@/hooks/useDatabase";
 import { useModal } from "@/hooks/useModal";
 import { Goal as GoalType, Task, Habit } from "@/types/database";
 import React from "react";
@@ -14,12 +14,12 @@ import ItemCard from "@/components/ItemCard";
 export default function Goal() {
     const { id } = useLocalSearchParams();
     const { theme } = useContext(ThemeContext);
-    const { getGoalById, getTasksByGoalId, getHabitsByGoalId, updateGoal, hasError, errorMessage, clearError, deleteGoal } = useDatabase();
+    const { getGoalById, getTasksByGoalId, getHabitsByGoalId, updateGoal, hasError, errorMessage, clearError, deleteGoal, tasks, habits } = useDatabase();
 
     const [loading, setLoading] = useState(true);
     const [goal, setGoal] = useState<GoalType | null>(null);
-    const [tasks, setTasks] = useState<Task[]>([]);
-    const [habits, setHabits] = useState<Habit[]>([]);
+    const [goalTasks, setGoalTasks] = useState<Task[]>([]);
+    const [goalHabits, setGoalHabits] = useState<Habit[]>([]);
     const [localError, setLocalError] = useState<string | null>(null);
     const { openModal, closeModal } = useModal();
 
@@ -48,25 +48,27 @@ export default function Goal() {
                 }
 
                 setGoal(goalData);
+                setGoalTasks(tasks[goalData.id] || []);
+                setGoalHabits(habits[goalData.id] || []);
 
                 // Fetch tasks and habits
-                try {
-                    const goalTasks = await getTasksByGoalId(id);
-                    setTasks(goalTasks);
-                } catch (error) {
-                    console.error('Failed to fetch tasks:', error);
-                    // Continue with empty tasks
-                    setTasks([]);
-                }
+                // try {
+                //     const goalTasks = await getTasksByGoalId(id);
+                //     setTasks(goalTasks);
+                // } catch (error) {
+                //     console.error('Failed to fetch tasks:', error);
+                //     // Continue with empty tasks
+                //     setTasks([]);
+                // }
 
-                try {
-                    const goalHabits = await getHabitsByGoalId(id);
-                    setHabits(goalHabits);
-                } catch (error) {
-                    console.error('Failed to fetch habits:', error);
-                    // Continue with empty habits
-                    setHabits([]);
-                }
+                // try {
+                //     const goalHabits = await getHabitsByGoalId(id);
+                //     setHabits(goalHabits);
+                // } catch (error) {
+                //     console.error('Failed to fetch habits:', error);
+                //     // Continue with empty habits
+                //     setHabits([]);
+                // }
             } catch (error) {
                 console.error('Failed to fetch goal data:', error);
                 setLocalError('Error loading goal data. Please try again.');
@@ -87,6 +89,71 @@ export default function Goal() {
 
         fetchGoalData();
     }, [id]);
+
+    // useEffect(() => {
+    //     const fetchGoalData = async () => {
+    //         if (!id || typeof id !== 'string') {
+    //             setLocalError('Invalid goal ID');
+    //             setLoading(false);
+    //             return;
+    //         }
+
+    //         try {
+    //             setLoading(true);
+    //             setLocalError(null);
+    //             clearError(); // Clear any previous database errors
+    //             console.log(`Fetching goal data for ID: ${id}`);
+
+    //             // Fetch goal
+    //             const goalData = await getGoalById(id);
+
+    //             if (!goalData) {
+    //                 console.error('Goal not found');
+    //                 setLocalError(`Goal with ID ${id} not found`);
+    //                 setLoading(false);
+    //                 return;
+    //             }
+
+    //             setGoal(goalData);
+
+    //             // Fetch tasks and habits
+    //             try {
+    //                 const goalTasks = await getTasksByGoalId(id);
+    //                 setTasks(goalTasks);
+    //             } catch (error) {
+    //                 console.error('Failed to fetch tasks:', error);
+    //                 // Continue with empty tasks
+    //                 setTasks([]);
+    //             }
+
+    //             try {
+    //                 const goalHabits = await getHabitsByGoalId(id);
+    //                 setHabits(goalHabits);
+    //             } catch (error) {
+    //                 console.error('Failed to fetch habits:', error);
+    //                 // Continue with empty habits
+    //                 setHabits([]);
+    //             }
+    //         } catch (error) {
+    //             console.error('Failed to fetch goal data:', error);
+    //             setLocalError('Error loading goal data. Please try again.');
+
+    //             // Show alert for database errors
+    //             Alert.alert(
+    //                 'Error Loading Goal',
+    //                 'There was a problem loading the goal data. Do you want to go back?',
+    //                 [
+    //                     { text: 'Try Again', onPress: () => fetchGoalData() },
+    //                     { text: 'Go Back', onPress: () => router.back() }
+    //                 ]
+    //             );
+    //         } finally {
+    //             setLoading(false);
+    //         }
+    //     };
+
+    //     fetchGoalData();
+    // }, [id]);
 
     const pickImageAsync = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
@@ -264,7 +331,7 @@ export default function Goal() {
                         <View style={styles.sectionContainer}>
                             <View style={styles.sectionHeadingContainer}>
                                 <Text style={[styles.sectionHeadingTitle, theme === 'light' ? styles.sectionHeadingTitleLight : styles.sectionHeadingTitleDark]}>
-                                    Tasks ({tasks.length})
+                                    Tasks ({goalTasks.length})
                                 </Text>
                                 <Pressable style={[styles.infoButton, theme === 'light' ? styles.infoButtonLight : styles.infoButtonDark]}>
                                     <FontAwesome name="info" size={12} color={theme === 'light' ? colors.light_theme.text_secondary : colors.dark_theme.text_secondary} />
@@ -273,9 +340,9 @@ export default function Goal() {
 
                             {/* Tasks List */}
 
-                            {tasks.length > 0 && (
+                            {goalTasks.length > 0 && (
                                 <ScrollView showsVerticalScrollIndicator={false} style={styles.tasksList}>
-                                    {tasks.map((task) => (
+                                    {goalTasks.map((task) => (
                                         <ItemCard
                                             key={task.id}
                                             item={task}
@@ -314,7 +381,7 @@ export default function Goal() {
                         <View style={styles.sectionContainer}>
                             <View style={styles.sectionHeadingContainer}>
                                 <Text style={[styles.sectionHeadingTitle, theme === 'light' ? styles.sectionHeadingTitleLight : styles.sectionHeadingTitleDark]}>
-                                    Habits ({habits.length})
+                                    Habits ({goalHabits.length})
                                 </Text>
                                 <Pressable style={[styles.infoButton, theme === 'light' ? styles.infoButtonLight : styles.infoButtonDark]}>
                                     <FontAwesome name="info" size={12} color={theme === 'light' ? colors.light_theme.text_secondary : colors.dark_theme.text_secondary} />
@@ -323,9 +390,9 @@ export default function Goal() {
 
                             {/* Habits List */}
 
-                            {habits.length > 0 && (
+                            {goalHabits.length > 0 && (
                                 <ScrollView showsVerticalScrollIndicator={false} style={styles.habitsList}>
-                                    {habits.map((habit) => (
+                                    {goalHabits.map((habit) => (
                                         <ItemCard
                                             key={habit.id}
                                             item={habit}

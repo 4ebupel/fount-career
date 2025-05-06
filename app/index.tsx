@@ -5,7 +5,7 @@ import Button from '@/components/Button';
 import SocialButton from '@/components/SocialButton';
 import { useRouter } from 'expo-router';
 import { ThemeContext } from '@/contexts/ThemeContext';
-import { useDatabase } from '@/contexts/DatabaseContext';
+import { useDatabase } from '@/hooks/useDatabase';
 import { colors } from '@/lib/colors';
 
 export default function Index() {

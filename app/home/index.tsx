@@ -6,7 +6,7 @@ import { useContext, useState, useEffect } from "react";
 import React from "react";
 import GoalCard from "@/components/GoalCard";
 import { GoalCardPressProvider } from "@/contexts/GoalCardPressedContext";
-import { useDatabase } from "@/contexts/DatabaseContext";
+import { useDatabase } from "@/hooks/useDatabase";
 import { useModal } from "@/hooks/useModal";
 import { Feather } from '@expo/vector-icons';
 import { Goal } from "@/types/database";

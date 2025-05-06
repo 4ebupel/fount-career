@@ -74,7 +74,7 @@ interface DatabaseContextType {
 }
 
 // Create the context with default values
-const DatabaseContext = createContext<DatabaseContextType | undefined>(undefined);
+export const DatabaseContext = createContext<DatabaseContextType | undefined>(undefined);
 
 // Provider props type
 interface DatabaseProviderProps {
@@ -454,15 +454,4 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
       {children}
     </DatabaseContext.Provider>
   );
-};
-
-// Custom hook to use the database context
-export const useDatabase = () => {
-  const context = useContext(DatabaseContext);
-
-  if (context === undefined) {
-    throw new Error('useDatabase must be used within a DatabaseProvider');
-  }
-
-  return context;
 };

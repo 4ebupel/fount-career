@@ -8,7 +8,7 @@ import { useModal } from '@/hooks/useModal';
 import { EMOJI_SELECTOR_MODAL, TIME_PICKER_MODAL } from '@/lib/modals';
 import Button from '@/components/Button';
 import { ThemeContext } from '@/contexts/ThemeContext';
-import { useDatabase } from '@/contexts/DatabaseContext';
+import { useDatabase } from '@/hooks/useDatabase';
 
 // Days of the week for habit reminders
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];

@@ -1,15 +1,16 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, ScrollView, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/lib/colors';
-import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
-import { AntDesign, Ionicons } from '@expo/vector-icons';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { AntDesign, FontAwesome } from '@expo/vector-icons';
 import { useModal } from '@/hooks/useModal';
-import { EMOJI_SELECTOR_MODAL } from '@/lib/modals';
+import { DEFAULT_MODAL, EMOJI_SELECTOR_MODAL } from '@/lib/modals';
 import Button from '@/components/Button';
 import { ThemeContext } from '@/contexts/ThemeContext';
-import { mockData } from '@/lib/mock-data';
 import { useDatabase } from '@/hooks/useDatabase';
+
+// Add or edit a task
 export default function AddTask() {
     // Will be undefined if nothing is passed (why is it typed as string | string[] then?)
     const { goalId, taskId, title, description, emoji, due_date, reminder_time } = useLocalSearchParams();
@@ -18,8 +19,8 @@ export default function AddTask() {
     const [taskTitle, setTaskTitle] = useState<string>(title as string || '');
     const [taskDescription, setTaskDescription] = useState<string>(description as string || '');
     const router = useRouter();
-    const { openModal } = useModal();
-    const { createTask, updateTask } = useDatabase();
+    const { openModal, closeModal } = useModal();
+    const { createTask, updateTask, deleteTask } = useDatabase();
 
     // Find the goal that this task belongs to
     // const goal = mockData.find((item) => item.id === parseInt(goalId as string));
@@ -47,13 +48,42 @@ export default function AddTask() {
             }
         });
     };
-    
+
+    const handleDelete = async () => {
+        if (!taskId) {
+            return;
+        }
+
+        Keyboard.dismiss();
+        openModal({
+            modalName: DEFAULT_MODAL,
+            props: {
+                theme,
+                title: 'Delete Task',
+                content: '',
+                description: 'Are you sure you want to delete this task? \n This action cannot be undone.',
+                primaryCTA: 'Delete',
+                secondaryCTA: 'Cancel',
+                onConfirm: () => {
+                    // TODO: should be "awaited" in the modal code (maybe add an additional "onSuccess" callback?)
+                    deleteTask(taskId as string, goalId as string);
+                    closeModal();
+                    router.back();
+                },
+                onCancel: () => {
+                    closeModal();
+                },
+                onClose: () => { },
+            }
+        });
+    };
+
     const handleSave = async () => {
         if (!taskTitle.trim()) {
             // Don't create tasks without a title
             return;
         }
-        
+
         try {
             // Create the new task using the database context
             await createTask({
@@ -64,7 +94,7 @@ export default function AddTask() {
                 reminder_time: null,
                 due_date: null,
             });
-            
+
             // Navigate back to the goal details page after successful creation
             router.back();
         } catch (error) {
@@ -78,7 +108,7 @@ export default function AddTask() {
             // Don't save tasks without a title
             return;
         }
-        
+
         try {
             // Update the task using the database context
 
@@ -109,15 +139,21 @@ export default function AddTask() {
             <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
                 <View style={styles.container}>
                     <View style={styles.header}>
+                        {/* Back button */}
                         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                             <AntDesign name="close" size={24} color={theme === 'dark' ? colors.dark_theme.text_primary : colors.light_theme.text_primary} />
                         </TouchableOpacity>
+                        {/* Header text */}
                         <Text style={[
                             styles.headerText,
                             theme === 'dark' ? styles.headerTextDark : styles.headerTextLight
                         ]}>
-                            Add Task
+                            {taskId ? 'Edit Task' : 'Add Task'}
                         </Text>
+                        {/* Delete button */}
+                        <TouchableOpacity onPress={handleDelete} style={styles.deleteButton} disabled={!taskId}>
+                            <FontAwesome name="trash" size={24} color={ taskId ? colors.dark_theme.status_error : colors.dark_theme.button_disabled_text} />
+                        </TouchableOpacity>
                     </View>
                     <View style={styles.scrollView}>
                         <View style={styles.section}>
@@ -226,16 +262,18 @@ const styles = StyleSheet.create({
         paddingBottom: 12,
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'space-between',
     },
     backButton: {
-        position: 'absolute',
-        left: 12,
-        top: 24,
+        padding: 4,
+    },
+    deleteButton: {
+        padding: 4,
     },
     headerText: {
         fontSize: 24,
         fontWeight: 'bold',
+        textAlign: 'center'
     },
     headerTextLight: {
         color: colors.light_theme.text_primary,

@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, useWindowDimensions } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { colors } from "@/lib/colors";
 import { Habit, Task } from "@/types/database";
@@ -15,6 +15,8 @@ interface props {
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 export default function ItemCard({ item, theme, displayCheckbox, displayBorders, onPress }: props) {
+    const { width } = useWindowDimensions();
+
     return (
         <TouchableOpacity
             style={[
@@ -48,7 +50,7 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
                 </Text>
 
                 {item.reminder_time ? (
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{ flexDirection: width >= 390 ? 'row' : 'column', alignItems: 'flex-start', justifyContent: 'center', gap: width >= 390 ? 0 : 4 }}>
                         <View style={styles.daysContainer}>
                             {DAYS_OF_WEEK.map((day, index) => (
                                 <View

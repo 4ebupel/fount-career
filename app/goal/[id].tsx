@@ -339,9 +339,9 @@ export default function Goal() {
                             </View>
 
                             {/* Tasks List */}
-
+                            {/* TODO: Add scroll view */}
                             {goalTasks.length > 0 && (
-                                <ScrollView showsVerticalScrollIndicator={false} style={styles.tasksList}>
+                                <View style={styles.tasksList}>
                                     {goalTasks.map((task) => (
                                         <ItemCard
                                             key={task.id}
@@ -363,7 +363,7 @@ export default function Goal() {
                                             })}
                                         />
                                     ))}
-                                </ScrollView>
+                                </View>
                             )}
 
                             <TouchableOpacity
@@ -389,9 +389,10 @@ export default function Goal() {
                             </View>
 
                             {/* Habits List */}
+                            {/* TODO: Add scroll view */}
 
                             {goalHabits.length > 0 && (
-                                <ScrollView showsVerticalScrollIndicator={false} style={styles.habitsList}>
+                                <View style={styles.habitsList}>
                                     {goalHabits.map((habit) => (
                                         <ItemCard
                                             key={habit.id}
@@ -412,7 +413,7 @@ export default function Goal() {
                                             })}
                                         />
                                     ))}
-                                </ScrollView>
+                                </View>
                             )}
 
                             <TouchableOpacity
@@ -630,13 +631,14 @@ const styles = StyleSheet.create({
         gap: 24,
     },
     sectionContainer: {
-        gap: 16,
+        // gap: 16,
     },
     sectionHeadingContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'flex-start',
         gap: 8,
+        marginBottom: 16,
     },
     sectionHeadingTitle: {
         fontSize: 18,
@@ -709,10 +711,10 @@ const styles = StyleSheet.create({
         color: colors.dark_theme.text_primary,
     },
     tasksList: {
-        marginBottom: 16,
+        // marginBottom: 16,
     },
     habitsList: {
-        marginBottom: 16,
+        // marginBottom: 16,
     },
     taskItem: {
         flexDirection: 'row',

@@ -1,5 +1,5 @@
 import { colors } from "@/lib/colors";
-import { View, Text, Image, StyleSheet } from "react-native";
+import { View, Text, Image, StyleSheet, useWindowDimensions } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
@@ -33,7 +33,8 @@ export default function GoalCard({ goal, habits, tasks, theme, lastCard = false 
     const completedTasks = tasks?.filter((task: Task) => task.completed).length || 0;
     const totalHabits = habits?.length || 0;
     const totalTasks = tasks?.length || 0;
-    
+    const { width } = useWindowDimensions();
+
     // Access the context to track active cards
     const { activeCardId, setActiveCardId } = useContext(GoalCardPressContext);
     
@@ -83,7 +84,7 @@ export default function GoalCard({ goal, habits, tasks, theme, lastCard = false 
                 >
                     {goal.title}
                 </Text>
-                <View style={styles.goalContainerInfoPills}>
+                <View style={[styles.goalContainerInfoPills, {gap: width >= 390 ? 12 : 2}]}>
                     <View style={[styles.goalContainerInfoPill, theme === 'light' ? styles.goalContainerInfoPillLight : styles.goalContainerInfoPillDark]}>
                         <Text style={[styles.goalContainerInfoPillText, theme === 'light' ? styles.goalContainerInfoPillTextLight : styles.goalContainerInfoPillTextDark]}>Habits {completedHabits}/{totalHabits}</Text>
                     </View>

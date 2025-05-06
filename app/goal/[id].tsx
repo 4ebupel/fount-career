@@ -88,7 +88,7 @@ export default function Goal() {
         };
 
         fetchGoalData();
-    }, [id]);
+    }, [id, tasks, habits]);
 
     // useEffect(() => {
     //     const fetchGoalData = async () => {

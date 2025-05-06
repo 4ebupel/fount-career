@@ -66,7 +66,7 @@ export default function AddTask() {
             });
             
             // Navigate back to the goal details page after successful creation
-            router.replace(`/goal/${goalId}`);
+            router.back();
         } catch (error) {
             console.error('Error creating task:', error);
             // In a production app, you would show an error message to the user
@@ -93,7 +93,7 @@ export default function AddTask() {
 
             await updateTask(taskId as string, updatedTask);
             // Navigate back to the goal details page after successful update
-            router.replace(`/goal/${goalId}`);
+            router.back();
         } catch (error) {
             console.error('Error updating task:', error);
         }

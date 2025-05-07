@@ -4,7 +4,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { Pressable } from "react-native";
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import { GoalCardPressContext } from "@/contexts/GoalCardPressedContext";
 import { Goal, Habit, Task } from "@/types/database";
 
@@ -15,6 +15,7 @@ interface GoalCardProps {
     tasks: Task[];
     theme: 'light' | 'dark';
     lastCard?: boolean;
+    isPremade?: boolean;
 }
 
 const daysRemaining = (dueDate: string) => {
@@ -27,7 +28,7 @@ const daysRemaining = (dueDate: string) => {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export default function GoalCard({ goal, habits, tasks, theme, lastCard = false }: GoalCardProps) {
+export default function GoalCard({ goal, habits, tasks, theme, lastCard = false, isPremade = false }: GoalCardProps) {
     // Calculate completed habits and tasks
     const completedHabits = habits?.filter((habit: Habit) => habit.completed).length || 0;
     const completedTasks = tasks?.filter((task: Task) => task.completed).length || 0;
@@ -37,16 +38,21 @@ export default function GoalCard({ goal, habits, tasks, theme, lastCard = false 
 
     // Access the context to track active cards
     const { activeCardId, setActiveCardId } = useContext(GoalCardPressContext);
-    
+
     // Animation shared value
     const pressed = useSharedValue(0);
-    
+
+    useEffect(() => {
+        console.log(goal.image_small);
+        console.log(goal.image_large);
+    }, [goal]);
+
     // Animated style for background color transition
     const animatedStyle = useAnimatedStyle(() => {
-        const backgroundColor = theme === 'light' 
-            ? `rgba(240, 240, 240, ${pressed.value})` 
+        const backgroundColor = theme === 'light'
+            ? `rgba(240, 240, 240, ${pressed.value})`
             : `rgba(48, 48, 48, ${pressed.value})`;
-        
+
         return {
             backgroundColor
         };
@@ -54,7 +60,7 @@ export default function GoalCard({ goal, habits, tasks, theme, lastCard = false 
 
     // Determine if this card can respond to touch events
     const isInteractionBlocked = activeCardId !== null && activeCardId !== goal.id;
-    
+
     return (
         <AnimatedPressable
             onPress={() => {
@@ -75,27 +81,34 @@ export default function GoalCard({ goal, habits, tasks, theme, lastCard = false 
             }}
             style={[styles.goalContainer, animatedStyle, lastCard ? styles.lastCard : null]}
         >
-            <Image source={{ uri: goal.image_small || goal.image_large || undefined }} style={styles.goalContainerImage} />
+            <Image 
+                source={goal.image_small || goal.image_large ? { uri: goal.image_small || goal.image_large || undefined } : require('@/assets/tempPlaceholderMeme.png')} 
+                style={styles.goalContainerImage}
+            />
             <View style={styles.goalContainerInfo}>
-                <Text 
-                    numberOfLines={2} 
-                    ellipsizeMode="tail" 
+                <Text
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
                     style={[styles.goalContainerInfoTitle, theme === 'light' ? styles.goalContainerInfoTitleLight : styles.goalContainerInfoTitleDark]}
                 >
                     {goal.title}
                 </Text>
-                <View style={[styles.goalContainerInfoPills, {gap: width >= 390 ? 12 : 2}]}>
+                <View style={[styles.goalContainerInfoPills, { gap: width >= 390 ? 12 : 2 }]}>
                     <View style={[styles.goalContainerInfoPill, theme === 'light' ? styles.goalContainerInfoPillLight : styles.goalContainerInfoPillDark]}>
-                        <Text style={[styles.goalContainerInfoPillText, theme === 'light' ? styles.goalContainerInfoPillTextLight : styles.goalContainerInfoPillTextDark]}>Habits {completedHabits}/{totalHabits}</Text>
+                        <Text style={[styles.goalContainerInfoPillText, theme === 'light' ? styles.goalContainerInfoPillTextLight : styles.goalContainerInfoPillTextDark]}>Habits {!isPremade &&`${completedHabits}/`}{totalHabits}</Text>
                     </View>
-                    <View style={[styles.goalContainerInfoPill, {borderColor: "#1A96F0"}]}>
-                        <Text style={[styles.goalContainerInfoPillText, {color: "#1A96F0"}]}>Tasks {completedTasks}/{totalTasks}</Text>
+                    <View style={[styles.goalContainerInfoPill, { borderColor: "#1A96F0" }]}>
+                        <Text style={[styles.goalContainerInfoPillText, { color: "#1A96F0" }]}>Tasks {!isPremade && `${completedTasks}/`}{totalTasks}</Text>
                     </View>
                 </View>
-                <View style={styles.goalContainerInfoDueDate}>
-                    <Ionicons name="calendar-outline" size={16} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
-                    <Text style={[styles.goalContainerInfoDueDateText, theme === 'light' ? styles.goalContainerInfoDueDateTextLight : styles.goalContainerInfoDueDateTextDark]}>{daysRemaining(goal.due_date || '')} {goal.due_date ? 'days remaining' : ''}</Text>
-                </View>
+                {
+                    !isPremade && (
+                        <View style={styles.goalContainerInfoDueDate}>
+                            <Ionicons name="calendar-outline" size={16} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
+                            <Text style={[styles.goalContainerInfoDueDateText, theme === 'light' ? styles.goalContainerInfoDueDateTextLight : styles.goalContainerInfoDueDateTextDark]}>{daysRemaining(goal.due_date || '')} {goal.due_date ? 'days remaining' : ''}</Text>
+                        </View>
+                    )
+                }
             </View>
         </AnimatedPressable>
     );

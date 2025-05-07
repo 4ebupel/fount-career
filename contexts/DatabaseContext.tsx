@@ -62,6 +62,11 @@ interface DatabaseContextType {
    * Get a premade task by id
    */
   getPremadeTaskById: typeof DB.getPremadeTaskById;
+  // Premade habit operations
+  /**
+   * Get all premade habits for an array of goal IDs
+   */
+  getPremadeHabitsForGoalIds: typeof DB.getPremadeHabitsForGoalIds;
   // Habit operations
   /**
    * Create a new habit
@@ -470,6 +475,8 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     getPremadeTasks: DB.getPremadeTasks,
     getPremadeTasksForGoalIds: DB.getPremadeTasksForGoalIds,
     getPremadeTaskById: DB.getPremadeTaskById,
+    // Premade habit operations
+    getPremadeHabitsForGoalIds: DB.getPremadeHabitsForGoalIds,
     // Habit operations
     createHabit: createHabitWithRefresh,
     getHabitsByGoalId: DB.getHabitsByGoalId,

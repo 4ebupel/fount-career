@@ -9,12 +9,14 @@ import { GoalCardPressProvider } from "@/contexts/GoalCardPressedContext";
 import { useDatabase } from "@/hooks/useDatabase";
 import { useModal } from "@/hooks/useModal";
 import { Feather } from '@expo/vector-icons';
-import { Goal } from "@/types/database";
+import { Goal, Task, Habit } from "@/types/database";
 
 export default function Explore() {
     const [selectedButton, setSelectedButton] = useState<'ongoing' | 'achieved'>('ongoing');
-    const { getPremadeGoals } = useDatabase();
+    const { getPremadeGoals, getPremadeTasksForGoalIds, getPremadeHabitsForGoalIds } = useDatabase();
     const [premadeGoals, setPremadeGoals] = useState<Goal[]>([]);
+    const [premadeTasks, setPremadeTasks] = useState<Task[]>([]);
+    const [premadeHabits, setPremadeHabits] = useState<Habit[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const { theme } = useContext(ThemeContext);
     const { openModal, closeModal } = useModal();
@@ -24,7 +26,12 @@ export default function Explore() {
         const fetchPremadeGoals = async () => {
             try {
                 const premadeGoals = await getPremadeGoals();
+                const premadeTasks = await getPremadeTasksForGoalIds(premadeGoals.goals.map((goal) => goal.id));
+                const premadeHabits = await getPremadeHabitsForGoalIds(premadeGoals.goals.map((goal) => goal.id));
+
                 setPremadeGoals(premadeGoals.goals);
+                setPremadeTasks(premadeTasks);
+                setPremadeHabits(premadeHabits);
                 setIsLoading(false);
             } catch (error) {
                 console.error(error);
@@ -59,7 +66,18 @@ export default function Explore() {
                         selectedButton === 'ongoing' ? (
                             premadeGoals.filter((item) => !item.achieved).map((item, index) => (
                                 <React.Fragment key={item.id}>
-                                    <GoalCard goal={item} theme={theme} habits={[]} tasks={[]} lastCard={index === premadeGoals.length - 1} />
+                                    <GoalCard
+                                        goal={item} 
+                                        theme={theme} 
+                                        habits={
+                                            premadeHabits.filter((habit) => habit.goal_id === item.id)
+                                        } 
+                                        tasks={
+                                            premadeTasks.filter((task) => task.goal_id === item.id)
+                                        } 
+                                        lastCard={index === premadeGoals.length - 1}
+                                        isPremade={true}
+                                    />
                                     {index < premadeGoals.length - 1 && (
                                         <View style={[styles.divider, theme === 'light' ? styles.dividerLight : styles.dividerDark]} />
                                     )}
@@ -68,7 +86,18 @@ export default function Explore() {
                         ) : (
                             premadeGoals.filter((item) => item.achieved).map((item, index) => (
                                 <React.Fragment key={item.id}>
-                                    <GoalCard goal={item} theme={theme} habits={[]} tasks={[]} lastCard={index === premadeGoals.length - 1} />
+                                    <GoalCard
+                                        goal={item}
+                                        theme={theme}
+                                        habits={
+                                            premadeHabits.filter((habit) => habit.goal_id === item.id)
+                                        }
+                                        tasks={
+                                            premadeTasks.filter((task) => task.goal_id === item.id)
+                                        }
+                                        lastCard={index === premadeGoals.length - 1}
+                                        isPremade={true}
+                                    />
                                     {index < premadeGoals.length - 1 && (
                                         <View style={[styles.divider, theme === 'light' ? styles.dividerLight : styles.dividerDark]} />
                                     )}

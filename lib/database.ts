@@ -2,6 +2,7 @@ import * as SQLite from 'expo-sqlite';
 import { Platform } from 'react-native';
 import { Goal, Habit, Task } from '../types/database';
 import { premadeGoalsSeedData, premadeTasksSeedData, premadeHabitsSeedData } from './seedData';
+
 // Database name
 const DATABASE_NAME = 'fount_career.db';
 
@@ -156,6 +157,10 @@ export const populatePremadeGoals = async (): Promise<void> => {
         const params: any[] = [];
 
         for (const goalData of batch) {
+          // Use a placeholder string that our image component can recognize
+          // const imagePath = Platform.OS === 'ios' ? `asset:/assets/${goalData.image_small}` : `file:///android_asset/assets/${goalData.image_small}`;
+          const imagePath =`asset:/fount.career/assets/${goalData.image_small}`;
+          
           valueGroups.push('(?, ?, ?, ?, ?, ?, ?, ?, ?)');
           params.push(
             goalData.id,
@@ -165,8 +170,8 @@ export const populatePremadeGoals = async (): Promise<void> => {
             goalData.category,
             goalData.due_date,
             goalData.achieved ? 1 : 0,
-            goalData.image_small,
-            goalData.image_large
+            imagePath,
+            imagePath
           );
         }
 
@@ -216,7 +221,7 @@ export const populatePremadeTasks = async (): Promise<void> => {
         const params: any[] = [];
 
         for (const taskData of batch) {
-          valueGroups.push('(?, ?, ?, ?, ?, ?, ?, ?, ?)');
+          valueGroups.push('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
           params.push(
             taskData.id,
             now,
@@ -871,12 +876,12 @@ export const getPremadeTasks = async (page = 1, limit = 20): Promise<{ tasks: Ta
 /**
  * Get all premade tasks for an array of goal IDs with improved error handling and performance
  * @param goalIds Array of goal IDs to fetch tasks for
- * @param batchSize Optional batch size for processing large arrays (default 50)
+ * @param batchSize Optional batch size for processing large arrays (default 500)
  * @returns Promise<Task[]> Array of tasks
  */
 export const getPremadeTasksForGoalIds = async (
-  goalIds: string[], 
-  batchSize: number = 50
+  goalIds: string[],
+  batchSize: number = 500
 ): Promise<Task[]> => {
   try {
     // Input validation
@@ -890,7 +895,7 @@ export const getPremadeTasksForGoalIds = async (
     // Process in batches if the array is large
     for (let i = 0; i < goalIds.length; i += batchSize) {
       const batchIds = goalIds.slice(i, i + batchSize);
-      
+
       const query = `
         SELECT * FROM premadeTasks 
         WHERE goal_id IN (${batchIds.map(() => '?').join(',')}) 
@@ -933,6 +938,54 @@ export const getPremadeTaskById = async (id: string): Promise<Task | null> => {
   } catch (error) {
     console.error(`Error getting premade task with ID ${id}:`, error);
     return null;
+  }
+};
+
+// PREMADE HABITS Functions
+
+/**
+ * Get all premade habits for an array of goal IDs with improved error handling and performance
+ * @param goalIds Array of goal IDs to fetch habits for
+ * @param batchSize Optional batch size for processing large arrays (default 500)
+ * @returns Promise<Habit[]> Array of habits
+ */
+export const getPremadeHabitsForGoalIds = async (
+  goalIds: string[],
+  batchSize: number = 500
+): Promise<Habit[]> => {
+  try {
+    // Input validation
+    if (!Array.isArray(goalIds) || goalIds.length === 0) {
+      return [];
+    }
+
+    const db = await getDatabase();
+    let allHabits: Habit[] = [];
+
+    // Process in batches if the array is large
+    for (let i = 0; i < goalIds.length; i += batchSize) {
+      const batchIds = goalIds.slice(i, i + batchSize);
+
+      const query = `
+        SELECT * FROM premadeHabits 
+        WHERE goal_id IN (${batchIds.map(() => '?').join(',')}) 
+        ORDER BY title ASC;
+      `;
+
+      const batchHabits = await db.getAllAsync<Habit>(query, batchIds);
+      allHabits = allHabits.concat(
+        batchHabits.map(habit => ({ ...habit, completed: Boolean(habit.completed) }))
+      );
+    }
+
+    return allHabits;
+
+  } catch (error) {
+    console.error(
+      `Error getting premade habits for goal IDs: ${goalIds.slice(0, 3).join(', ')}${goalIds.length > 3 ? '...' : ''}`,
+      error
+    );
+    throw new Error(`Failed to fetch premade habits: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 

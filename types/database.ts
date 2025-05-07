@@ -3,7 +3,7 @@ export interface Goal {
   created_at: string;
   updated_at: string;
   title: string;
-  category: string;
+  category: 'Career Development' | 'Health & Fitness' | 'Personal Growth' | 'Financial' | 'Education' | 'Relationships' | 'Creativity' | 'Travel' | 'Other' | string;
   due_date: string | null;
   achieved: boolean;
   image_small: string | null;

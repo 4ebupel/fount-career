@@ -1,7 +1,7 @@
 import * as SQLite from 'expo-sqlite';
 import { Platform } from 'react-native';
 import { Goal, Habit, Task } from '../types/database';
-
+import { premadeGoalsSeedData, premadeTasksSeedData, premadeHabitsSeedData } from './seedData';
 // Database name
 const DATABASE_NAME = 'fount_career.db';
 
@@ -49,6 +49,45 @@ export const initDatabase = async (): Promise<void> => {
         image_large TEXT
       );
       
+      CREATE TABLE IF NOT EXISTS premadeGoals (
+        id TEXT PRIMARY KEY NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        title TEXT NOT NULL,
+        category TEXT NOT NULL,
+        due_date TEXT,
+        achieved INTEGER NOT NULL DEFAULT 0,
+        image_small TEXT,
+        image_large TEXT
+      );
+
+      CREATE TABLE IF NOT EXISTS premadeHabits (
+        id TEXT PRIMARY KEY NOT NULL,
+        goal_id TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        title TEXT NOT NULL,
+        selected_emoji TEXT NOT NULL,
+        reminder_days TEXT NOT NULL,
+        reminder_time TEXT NOT NULL,
+        completed INTEGER NOT NULL DEFAULT 0,
+        FOREIGN KEY (goal_id) REFERENCES premadeGoals (id) ON DELETE CASCADE
+      );
+
+      CREATE TABLE IF NOT EXISTS premadeTasks (
+        id TEXT PRIMARY KEY NOT NULL,
+        goal_id TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        title TEXT NOT NULL,
+        selected_emoji TEXT NOT NULL,
+        reminder_time TEXT,
+        due_date TEXT,
+        description TEXT,
+        completed INTEGER NOT NULL DEFAULT 0,
+        FOREIGN KEY (goal_id) REFERENCES premadeGoals (id) ON DELETE CASCADE
+      );
+      
       CREATE TABLE IF NOT EXISTS habits (
         id TEXT PRIMARY KEY NOT NULL,
         goal_id TEXT NOT NULL,
@@ -78,11 +117,199 @@ export const initDatabase = async (): Promise<void> => {
     `);
 
     console.log('Database tables created successfully');
+
+    // Check if premade goals need to be populated
+    await populatePremadeGoals();
+    await populatePremadeTasks();
+    await populatePremadeHabits();
   } catch (error) {
     console.error('Error initializing database:', error);
     throw error;
   }
 };
+
+// Populate the premade tables with predefined data
+
+/**
+ * Populate the premadeGoals table with predefined data
+ */
+export const populatePremadeGoals = async (): Promise<void> => {
+  try {
+    const db = await getDatabase();
+    const count = await db.getFirstAsync<{ count: number }>("SELECT count(*) as count FROM premadeGoals;");
+
+    if (count && count.count === 0) {
+      console.log('Populating premadeGoals table with seed data...');
+      const now = new Date().toISOString();
+
+      // Handle large datasets by processing in batches
+      const BATCH_SIZE = 50; // SQLite has parameter limits, keep batch size reasonable
+      let totalInserted = 0;
+
+      // Process in batches to avoid hitting SQLite parameter limits
+      for (let i = 0; i < premadeGoalsSeedData.length; i += BATCH_SIZE) {
+        const batch = premadeGoalsSeedData.slice(i, i + BATCH_SIZE);
+
+        // Use a single SQL statement with multiple value sets for better performance
+        // This builds a query like: INSERT INTO table VALUES (), (), ()...
+        const valueGroups: string[] = [];
+        const params: any[] = [];
+
+        for (const goalData of batch) {
+          valueGroups.push('(?, ?, ?, ?, ?, ?, ?, ?, ?)');
+          params.push(
+            goalData.id,
+            now,
+            now,
+            goalData.title,
+            goalData.category,
+            goalData.due_date,
+            goalData.achieved ? 1 : 0,
+            goalData.image_small,
+            goalData.image_large
+          );
+        }
+
+        // Execute the batch insert
+        const query = `
+          INSERT INTO premadeGoals (id, created_at, updated_at, title, category, due_date, achieved, image_small, image_large)
+          VALUES ${valueGroups.join(', ')};
+        `;
+
+        await db.runAsync(query, params);
+        totalInserted += batch.length;
+      }
+
+      console.log(`${totalInserted} premade goals added successfully`);
+    } else {
+      console.log('Premade goals already populated, skipping seed data');
+    }
+  } catch (error) {
+    console.error('Error populating premade goals:', error);
+  }
+};
+
+/**
+ * Populate the tasks table with predefined data
+ */
+
+export const populatePremadeTasks = async (): Promise<void> => {
+  try {
+    const db = await getDatabase();
+    const count = await db.getFirstAsync<{ count: number }>("SELECT count(*) as count FROM premadeTasks;");
+
+    if (count && count.count === 0) {
+      console.log('Populating premadeTasks table with seed data...');
+      const now = new Date().toISOString();
+
+      // Handle large datasets by processing in batches
+      const BATCH_SIZE = 50; // SQLite has parameter limits, keep batch size reasonable
+      let totalInserted = 0;
+
+      // Process in batches to avoid hitting SQLite parameter limits
+      for (let i = 0; i < premadeTasksSeedData.length; i += BATCH_SIZE) {
+        const batch = premadeTasksSeedData.slice(i, i + BATCH_SIZE);
+
+        // Use a single SQL statement with multiple value sets for better performance
+        // This builds a query like: INSERT INTO table VALUES (), (), ()...
+        const valueGroups: string[] = [];
+        const params: any[] = [];
+
+        for (const taskData of batch) {
+          valueGroups.push('(?, ?, ?, ?, ?, ?, ?, ?, ?)');
+          params.push(
+            taskData.id,
+            now,
+            now,
+            taskData.title,
+            taskData.selected_emoji,
+            taskData.reminder_time,
+            taskData.due_date,
+            taskData.description,
+            taskData.completed ? 1 : 0,
+            taskData.goal_id
+          );
+        }
+
+        // Execute the batch insert
+        const query = `
+          INSERT INTO premadeTasks (id, created_at, updated_at, title, selected_emoji, reminder_time, due_date, description, completed, goal_id)
+          VALUES ${valueGroups.join(', ')};
+        `;
+
+        await db.runAsync(query, params);
+        totalInserted += batch.length;
+      }
+
+      console.log(`${totalInserted} premade tasks added successfully`);
+    } else {
+      console.log('Premade tasks already populated, skipping seed data');
+    }
+  } catch (error) {
+    console.error('Error populating premade tasks:', error);
+  }
+};
+
+/**
+ * Populate the habits table with predefined data
+ */
+
+export const populatePremadeHabits = async (): Promise<void> => {
+  try {
+    const db = await getDatabase();
+    const count = await db.getFirstAsync<{ count: number }>("SELECT count(*) as count FROM premadeHabits;");
+
+    if (count && count.count === 0) {
+      console.log('Populating premadeHabits table with seed data...');
+      const now = new Date().toISOString();
+
+      // Handle large datasets by processing in batches
+      const BATCH_SIZE = 50; // SQLite has parameter limits, keep batch size reasonable
+      let totalInserted = 0;
+
+      // Process in batches to avoid hitting SQLite parameter limits
+      for (let i = 0; i < premadeHabitsSeedData.length; i += BATCH_SIZE) {
+        const batch = premadeHabitsSeedData.slice(i, i + BATCH_SIZE);
+
+        // Use a single SQL statement with multiple value sets for better performance
+        // This builds a query like: INSERT INTO table VALUES (), (), ()...
+        const valueGroups: string[] = [];
+        const params: any[] = [];
+
+        for (const habitData of batch) {
+          valueGroups.push('(?, ?, ?, ?, ?, ?, ?, ?, ?)');
+          params.push(
+            habitData.id,
+            now,
+            now,
+            habitData.title,
+            habitData.selected_emoji,
+            habitData.reminder_days,
+            habitData.reminder_time,
+            habitData.completed ? 1 : 0,
+            habitData.goal_id
+          );
+        }
+
+        // Execute the batch insert
+        const query = `
+          INSERT INTO premadeHabits (id, created_at, updated_at, title, selected_emoji, reminder_days, reminder_time, completed, goal_id)
+          VALUES ${valueGroups.join(', ')};
+        `;
+
+        await db.runAsync(query, params);
+        totalInserted += batch.length;
+      }
+
+      console.log(`${totalInserted} premade habits added successfully`);
+    } else {
+      console.log('Premade habits already populated, skipping seed data');
+    }
+  } catch (error) {
+    console.error('Error populating premade habits:', error);
+  }
+};
+
 
 /**
  * Check if the database has been initialized by checking if tables exist
@@ -501,10 +728,10 @@ export const resetDatabase = async (): Promise<void> => {
   try {
     const db = await getDatabase();
     console.log('Dropping all tables and resetting database...');
-    
+
     // First close the existing connection
     await closeDatabase();
-    
+
     // For Expo SQLite, delete the database file
     if (Platform.OS === 'web') {
       // Web implementation
@@ -513,19 +740,268 @@ export const resetDatabase = async (): Promise<void> => {
         DROP TABLE IF EXISTS tasks;
         DROP TABLE IF EXISTS habits;
         DROP TABLE IF EXISTS goals;
+        DROP TABLE IF EXISTS premadeGoals;
       `);
     } else {
       // Native implementation
       await SQLite.deleteDatabaseAsync(DATABASE_NAME);
     }
-    
+
     // Reinitialize the database
     dbInstance = null; // Reset the instance
     await initDatabase();
-    
+
     console.log('Database reset successfully');
   } catch (error) {
     console.error('Error resetting database:', error);
+    throw error;
+  }
+};
+
+// PREMADE GOALS Functions
+
+/**
+ * Get all premade goals
+ */
+export const getPremadeGoals = async (page = 1, limit = 20): Promise<{ goals: Goal[], total: number }> => {
+  try {
+    const db = await getDatabase();
+    const offset = (page - 1) * limit;
+
+    const goals = await db.getAllAsync<Goal>(
+      'SELECT * FROM premadeGoals ORDER BY title ASC LIMIT ? OFFSET ?;',
+      [limit, offset]
+    );
+
+    const total = await db.getFirstAsync<{ count: number }>(
+      'SELECT COUNT(*) as count FROM premadeGoals;'
+    );
+
+    return {
+      goals: goals.map(goal => ({ ...goal, achieved: Boolean(goal.achieved) })),
+      total: total?.count || 0
+    };
+  } catch (error) {
+    console.error('Error getting premade goals:', error);
+    return { goals: [], total: 0 };
+  }
+};
+
+/**
+ * Get a premade goal by its ID
+ */
+export const getPremadeGoalById = async (id: string): Promise<Goal | null> => {
+  try {
+    const db = await getDatabase();
+    const goal = await db.getFirstAsync<Goal>('SELECT * FROM premadeGoals WHERE id = ?;', [id]);
+
+    if (!goal) {
+      return null;
+    }
+
+    return {
+      ...goal,
+      achieved: Boolean(goal.achieved),
+    };
+  } catch (error) {
+    console.error(`Error getting premade goal with ID ${id}:`, error);
+    return null;
+  }
+};
+
+/**
+ * Add a premade goal to the user's goals
+ */
+export const addPremadeGoalToUserGoals = async (premadeGoalId: string): Promise<Goal | null> => {
+  try {
+    // Get the premade goal
+    const premadeGoal = await getPremadeGoalById(premadeGoalId);
+
+    if (!premadeGoal) {
+      throw new Error('Premade goal not found');
+    }
+
+    // Create a new goal based on the premade goal
+    const newGoal: Omit<Goal, 'id' | 'created_at' | 'updated_at'> = {
+      title: premadeGoal.title,
+      category: premadeGoal.category,
+      due_date: null, // Reset the due date for the user to set
+      achieved: false,
+      image_small: premadeGoal.image_small,
+      image_large: premadeGoal.image_large,
+    };
+
+    // Add to user goals
+    return await createGoal(newGoal);
+  } catch (error) {
+    console.error(`Error adding premade goal with ID ${premadeGoalId} to user goals:`, error);
+    return null;
+  }
+};
+
+// PREMADE TASKS Functions
+
+/**
+ * Get all premade tasks
+ */
+export const getPremadeTasks = async (page = 1, limit = 20): Promise<{ tasks: Task[], total: number }> => {
+  try {
+    const db = await getDatabase();
+    const offset = (page - 1) * limit;
+
+    const tasks = await db.getAllAsync<Task>(
+      'SELECT * FROM premadeTasks ORDER BY title ASC LIMIT ? OFFSET ?;',
+      [limit, offset]
+    );
+
+    const total = await db.getFirstAsync<{ count: number }>(
+      'SELECT COUNT(*) as count FROM premadeTasks;'
+    );
+
+    return {
+      tasks: tasks.map(task => ({ ...task, completed: Boolean(task.completed) })),
+      total: total?.count || 0
+    };
+  } catch (error) {
+    console.error('Error getting premade tasks:', error);
+    return { tasks: [], total: 0 };
+  }
+};
+
+/**
+ * Get all premade tasks for an array of goal IDs with improved error handling and performance
+ * @param goalIds Array of goal IDs to fetch tasks for
+ * @param batchSize Optional batch size for processing large arrays (default 50)
+ * @returns Promise<Task[]> Array of tasks
+ */
+export const getPremadeTasksForGoalIds = async (
+  goalIds: string[], 
+  batchSize: number = 50
+): Promise<Task[]> => {
+  try {
+    // Input validation
+    if (!Array.isArray(goalIds) || goalIds.length === 0) {
+      return [];
+    }
+
+    const db = await getDatabase();
+    let allTasks: Task[] = [];
+
+    // Process in batches if the array is large
+    for (let i = 0; i < goalIds.length; i += batchSize) {
+      const batchIds = goalIds.slice(i, i + batchSize);
+      
+      const query = `
+        SELECT * FROM premadeTasks 
+        WHERE goal_id IN (${batchIds.map(() => '?').join(',')}) 
+        ORDER BY title ASC;
+      `;
+
+      const batchTasks = await db.getAllAsync<Task>(query, batchIds);
+      allTasks = allTasks.concat(
+        batchTasks.map(task => ({ ...task, completed: Boolean(task.completed) }))
+      );
+    }
+
+    return allTasks;
+
+  } catch (error) {
+    console.error(
+      `Error getting premade tasks for goal IDs: ${goalIds.slice(0, 3).join(', ')}${goalIds.length > 3 ? '...' : ''}`,
+      error
+    );
+    throw new Error(`Failed to fetch premade tasks: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
+/**
+ * Get a premade task by its ID
+ */
+export const getPremadeTaskById = async (id: string): Promise<Task | null> => {
+  try {
+    const db = await getDatabase();
+    const task = await db.getFirstAsync<Task>('SELECT * FROM premadeTasks WHERE id = ?;', [id]);
+
+    if (!task) {
+      return null;
+    }
+
+    return {
+      ...task,
+      completed: Boolean(task.completed),
+    };
+  } catch (error) {
+    console.error(`Error getting premade task with ID ${id}:`, error);
+    return null;
+  }
+};
+
+// DEVELOPMENT UTILITY FUNCTIONS
+
+/**
+ * Generate a large number of test premade goals for development purposes
+ * This is useful for testing how the app handles a large number of goals
+ */
+export const generateTestPremadeGoals = async (count: number = 100): Promise<void> => {
+  try {
+    const db = await getDatabase();
+    console.log(`Generating ${count} test premade goals...`);
+
+    // Generate categories for test data
+    const categories = [
+      'Career Development',
+      'Education',
+      'Financial',
+      'Health & Fitness',
+      'Personal Growth',
+      'Relationships',
+      'Creativity',
+      'Travel',
+      'Other'
+    ];
+
+    const now = new Date().toISOString();
+    const BATCH_SIZE = 50;
+    let totalInserted = 0;
+
+    // Process in batches
+    for (let i = 0; i < count; i += BATCH_SIZE) {
+      const batchSize = Math.min(BATCH_SIZE, count - i);
+      const valueGroups: string[] = [];
+      const params: any[] = [];
+
+      for (let j = 0; j < batchSize; j++) {
+        const goalId = generateUUID();
+        const categoryIndex = Math.floor(Math.random() * categories.length);
+
+        valueGroups.push('(?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        params.push(
+          goalId,
+          now,
+          now,
+          `Test Goal #${i + j + 1}`,
+          categories[categoryIndex],
+          null,
+          0,
+          null,
+          null
+        );
+      }
+
+      // Execute the batch insert
+      const query = `
+        INSERT INTO premadeGoals (id, created_at, updated_at, title, category, due_date, achieved, image_small, image_large)
+        VALUES ${valueGroups.join(', ')};
+      `;
+
+      await db.runAsync(query, params);
+      totalInserted += batchSize;
+      console.log(`Inserted batch of ${batchSize} goals. Total: ${totalInserted}/${count}`);
+    }
+
+    console.log(`Successfully generated ${totalInserted} test premade goals`);
+  } catch (error) {
+    console.error('Error generating test premade goals:', error);
     throw error;
   }
 };

@@ -34,6 +34,34 @@ interface DatabaseContextType {
    * Delete a goal
    */
   deleteGoal: typeof DB.deleteGoal;
+
+  // Premade goal operations
+  /**
+   * Get all premade goals
+   */ 
+  getPremadeGoals: typeof DB.getPremadeGoals;
+  /**
+   * Get a premade goal by id
+   */
+  getPremadeGoalById: typeof DB.getPremadeGoalById;
+  /**
+   * Add a premade goal to user goals
+   */
+  addPremadeGoalToUserGoals: typeof DB.addPremadeGoalToUserGoals;
+
+  // Premade task operations
+  /**
+   * Get all premade tasks
+   */
+  getPremadeTasks: typeof DB.getPremadeTasks;
+  /**
+   * Get all premade tasks for an array of goal IDs
+   */
+  getPremadeTasksForGoalIds: typeof DB.getPremadeTasksForGoalIds;
+  /**
+   * Get a premade task by id
+   */
+  getPremadeTaskById: typeof DB.getPremadeTaskById;
   // Habit operations
   /**
    * Create a new habit
@@ -140,7 +168,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
   };
 
   /**
-   * NOT WORKING: Refresh all data
+   * Refresh all data
    */
   const refreshData = async () => {
     try {
@@ -434,6 +462,14 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     getGoalById: DB.getGoalById,
     updateGoal: updateGoalWithRefresh,
     deleteGoal: deleteGoalWithRefresh,
+    // Premade goal operations
+    getPremadeGoals: DB.getPremadeGoals,
+    getPremadeGoalById: DB.getPremadeGoalById,
+    addPremadeGoalToUserGoals: DB.addPremadeGoalToUserGoals,
+    // Premade task operations
+    getPremadeTasks: DB.getPremadeTasks,
+    getPremadeTasksForGoalIds: DB.getPremadeTasksForGoalIds,
+    getPremadeTaskById: DB.getPremadeTaskById,
     // Habit operations
     createHabit: createHabitWithRefresh,
     getHabitsByGoalId: DB.getHabitsByGoalId,

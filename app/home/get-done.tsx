@@ -241,7 +241,7 @@ export default function GetDone() {
                         />
                     </View>
                 </View>
-            ) : goals.length === 0 ? (
+            ) : totalItems <= 0 ? (
                 <View style={styles.backgroundImageContainer}>
                     <Image
                         source={theme === 'dark'

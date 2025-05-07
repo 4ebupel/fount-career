@@ -252,8 +252,8 @@ export default function GetDone() {
                         resizeMode="contain"
                     />
                     <View style={styles.backgroundTitleContainer}>
-                        <Text style={[styles.backgroundTitle, theme === 'dark' ? styles.backgroundTitleDark : styles.backgroundTitleLight]}>You have no goals</Text>
-                        <Text style={[styles.backgroundDescription, theme === 'dark' ? styles.backgroundDescriptionDark : styles.backgroundDescriptionLight]}>Add a goal by clicking the (+) button below.</Text>
+                        <Text style={[styles.backgroundTitle, theme === 'dark' ? styles.backgroundTitleDark : styles.backgroundTitleLight]}>{goals.length === 0 ? "You have no goals" : "You have no tasks or habits"}</Text>
+                        <Text style={[styles.backgroundDescription, theme === 'dark' ? styles.backgroundDescriptionDark : styles.backgroundDescriptionLight]}>{goals.length === 0 ? "Add a goal by clicking the (+) button below." : "Add a task or habit by editing your goal."}</Text>
                     </View>
                 </View>
             ) : (

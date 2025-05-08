@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Pressable, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Pressable, ActivityIndicator, Image, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "@/lib/colors";
 import { ThemeContext } from "@/contexts/ThemeContext";
@@ -10,9 +10,12 @@ import { useDatabase } from "@/hooks/useDatabase";
 import { useModal } from "@/hooks/useModal";
 import { Feather } from '@expo/vector-icons';
 import { Goal, Task, Habit } from "@/types/database";
+import { goalCategories } from "@/lib/goalCategories";
 
 export default function Explore() {
-    const [selectedButton, setSelectedButton] = useState<'ongoing' | 'achieved'>('ongoing');
+    const categories = ['Popular', ...goalCategories];
+
+    const [selectedButton, setSelectedButton] = useState<string>(categories[0]);
     const { getPremadeGoals, getPremadeTasksForGoalIds, getPremadeHabitsForGoalIds } = useDatabase();
     const [premadeGoals, setPremadeGoals] = useState<Goal[]>([]);
     const [premadeTasks, setPremadeTasks] = useState<Task[]>([]);
@@ -20,6 +23,9 @@ export default function Explore() {
     const [isLoading, setIsLoading] = useState(true);
     const { theme } = useContext(ThemeContext);
     const { openModal, closeModal } = useModal();
+
+    const banner = theme === 'light' ? require('@/assets/exploreBannerLight.png') : require('@/assets/exploreBannerDark.png');
+    const width = Dimensions.get('window').width;
 
 
     useEffect(() => {
@@ -52,59 +58,59 @@ export default function Explore() {
 
     return (
         <View style={[styles.container, theme === 'light' ? styles.containerLight : styles.containerDark]}>
-            <View style={[styles.buttonsContainer, theme === 'light' ? styles.buttonsContainerLight : styles.buttonsContainerDark]}>
-                <TouchableOpacity style={[styles.button, theme === 'light' ? styles.buttonLight : styles.buttonDark, selectedButton !== 'ongoing' && styles.buttonInactive]} onPress={() => setSelectedButton('ongoing')}>
-                    <Text style={[styles.buttonText, selectedButton === 'ongoing' ? (theme === 'light' ? styles.buttonTextLight : styles.buttonTextDark) : { color: theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary }]}>Ongoing</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.button, theme === 'light' ? styles.buttonLight : styles.buttonDark, selectedButton !== 'achieved' && styles.buttonInactive]} onPress={() => setSelectedButton('achieved')}>
-                    <Text style={[styles.buttonText, selectedButton === 'achieved' ? (theme === 'light' ? styles.buttonTextLight : styles.buttonTextDark) : { color: theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary }]}>Achieved</Text>
-                </TouchableOpacity>
+            <View style={styles.bannerContainer}>
+                <View style={styles.bannerOverlay}>
+                    <Image
+                        source={banner}
+                        style={styles.banner}
+                    />
+                    <Text style={[styles.bannerText, { fontSize: width < 390 ? 18 : 20 }, { color: theme === 'light' ? colors.light_theme.button_primary_text : colors.dark_theme.button_primary_text }]}>
+                        {'Explore thousands \nof amazing goals \ntoday!'}
+                    </Text>
+                </View>
             </View>
+            <ScrollView
+                horizontal
+                style={styles.buttonsContainer}
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{
+                    flexDirection: "row",
+                    justifyContent: "flex-start",
+                    alignItems: "center",
+                    gap: 8,
+                }}
+            >
+                {categories.map((category, index) => (
+                    <TouchableOpacity key={index} style={[styles.button, theme === 'light' ? styles.buttonLight : styles.buttonDark, selectedButton !== category && styles.buttonInactive]} onPress={() => setSelectedButton(category)}>
+                        <Text
+                            style={[styles.buttonText, selectedButton === category ? (theme === 'light' ? styles.buttonTextLight : styles.buttonTextDark) : { color: theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary }]}
+                        >
+                            {category.split(' ')[0]}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
+            </ScrollView>
             <ScrollView style={styles.goalsContainer}>
                 <GoalCardPressProvider>
-                    {
-                        selectedButton === 'ongoing' ? (
-                            premadeGoals.filter((item) => !item.achieved).map((item, index) => (
-                                <React.Fragment key={item.id}>
-                                    <GoalCard
-                                        goal={item} 
-                                        theme={theme} 
-                                        habits={
-                                            premadeHabits.filter((habit) => habit.goal_id === item.id)
-                                        } 
-                                        tasks={
-                                            premadeTasks.filter((task) => task.goal_id === item.id)
-                                        } 
-                                        lastCard={index === premadeGoals.length - 1}
-                                        isPremade={true}
-                                    />
-                                    {index < premadeGoals.length - 1 && (
-                                        <View style={[styles.divider, theme === 'light' ? styles.dividerLight : styles.dividerDark]} />
-                                    )}
-                                </React.Fragment>
-                            ))
-                        ) : (
-                            premadeGoals.filter((item) => item.achieved).map((item, index) => (
-                                <React.Fragment key={item.id}>
-                                    <GoalCard
-                                        goal={item}
-                                        theme={theme}
-                                        habits={
-                                            premadeHabits.filter((habit) => habit.goal_id === item.id)
-                                        }
-                                        tasks={
-                                            premadeTasks.filter((task) => task.goal_id === item.id)
-                                        }
-                                        lastCard={index === premadeGoals.length - 1}
-                                        isPremade={true}
-                                    />
-                                    {index < premadeGoals.length - 1 && (
-                                        <View style={[styles.divider, theme === 'light' ? styles.dividerLight : styles.dividerDark]} />
-                                    )}
-                                </React.Fragment>
-                            ))
-                        )
-                    }
+                    {premadeGoals.filter((item) => selectedButton === 'Popular' ? true : item.category === selectedButton).map((item, index) => (
+                        <React.Fragment key={item.id}>
+                            <GoalCard
+                                goal={item}
+                                theme={theme}
+                                habits={
+                                    premadeHabits.filter((habit) => habit.goal_id === item.id)
+                                }
+                                tasks={
+                                    premadeTasks.filter((task) => task.goal_id === item.id)
+                                }
+                                lastCard={index === premadeGoals.length - 1}
+                                isPremade={true}
+                            />
+                            {index < premadeGoals.length - 1 && (
+                                <View style={[styles.divider, theme === 'light' ? styles.dividerLight : styles.dividerDark]} />
+                            )}
+                        </React.Fragment>
+                    ))}
                 </GoalCardPressProvider>
             </ScrollView>
         </View>
@@ -115,6 +121,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         alignItems: "flex-start",
+        justifyContent: "flex-start",
     },
     loadingContainer: {
         flex: 1,
@@ -128,28 +135,20 @@ const styles = StyleSheet.create({
         backgroundColor: colors.dark_theme.background,
     },
     buttonsContainer: {
-        flexDirection: "row",
-        justifyContent: "center",
-        alignItems: "center",
         maxHeight: 62,
         height: 52,
         minHeight: 42,
-        alignSelf: "stretch",
         marginHorizontal: 24,
         marginBottom: 24,
         marginTop: 8,
         borderRadius: 6,
     },
-    buttonsContainerLight: {
-        backgroundColor: colors.light_theme.secondary_background,
-    },
-    buttonsContainerDark: {
-        backgroundColor: colors.dark_theme.secondary_background,
-    },
     button: {
-        width: "50%",
-        height: "100%",
-        borderRadius: 6,
+        flex: 1,
+        height: 42,
+        paddingHorizontal: 16,
+        paddingVertical: 6,
+        borderRadius: 100,
         alignItems: "center",
         justifyContent: "center",
     },
@@ -196,9 +195,42 @@ const styles = StyleSheet.create({
         backgroundColor: colors.dark_theme.border_input,
     },
     goalsContainer: {
-        alignSelf: "stretch",
         flex: 1,
+        width: '100%',
         gap: 16,
         marginHorizontal: 24,
     },
+    banner: {
+        width: "100%",
+        height: "100%",
+        borderRadius: 6,
+        alignSelf: 'center',
+        resizeMode: 'cover',
+        backgroundColor: colors.light_theme.button_primary_bg,
+    },
+    bannerContainer: {
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        width: "100%",
+        maxHeight: 180,
+        paddingHorizontal: 24,
+    },
+    bannerOverlay: {
+        position: 'relative',
+        width: "100%",
+        height: "100%",
+        backgroundColor: colors.light_theme.overlay_background,
+        borderRadius: 6,
+    },
+    bannerText: {
+        position: 'absolute',
+        top: 40,
+        left: 20,
+        right: 0,
+        bottom: 0,
+        color: colors.light_theme.button_primary_text,
+        fontSize: 20,
+        fontWeight: "bold",
+    }
 })

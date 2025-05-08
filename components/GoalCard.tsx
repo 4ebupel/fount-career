@@ -82,7 +82,7 @@ export default function GoalCard({ goal, habits, tasks, theme, lastCard = false,
             style={[styles.goalContainer, animatedStyle, lastCard ? styles.lastCard : null]}
         >
             <Image 
-                source={goal.image_small || goal.image_large ? { uri: goal.image_small || goal.image_large || undefined } : require('@/assets/tempPlaceholderMeme.png')} 
+                source={goal.image_small || goal.image_large ? { uri: goal.image_small || goal.image_large || undefined } : require('@/assets/tempPlaceholderMeme.png')}
                 style={styles.goalContainerImage}
             />
             <View style={styles.goalContainerInfo}>

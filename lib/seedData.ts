@@ -7,8 +7,8 @@ export const premadeGoalsSeedData: Omit<Goal, 'created_at' | 'updated_at'>[] = [
         category: 'Personal Growth',
         due_date: null,
         achieved: false,
-        image_small: 'tempPlaceholderMeme.png',
-        image_large: 'tempPlaceholderMeme.png'
+        image_small: null,
+        image_large: null
     },
     {
         id: '2',
@@ -16,8 +16,8 @@ export const premadeGoalsSeedData: Omit<Goal, 'created_at' | 'updated_at'>[] = [
         category: 'Education',
         due_date: null,
         achieved: false,
-        image_small: 'tempPlaceholderMeme.png',
-        image_large: 'tempPlaceholderMeme.png'
+        image_small: null,
+        image_large: null
     },
     {
         id: '3',
@@ -25,8 +25,8 @@ export const premadeGoalsSeedData: Omit<Goal, 'created_at' | 'updated_at'>[] = [
         category: 'Relationships',
         due_date: null,
         achieved: false,
-        image_small: 'tempPlaceholderMeme.png',
-        image_large: 'tempPlaceholderMeme.png'
+        image_small: null,
+        image_large: null
     },
     {
         id: '4',
@@ -34,8 +34,8 @@ export const premadeGoalsSeedData: Omit<Goal, 'created_at' | 'updated_at'>[] = [
         category: 'Financial',
         due_date: null,
         achieved: false,
-        image_small: 'tempPlaceholderMeme.png',
-        image_large: 'tempPlaceholderMeme.png'
+        image_small: null,
+        image_large: null
     },
     {
         id: '5',
@@ -43,8 +43,8 @@ export const premadeGoalsSeedData: Omit<Goal, 'created_at' | 'updated_at'>[] = [
         category: 'Creativity',
         due_date: null,
         achieved: false,
-        image_small: 'tempPlaceholderMeme.png',
-        image_large: 'tempPlaceholderMeme.png'
+        image_small: null,
+        image_large: null
     },
     {
         id: '6',
@@ -52,8 +52,8 @@ export const premadeGoalsSeedData: Omit<Goal, 'created_at' | 'updated_at'>[] = [
         category: 'Other',
         due_date: null,
         achieved: false,
-        image_small: 'tempPlaceholderMeme.png',
-        image_large: 'tempPlaceholderMeme.png'
+        image_small: null,
+        image_large: null
     }
 ];
 

@@ -12,7 +12,7 @@ export const colors = {
         text_disabled: '#C0C0C0',
 
         button_primary_bg: '#FFA914',
-        button_primary_text: '#181A20',
+        button_primary_text: '#2C0166',
         button_secondary_bg: '#35383F',
         button_secondary_text: '#FFFFFF',
         button_disabled_bg: '#CFA46D',

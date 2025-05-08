@@ -159,7 +159,7 @@ export const populatePremadeGoals = async (): Promise<void> => {
         for (const goalData of batch) {
           // Use a placeholder string that our image component can recognize
           // const imagePath = Platform.OS === 'ios' ? `asset:/assets/${goalData.image_small}` : `file:///android_asset/assets/${goalData.image_small}`;
-          const imagePath =`asset:/fount.career/assets/${goalData.image_small}`;
+          // const imagePath =`asset:/fount.career/assets/${goalData.image_small}`;
           
           valueGroups.push('(?, ?, ?, ?, ?, ?, ?, ?, ?)');
           params.push(
@@ -170,8 +170,10 @@ export const populatePremadeGoals = async (): Promise<void> => {
             goalData.category,
             goalData.due_date,
             goalData.achieved ? 1 : 0,
-            imagePath,
-            imagePath
+            // imagePath,
+            // imagePath
+            goalData.image_small,
+            goalData.image_large
           );
         }
 

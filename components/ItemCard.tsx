@@ -49,7 +49,7 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
                     {item.selected_emoji} {item.title}
                 </Text>
 
-                {item.reminder_time ? (
+                {'reminder_days' in item ? (
                     <View style={{ flexDirection: width >= 390 ? 'row' : 'column', alignItems: 'flex-start', justifyContent: 'center', gap: width >= 390 ? 0 : 4 }}>
                         <View style={styles.daysContainer}>
                             {DAYS_OF_WEEK.map((day, index) => (
@@ -106,7 +106,7 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
             </View>
 
             {/* Colored stripe */}
-            <View style={[styles.colorStripe, item.reminder_time ? ( theme === 'dark' ? { backgroundColor: colors.dark_theme.text_accent } : { backgroundColor: colors.light_theme.text_accent }) : { backgroundColor: '#1A96F0' }]} />
+            <View style={[styles.colorStripe, 'reminder_days' in item ? ( theme === 'dark' ? { backgroundColor: colors.dark_theme.text_accent } : { backgroundColor: colors.light_theme.text_accent }) : { backgroundColor: '#1A96F0' }]} />
         </TouchableOpacity>
     )
 }

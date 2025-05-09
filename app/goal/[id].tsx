@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, Image, Pressable, ScrollView, TouchableOpacity,
 import { useLocalSearchParams, router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { ThemeContext } from "@/contexts/ThemeContext";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { colors } from "@/lib/colors";
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useDatabase } from "@/hooks/useDatabase";
@@ -14,14 +14,18 @@ import ItemCard from "@/components/ItemCard";
 export default function Goal() {
     const { id } = useLocalSearchParams();
     const { theme } = useContext(ThemeContext);
-    const { getGoalById, getTasksByGoalId, getHabitsByGoalId, updateGoal, hasError, errorMessage, clearError, deleteGoal, tasks, habits } = useDatabase();
+    const { getGoalById, updateGoal, hasError, errorMessage, clearError, deleteGoal, tasks, habits, getPremadeGoalById, getPremadeTasksForGoalIds, getPremadeHabitsForGoalIds } = useDatabase();
+    const { openModal, closeModal } = useModal();
+
+    const isPremadeGoal = useMemo(() => {
+        return !isNaN(Number(id));
+    }, [id]);
 
     const [loading, setLoading] = useState(true);
     const [goal, setGoal] = useState<GoalType | null>(null);
     const [goalTasks, setGoalTasks] = useState<Task[]>([]);
     const [goalHabits, setGoalHabits] = useState<Habit[]>([]);
     const [localError, setLocalError] = useState<string | null>(null);
-    const { openModal, closeModal } = useModal();
 
     useEffect(() => {
         const fetchGoalData = async () => {
@@ -38,7 +42,8 @@ export default function Goal() {
                 console.log(`Fetching goal data for ID: ${id}`);
 
                 // Fetch goal
-                const goalData = await getGoalById(id);
+                const goalData = isPremadeGoal ? await getPremadeGoalById(id) : await getGoalById(id);
+
 
                 if (!goalData) {
                     console.error('Goal not found');
@@ -47,9 +52,17 @@ export default function Goal() {
                     return;
                 }
 
+                if (isPremadeGoal) {
+                    const goalTasks = await getPremadeTasksForGoalIds([id]);
+                    const goalHabits = await getPremadeHabitsForGoalIds([id]);
+                    setGoalTasks(goalTasks);
+                    setGoalHabits(goalHabits);
+                } else {
+                    setGoalTasks(tasks[goalData.id] || []);
+                    setGoalHabits(habits[goalData.id] || []);
+                }
+
                 setGoal(goalData);
-                setGoalTasks(tasks[goalData.id] || []);
-                setGoalHabits(habits[goalData.id] || []);
 
                 // Fetch tasks and habits
                 // try {
@@ -156,10 +169,11 @@ export default function Goal() {
     // }, [id]);
 
     const pickImageAsync = async () => {
-        let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images'],
-            allowsEditing: true,
-            quality: 1,
+        if (!isPremadeGoal) {
+            let result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                allowsEditing: true,
+                quality: 1,
         });
         if (!result.canceled) {
             if (goal) {  // Check if goal exists before updating
@@ -170,14 +184,15 @@ export default function Goal() {
                 });
                 updateGoal(goal.id, { image_large: result.assets[0].uri, image_small: result.assets[0].uri });
             }
-        } else {
-            // Alert.alert('No image selected');
+            } else {
+                // Alert.alert('No image selected');
+            }
         }
     };
 
     const handleEditGoal = () => {
         console.log('goal', goal);
-        if (goal) {  // Only open modal if goal exists
+        if (goal && !isPremadeGoal) {  // Only open modal if goal exists
             openModal({
                 modalName: "EditGoalModal",
                 props: {
@@ -201,7 +216,7 @@ export default function Goal() {
     };
 
     const handleDeleteGoal = () => {
-        if (goal) {
+        if (goal && !isPremadeGoal) {
             openModal({
                 modalName: "DefaultModal",
                 props: {
@@ -276,7 +291,7 @@ export default function Goal() {
         <View style={[styles.container, theme === 'light' ? styles.containerLight : styles.containerDark]}>
             <View style={styles.goalImageContainer}>
                 <Image
-                    source={goal.image_large ? { uri: goal.image_large } : require('@/assets/goalCreationTutorialFinal.png')}
+                    source={goal.image_large ? { uri: goal.image_large } : require('@/assets/tempPlaceholderMeme.png')}
                     style={styles.goalImage}
                 />
                 {/* Back button */}
@@ -284,13 +299,17 @@ export default function Goal() {
                     <FontAwesome name="arrow-left" size={24} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
                 </Pressable>
                 {/* Delete button */}
-                <Pressable onPress={handleDeleteGoal} style={[styles.deleteButton, theme === 'light' ? styles.deleteButtonLight : styles.deleteButtonDark]}>
-                    <FontAwesome name="trash" size={24} color={theme === 'light' ? colors.light_theme.button_primary_text : colors.dark_theme.button_primary_text} />
-                </Pressable>
+                {!isPremadeGoal && (
+                    <Pressable onPress={handleDeleteGoal} style={[styles.deleteButton, theme === 'light' ? styles.deleteButtonLight : styles.deleteButtonDark]}>
+                        <FontAwesome name="trash" size={24} color={theme === 'light' ? colors.light_theme.button_primary_text : colors.dark_theme.button_primary_text} />
+                    </Pressable>
+                )}
                 {/* Edit image button */}
-                <Pressable onPress={pickImageAsync} style={[styles.imageButton, theme === 'light' ? styles.imageButtonLight : styles.imageButtonDark]}>
-                    <FontAwesome name="image" size={24} color={theme === 'light' ? colors.light_theme.button_primary_text : colors.dark_theme.button_primary_text} />
-                </Pressable>
+                {!isPremadeGoal && (
+                    <Pressable onPress={pickImageAsync} style={[styles.imageButton, theme === 'light' ? styles.imageButtonLight : styles.imageButtonDark]}>
+                        <FontAwesome name="image" size={24} color={theme === 'light' ? colors.light_theme.button_primary_text : colors.dark_theme.button_primary_text} />
+                    </Pressable>
+                )}
             </View>
             <View style={styles.contentContainer}>
                 <View style={styles.goalHeadingContainer}>
@@ -307,9 +326,11 @@ export default function Goal() {
                             {goal.title || 'Add a Goal Title'}
                         </Text>
                         {/* Edit Goal button */}
-                        <TouchableOpacity onPress={handleEditGoal} style={[styles.editGoalTitleButton, theme === 'light' ? styles.editGoalTitleButtonLight : styles.editGoalTitleButtonDark]}>
-                            <FontAwesome name="pencil" size={18} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
-                        </TouchableOpacity>
+                        {!isPremadeGoal && (
+                            <TouchableOpacity onPress={handleEditGoal} style={[styles.editGoalTitleButton, theme === 'light' ? styles.editGoalTitleButtonLight : styles.editGoalTitleButtonDark]}>
+                                <FontAwesome name="pencil" size={18} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
+                            </TouchableOpacity>
+                        )}
                     </View>
                     <View style={styles.goalHeadingSubContainer}>
                         <View style={[styles.goalHeadingCategoryContainer, theme === 'light' ? styles.goalHeadingCategoryContainerLight : styles.goalHeadingCategoryContainerDark]}>
@@ -317,12 +338,14 @@ export default function Goal() {
                                 {goal.category || 'Category'}
                             </Text>
                         </View>
-                        <View style={styles.goalHeadingDateContainer}>
-                            <FontAwesome name="calendar" size={14} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
-                            <Text style={[styles.dueDateText, theme === 'light' ? styles.dueDateTextLight : styles.dueDateTextDark]}>
-                                {goal.due_date || 'No due date'}
-                            </Text>
-                        </View>
+                        {!isPremadeGoal && (
+                            <View style={styles.goalHeadingDateContainer}>
+                                <FontAwesome name="calendar" size={14} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
+                                <Text style={[styles.dueDateText, theme === 'light' ? styles.dueDateTextLight : styles.dueDateTextDark]}>
+                                    {goal.due_date || 'No due date'}
+                                </Text>
+                            </View>
+                        )}
                     </View>
                 </View>
                 <View style={[styles.divider, theme === 'light' ? styles.dividerLight : styles.dividerDark]} />
@@ -366,16 +389,18 @@ export default function Goal() {
                                 </View>
                             )}
 
-                            <TouchableOpacity
-                                style={[styles.addButton, styles.addTaskButtonBgColor]}
-                                onPress={() => router.push({
-                                    pathname: '/addTask',
-                                    params: { goalId: id }
-                                })}
-                            >
-                                <FontAwesome name="plus" size={16} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
-                                <Text style={[styles.addButtonText, theme === 'light' ? styles.addButtonTextLight : styles.addButtonTextDark]}>Add Task</Text>
-                            </TouchableOpacity>
+                            {!isPremadeGoal && (
+                                <TouchableOpacity
+                                    style={[styles.addButton, styles.addTaskButtonBgColor]}
+                                    onPress={() => router.push({
+                                        pathname: '/addTask',
+                                        params: { goalId: id }
+                                    })}
+                                >
+                                    <FontAwesome name="plus" size={16} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
+                                    <Text style={[styles.addButtonText, theme === 'light' ? styles.addButtonTextLight : styles.addButtonTextDark]}>Add Task</Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
 
                         <View style={styles.sectionContainer}>
@@ -416,16 +441,18 @@ export default function Goal() {
                                 </View>
                             )}
 
-                            <TouchableOpacity
-                                style={[styles.addButton, styles.addHabitButtonBgColor]}
-                                onPress={() => router.push({
-                                    pathname: '/addHabit',
-                                    params: { goalId: id }
-                                })}
-                            >
-                                <FontAwesome name="plus" size={16} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
-                                <Text style={[styles.addButtonText, theme === 'light' ? styles.addButtonTextLight : styles.addButtonTextDark]}>Add Habit</Text>
-                            </TouchableOpacity>
+                            {!isPremadeGoal && (
+                                <TouchableOpacity
+                                    style={[styles.addButton, styles.addHabitButtonBgColor]}
+                                    onPress={() => router.push({
+                                        pathname: '/addHabit',
+                                        params: { goalId: id }
+                                    })}
+                                >
+                                    <FontAwesome name="plus" size={16} color={theme === 'light' ? colors.light_theme.text_primary : colors.dark_theme.text_primary} />
+                                    <Text style={[styles.addButtonText, theme === 'light' ? styles.addButtonTextLight : styles.addButtonTextDark]}>Add Habit</Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
                     </View>
                 </ScrollView>

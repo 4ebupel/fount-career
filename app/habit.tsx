@@ -22,7 +22,7 @@ export default function Habit() {
     const isPremadeGoal = useMemo(() => {
         return !isNaN(Number(goalId));
     }, [goalId]);
-    
+
     // Parse the reminder_days string to an array if it exists
     const [habitReminderDays, setHabitReminderDays] = useState<string[]>(() => {
         if (reminder_days) {
@@ -35,7 +35,7 @@ export default function Habit() {
         }
         return [];
     });
-    
+
     const [hour, setHour] = useState<string>('10');
     const [minute, setMinute] = useState<string>('00');
     const [period, setPeriod] = useState<string>('AM');
@@ -63,7 +63,7 @@ export default function Habit() {
                 secondaryCTA: 'Cancel',
                 onConfirm: (emoji: string) => {
                     setSelectedEmoji(emoji);
-                 },
+                },
                 onCancel: () => { },
                 onClose: () => { },
             }
@@ -72,6 +72,9 @@ export default function Habit() {
 
     // Toggle reminder day selection
     const toggleReminderDay = (day: string) => {
+        if (isPremadeGoal) {
+            return;
+        }
         if (habitReminderDays.includes(day)) {
             const newHabitReminderDays = habitReminderDays.filter(d => d !== day);
             setHabitReminderDays(newHabitReminderDays);
@@ -83,6 +86,9 @@ export default function Habit() {
 
     // Handle time picker for reminder time
     const handleTimeSelection = () => {
+        if (isPremadeGoal) {
+            return;
+        }
         Keyboard.dismiss();
         openModal({
             modalName: TIME_PICKER_MODAL,
@@ -108,7 +114,7 @@ export default function Habit() {
 
     // Delete the habit
     const handleDelete = async () => {
-        if (!habitId) {
+        if (!habitId || isPremadeGoal) {
             return;
         }
 
@@ -134,16 +140,16 @@ export default function Habit() {
                 onClose: () => { },
             }
         });
-        
+
     };
 
     // Create the habit
     const handleSave = async () => {
-        if (!habitTitle.trim()) {
+        if (!habitTitle.trim() || isPremadeGoal) {
             // Don't create habits without a title
             return;
         }
-        
+
         try {
             // Create the new habit using the database context
             await createHabit({
@@ -154,7 +160,7 @@ export default function Habit() {
                 reminder_time: habitReminderTime,
                 completed: false,
             });
-            
+
             // Navigate back to the goal details page after successful creation
             router.back();
         } catch (error) {
@@ -165,11 +171,11 @@ export default function Habit() {
 
     // Update the habit
     const handleUpdate = async () => {
-        if (!habitTitle.trim()) {
+        if (!habitTitle.trim() || isPremadeGoal) {
             // Don't update habits without a title
             return;
         }
-        
+
         try {
             // Prepare the updated habit data
             const updatedHabit = {
@@ -178,7 +184,7 @@ export default function Habit() {
                 reminder_days: JSON.stringify(habitReminderDays),
                 reminder_time: habitReminderTime,
             };
-            
+
             if (habitId) {
                 await updateHabit(habitId as string, updatedHabit);
             }
@@ -210,11 +216,11 @@ export default function Habit() {
                             styles.headerText,
                             theme === 'dark' ? styles.headerTextDark : styles.headerTextLight
                         ]}>
-                            Add Habit
+                            {habitId ? (isPremadeGoal ? 'Habit' : 'Edit Habit') : 'Add Habit'}
                         </Text>
                         {/* Delete button */}
-                        <TouchableOpacity onPress={handleDelete} style={styles.deleteButton} disabled={!habitId}>
-                            <FontAwesome name="trash" size={24} color={ habitId ? colors.dark_theme.status_error : colors.dark_theme.button_disabled_text} />
+                        <TouchableOpacity onPress={isPremadeGoal ? () => { } : handleDelete} style={styles.deleteButton} disabled={!habitId || isPremadeGoal}>
+                            <FontAwesome name="trash" size={24} color={habitId && !isPremadeGoal ? colors.dark_theme.status_error : colors.dark_theme.button_disabled_text} />
                         </TouchableOpacity>
                     </View>
                     <ScrollView style={styles.scrollView}>
@@ -228,37 +234,73 @@ export default function Habit() {
                                 Habit Title
                             </Text>
                             <View style={styles.titleContainer}>
-                                <TouchableOpacity
-                                    style={[
-                                        styles.emojiContainer,
-                                        theme === 'dark'
-                                            ? { backgroundColor: colors.dark_theme.secondary_background }
-                                            : { backgroundColor: colors.light_theme.secondary_background }
-                                    ]}
-                                    onPress={handleEmojiSelect}
-                                >
-                                    <Text style={styles.emojiText}>{selectedEmoji}</Text>
-                                </TouchableOpacity>
-                                <TextInput
-                                    style={[
-                                        styles.titleInput,
-                                        theme === 'dark'
-                                            ? {
-                                                color: colors.dark_theme.text_primary,
-                                                backgroundColor: colors.dark_theme.secondary_background,
-                                                borderColor: colors.dark_theme.border_input
-                                            }
-                                            : {
-                                                color: colors.light_theme.text_primary,
-                                                backgroundColor: colors.light_theme.secondary_background,
-                                                borderColor: colors.light_theme.border_input
-                                            }
-                                    ]}
-                                    placeholder="What habit will you build?"
-                                    placeholderTextColor={theme === 'dark' ? colors.dark_theme.text_secondary : colors.light_theme.text_secondary}
-                                    value={habitTitle}
-                                    onChangeText={setHabitTitle}
-                                />
+                                {!isPremadeGoal ? (
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.emojiContainer,
+                                            theme === 'dark'
+                                                ? { backgroundColor: colors.dark_theme.secondary_background }
+                                                : { backgroundColor: colors.light_theme.secondary_background }
+                                        ]}
+                                        onPress={handleEmojiSelect}
+                                    >
+                                        <Text style={styles.emojiText}>{selectedEmoji}</Text>
+                                    </TouchableOpacity>
+                                ) : (
+                                    <View
+                                        style={[
+                                            styles.emojiContainer,
+                                            theme === 'dark'
+                                                ? { backgroundColor: colors.dark_theme.secondary_background }
+                                                : { backgroundColor: colors.light_theme.secondary_background }
+                                        ]}
+                                    >
+                                        <Text style={styles.emojiText}>{selectedEmoji}</Text>
+                                    </View>
+                                )}
+                                {!isPremadeGoal ? (
+                                    <TextInput
+                                        style={[
+                                            styles.titleInput,
+                                            theme === 'dark'
+                                                ? {
+                                                    color: colors.dark_theme.text_primary,
+                                                    backgroundColor: colors.dark_theme.secondary_background,
+                                                    borderColor: colors.dark_theme.border_input
+                                                }
+                                                : {
+                                                    color: colors.light_theme.text_primary,
+                                                    backgroundColor: colors.light_theme.secondary_background,
+                                                    borderColor: colors.light_theme.border_input
+                                                }
+                                        ]}
+                                        placeholder="What habit will you build?"
+                                        placeholderTextColor={theme === 'dark' ? colors.dark_theme.text_secondary : colors.light_theme.text_secondary}
+                                        value={habitTitle}
+                                        onChangeText={setHabitTitle}
+                                    />
+                                ) : (
+                                    <Text
+                                        style={[
+                                            styles.titleInput,
+                                            { lineHeight: 65 },
+                                            { textAlign: 'center' },
+                                            theme === 'dark'
+                                                ? {
+                                                    color: colors.dark_theme.text_primary,
+                                                    backgroundColor: colors.dark_theme.secondary_background,
+                                                    borderColor: colors.dark_theme.border_input
+                                                }
+                                                : {
+                                                    color: colors.light_theme.text_primary,
+                                                    backgroundColor: colors.light_theme.secondary_background,
+                                                    borderColor: colors.light_theme.border_input
+                                                }
+                                        ]}
+                                    >
+                                        {habitTitle}
+                                    </Text>
+                                )}
                             </View>
                         </View>
 
@@ -273,42 +315,80 @@ export default function Habit() {
                             </Text>
                             <View style={styles.daysContainer}>
                                 {DAYS_OF_WEEK.map((day, index) => (
-                                    <TouchableOpacity
-                                        key={index}
-                                        style={[
-                                            styles.dayButton,
-                                            habitReminderDays.includes(day) && (
-                                                theme === 'dark'
-                                                    ? { 
-                                                        backgroundColor: colors.dark_theme.button_primary_bg,
-                                                        borderColor: colors.dark_theme.button_primary_bg
-                                                    }
-                                                    : { 
-                                                        backgroundColor: colors.light_theme.button_primary_bg,
-                                                        borderColor: colors.light_theme.button_primary_bg
-                                                    }
-                                            ),
-                                            !habitReminderDays.includes(day) && (
-                                                theme === 'dark'
-                                                    ? { borderColor: colors.dark_theme.border_input }
-                                                    : { borderColor: colors.light_theme.border_input }
-                                            )
-                                        ]}
-                                        onPress={() => toggleReminderDay(day)}
-                                    >
-                                        <Text style={[
-                                            styles.dayText,
-                                            habitReminderDays.includes(day)
-                                                ? theme === 'dark'
-                                                    ? { color: colors.dark_theme.button_primary_text }
-                                                    : { color: colors.light_theme.button_primary_text }
-                                                : theme === 'dark'
-                                                    ? { color: colors.dark_theme.text_primary }
-                                                    : { color: colors.light_theme.text_primary }
-                                        ]}>
-                                            {day.charAt(0)}
-                                        </Text>
-                                    </TouchableOpacity>
+                                    !isPremadeGoal ? (
+                                        <TouchableOpacity
+                                            key={index}
+                                            style={[
+                                                styles.dayButton,
+                                                habitReminderDays.includes(day) && (
+                                                    theme === 'dark'
+                                                        ? {
+                                                            backgroundColor: colors.dark_theme.button_primary_bg,
+                                                            borderColor: colors.dark_theme.button_primary_bg
+                                                        }
+                                                        : {
+                                                            backgroundColor: colors.light_theme.button_primary_bg,
+                                                            borderColor: colors.light_theme.button_primary_bg
+                                                        }
+                                                ),
+                                                !habitReminderDays.includes(day) && (
+                                                    theme === 'dark'
+                                                        ? { borderColor: colors.dark_theme.border_input }
+                                                        : { borderColor: colors.light_theme.border_input }
+                                                )
+                                            ]}
+                                            onPress={() => toggleReminderDay(day)}
+                                        >
+                                            <Text style={[
+                                                styles.dayText,
+                                                habitReminderDays.includes(day)
+                                                    ? theme === 'dark'
+                                                        ? { color: colors.dark_theme.button_primary_text }
+                                                        : { color: colors.light_theme.button_primary_text }
+                                                    : theme === 'dark'
+                                                        ? { color: colors.dark_theme.text_primary }
+                                                        : { color: colors.light_theme.text_primary }
+                                            ]}>
+                                                {day.charAt(0)}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ) : (
+                                        <View
+                                            key={index}
+                                            style={[
+                                                styles.dayButton,
+                                                habitReminderDays.includes(day) && (
+                                                    theme === 'dark'
+                                                        ? {
+                                                            backgroundColor: colors.dark_theme.button_primary_bg,
+                                                            borderColor: colors.dark_theme.button_primary_bg
+                                                        }
+                                                        : {
+                                                            backgroundColor: colors.light_theme.button_primary_bg,
+                                                            borderColor: colors.light_theme.button_primary_bg
+                                                        }
+                                                ),
+                                                !habitReminderDays.includes(day) && (
+                                                    theme === 'dark'
+                                                        ? { borderColor: colors.dark_theme.border_input }
+                                                        : { borderColor: colors.light_theme.border_input }
+                                                )
+                                            ]}
+                                        >
+                                            <Text style={[
+                                                styles.dayText,
+                                                habitReminderDays.includes(day)
+                                                    ? theme === 'dark'
+                                                        ? { color: colors.dark_theme.button_primary_text }
+                                                        : { color: colors.light_theme.button_primary_text }
+                                                    : theme === 'dark'
+                                                        ? { color: colors.dark_theme.text_primary }
+                                                        : { color: colors.light_theme.text_primary }
+                                            ]}>
+                                                {day.charAt(0)}
+                                            </Text>
+                                        </View>
+                                    )
                                 ))}
                             </View>
                         </View>
@@ -322,48 +402,83 @@ export default function Habit() {
                             ]}>
                                 Habit Reminder
                             </Text>
-                            <TouchableOpacity
-                                style={[
-                                    styles.timePickerButton,
-                                    theme === 'dark'
-                                        ? {
-                                            backgroundColor: colors.dark_theme.secondary_background,
-                                            borderColor: colors.dark_theme.border_input
-                                        }
-                                        : {
-                                            backgroundColor: colors.light_theme.secondary_background,
-                                            borderColor: colors.light_theme.border_input
-                                        }
-                                ]}
+                            {!isPremadeGoal ? (
+                                <TouchableOpacity
+                                    style={[
+                                        styles.timePickerButton,
+                                        theme === 'dark'
+                                            ? {
+                                                backgroundColor: colors.dark_theme.secondary_background,
+                                                borderColor: colors.dark_theme.border_input
+                                            }
+                                            : {
+                                                backgroundColor: colors.light_theme.secondary_background,
+                                                borderColor: colors.light_theme.border_input
+                                            }
+                                    ]}
                                 // Time picker is broken
                                 // onPress={handleTimeSelection}
-                            >
-                                <Text style={[
-                                    styles.timeText,
-                                    theme === 'dark'
-                                        ? { color: colors.dark_theme.text_primary }
-                                        : { color: colors.light_theme.text_primary }
-                                ]}>
-                                    {habitReminderTime}
-                                </Text>
-                                <AntDesign 
-                                    name="clockcircleo" 
-                                    size={20} 
-                                    color={theme === 'dark' ? colors.dark_theme.text_secondary : colors.light_theme.text_secondary} 
-                                />
-                            </TouchableOpacity>
+                                >
+                                    <Text style={[
+                                        styles.timeText,
+                                        theme === 'dark'
+                                            ? { color: colors.dark_theme.text_primary }
+                                            : { color: colors.light_theme.text_primary }
+                                    ]}>
+                                        {habitReminderTime}
+                                    </Text>
+                                    <AntDesign
+                                        name="clockcircleo"
+                                        size={20}
+                                        color={theme === 'dark' ? colors.dark_theme.text_secondary : colors.light_theme.text_secondary}
+                                    />
+                                </TouchableOpacity>
+                            ) : (
+                                <View
+                                    style={[
+                                        styles.timePickerButton,
+                                        theme === 'dark'
+                                            ? {
+                                                backgroundColor: colors.dark_theme.secondary_background,
+                                                borderColor: colors.dark_theme.border_input
+                                            }
+                                            : {
+                                                backgroundColor: colors.light_theme.secondary_background,
+                                                borderColor: colors.light_theme.border_input
+                                            }
+                                    ]}
+                                // Time picker is broken
+                                // onPress={handleTimeSelection}
+                                >
+                                    <Text style={[
+                                        styles.timeText,
+                                        theme === 'dark'
+                                            ? { color: colors.dark_theme.text_primary }
+                                            : { color: colors.light_theme.text_primary }
+                                    ]}>
+                                        {habitReminderTime}
+                                    </Text>
+                                    <AntDesign
+                                        name="clockcircleo"
+                                        size={20}
+                                        color={theme === 'dark' ? colors.dark_theme.text_secondary : colors.light_theme.text_secondary}
+                                    />
+                                </View>
+                            )}
                         </View>
                     </ScrollView>
 
-                    <View style={styles.buttonContainer}>
-                        <Button
-                            label={habitId ? 'Update Habit' : 'Save Habit'}
-                            variant="primary"
-                            theme={theme}
-                            onPress={habitId ? handleUpdate : handleSave}
-                            disabled={!habitTitle.trim()}
-                        />
-                    </View>
+                    {!isPremadeGoal && (
+                        <View style={styles.buttonContainer}>
+                            <Button
+                                label={habitId ? 'Update Habit' : 'Save Habit'}
+                                variant="primary"
+                                theme={theme}
+                                onPress={habitId ? handleUpdate : handleSave}
+                                disabled={!habitTitle.trim()}
+                            />
+                        </View>
+                    )}
                 </View>
             </TouchableWithoutFeedback>
         </SafeAreaView>

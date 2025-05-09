@@ -426,7 +426,7 @@ export default function Goal() {
                                             displayCheckbox={false}
                                             displayBorders={true}
                                             onPress={() => router.push({
-                                                pathname: '/task',
+                                                pathname: '/habit',
                                                 params: {
                                                     goalId: id,
                                                     habitId: habit.id,
@@ -445,7 +445,7 @@ export default function Goal() {
                                 <TouchableOpacity
                                     style={[styles.addButton, styles.addHabitButtonBgColor]}
                                     onPress={() => router.push({
-                                        pathname: '/task',
+                                        pathname: '/habit',
                                         params: { goalId: id }
                                     })}
                                 >

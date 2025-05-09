@@ -26,8 +26,8 @@ export default function DefaultModal({ theme = 'dark', isVisible, ...props }: Pr
                     entering={FadeIn.duration(200).delay(100)}
                     exiting={FadeOut.duration(200)}
                 >
-                    <Text style={styles.modalTitle}>{props.title || 'Are you sure?'}</Text>
-                    <Text style={styles.modalDescription}>{props.description || 'Some serious stuff here'}</Text>
+                    <Text style={[styles.modalTitle, theme === 'light' ? styles.modalTextLight : styles.modalTextDark]}>{props.title || 'Are you sure?'}</Text>
+                    <Text style={[styles.modalDescription, theme === 'light' ? styles.modalTextLight : styles.modalTextDark]}>{props.description || 'Some serious stuff here'}</Text>
                     <View style={styles.buttonRow}>
                         <View style={styles.buttonContainer}>
                             <Button

@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useMemo } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, ScrollView, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/lib/colors';
@@ -18,6 +18,10 @@ export default function Habit() {
     const { theme } = useContext(ThemeContext);
     const [habitTitle, setHabitTitle] = useState<string>(title as string || '');
     const [selectedEmoji, setSelectedEmoji] = useState<string>(emoji as string || '🔄');
+
+    const isPremadeGoal = useMemo(() => {
+        return !isNaN(Number(goalId));
+    }, [goalId]);
     
     // Parse the reminder_days string to an array if it exists
     const [habitReminderDays, setHabitReminderDays] = useState<string[]>(() => {
@@ -45,6 +49,9 @@ export default function Habit() {
     // Handle emoji selection
     const handleEmojiSelect = () => {
         Keyboard.dismiss();
+        if (isPremadeGoal) {
+            return;
+        }
         openModal({
             modalName: EMOJI_SELECTOR_MODAL,
             props: {

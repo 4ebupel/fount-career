@@ -373,7 +373,7 @@ export default function Goal() {
                                             displayCheckbox={false}
                                             displayBorders={true}
                                             onPress={() => router.push({
-                                                pathname: '/addTask',
+                                                pathname: '/task',
                                                 params: {
                                                     goalId: id,
                                                     taskId: task.id,
@@ -393,7 +393,7 @@ export default function Goal() {
                                 <TouchableOpacity
                                     style={[styles.addButton, styles.addTaskButtonBgColor]}
                                     onPress={() => router.push({
-                                        pathname: '/addTask',
+                                        pathname: '/task',
                                         params: { goalId: id }
                                     })}
                                 >
@@ -426,7 +426,7 @@ export default function Goal() {
                                             displayCheckbox={false}
                                             displayBorders={true}
                                             onPress={() => router.push({
-                                                pathname: '/addHabit',
+                                                pathname: '/task',
                                                 params: {
                                                     goalId: id,
                                                     habitId: habit.id,
@@ -445,7 +445,7 @@ export default function Goal() {
                                 <TouchableOpacity
                                     style={[styles.addButton, styles.addHabitButtonBgColor]}
                                     onPress={() => router.push({
-                                        pathname: '/addHabit',
+                                        pathname: '/task',
                                         params: { goalId: id }
                                     })}
                                 >

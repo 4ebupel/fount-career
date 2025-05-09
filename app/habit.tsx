@@ -13,7 +13,7 @@ import { useDatabase } from '@/hooks/useDatabase';
 // Days of the week for habit reminders
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-export default function AddHabit() {
+export default function Habit() {
     const { goalId, habitId, title, emoji, reminder_days, reminder_time } = useLocalSearchParams();
     const { theme } = useContext(ThemeContext);
     const [habitTitle, setHabitTitle] = useState<string>(title as string || '');

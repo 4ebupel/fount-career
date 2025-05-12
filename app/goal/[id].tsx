@@ -238,11 +238,12 @@ export default function Goal() {
         }
     };
 
-    const handleSaveGoal = () => {
+    const handleSaveGoal = async () => {
         if (isPremadeGoal && typeof id === 'string') {
             try {
                 setLoading(true);
-                addPremadeGoalToUserGoals(id);
+                await addPremadeGoalToUserGoals(id);
+                router.replace('/home/');
             } catch (error) {
                 console.error('Error adding premade goal to user goals:', error);
                 setLocalError('Error adding premade goal to user goals');

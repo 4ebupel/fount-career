@@ -10,11 +10,12 @@ import { useModal } from "@/hooks/useModal";
 import { Goal as GoalType, Task, Habit } from "@/types/database";
 import React from "react";
 import ItemCard from "@/components/ItemCard";
+import Button from "@/components/Button";
 
 export default function Goal() {
     const { id } = useLocalSearchParams();
     const { theme } = useContext(ThemeContext);
-    const { getGoalById, updateGoal, hasError, errorMessage, clearError, deleteGoal, tasks, habits, getPremadeGoalById, getPremadeTasksForGoalIds, getPremadeHabitsForGoalIds } = useDatabase();
+    const { getGoalById, updateGoal, hasError, errorMessage, clearError, deleteGoal, tasks, habits, getPremadeGoalById, getPremadeTasksForGoalIds, getPremadeHabitsForGoalIds, addPremadeGoalToUserGoals } = useDatabase();
     const { openModal, closeModal } = useModal();
 
     const isPremadeGoal = useMemo(() => {
@@ -174,16 +175,16 @@ export default function Goal() {
                 mediaTypes: ['images'],
                 allowsEditing: true,
                 quality: 1,
-        });
-        if (!result.canceled) {
-            if (goal) {  // Check if goal exists before updating
-                setGoal({
-                    ...goal,
-                    image_large: result.assets[0].uri,
-                    image_small: result.assets[0].uri,
-                });
-                updateGoal(goal.id, { image_large: result.assets[0].uri, image_small: result.assets[0].uri });
-            }
+            });
+            if (!result.canceled) {
+                if (goal) {  // Check if goal exists before updating
+                    setGoal({
+                        ...goal,
+                        image_large: result.assets[0].uri,
+                        image_small: result.assets[0].uri,
+                    });
+                    updateGoal(goal.id, { image_large: result.assets[0].uri, image_small: result.assets[0].uri });
+                }
             } else {
                 // Alert.alert('No image selected');
             }
@@ -234,6 +235,20 @@ export default function Goal() {
                     onCancel: () => closeModal(),
                 }
             });
+        }
+    };
+
+    const handleSaveGoal = () => {
+        if (isPremadeGoal && typeof id === 'string') {
+            try {
+                setLoading(true);
+                addPremadeGoalToUserGoals(id);
+            } catch (error) {
+                console.error('Error adding premade goal to user goals:', error);
+                setLocalError('Error adding premade goal to user goals');
+            } finally {
+                setLoading(false);
+            }
         }
     };
 
@@ -348,14 +363,18 @@ export default function Goal() {
                         )}
                     </View>
                 </View>
+
                 <View style={[styles.divider, theme === 'light' ? styles.dividerLight : styles.dividerDark]} />
+
                 <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scrollContentContainer}>
                     <View style={styles.sectionsContainer}>
                         <View style={styles.sectionContainer}>
                             <View style={styles.sectionHeadingContainer}>
+                                {/* Section Heading Title */}
                                 <Text style={[styles.sectionHeadingTitle, theme === 'light' ? styles.sectionHeadingTitleLight : styles.sectionHeadingTitleDark]}>
                                     Tasks ({goalTasks.length})
                                 </Text>
+                                {/* Info Button */}
                                 <Pressable style={[styles.infoButton, theme === 'light' ? styles.infoButtonLight : styles.infoButtonDark]}>
                                     <FontAwesome name="info" size={12} color={theme === 'light' ? colors.light_theme.text_secondary : colors.dark_theme.text_secondary} />
                                 </Pressable>
@@ -405,9 +424,11 @@ export default function Goal() {
 
                         <View style={styles.sectionContainer}>
                             <View style={styles.sectionHeadingContainer}>
+                                {/* Section Heading Title */}
                                 <Text style={[styles.sectionHeadingTitle, theme === 'light' ? styles.sectionHeadingTitleLight : styles.sectionHeadingTitleDark]}>
                                     Habits ({goalHabits.length})
                                 </Text>
+                                {/* Info Button */}
                                 <Pressable style={[styles.infoButton, theme === 'light' ? styles.infoButtonLight : styles.infoButtonDark]}>
                                     <FontAwesome name="info" size={12} color={theme === 'light' ? colors.light_theme.text_secondary : colors.dark_theme.text_secondary} />
                                 </Pressable>
@@ -457,6 +478,12 @@ export default function Goal() {
                     </View>
                 </ScrollView>
             </View>
+            {/* Save Goal Footer */}
+            {isPremadeGoal && (
+                <View style={[styles.saveGoalFooter, theme === 'light' ? styles.saveGoalFooterLight : styles.saveGoalFooterDark]}>
+                    <Button label="Save Goal" variant="primary" onPress={handleSaveGoal} theme={theme} />
+                </View>
+            )}
         </View>
     );
 }
@@ -564,6 +591,7 @@ const styles = StyleSheet.create({
     contentContainer: {
         flex: 1,
         padding: 24,
+        paddingBottom: 0,
         gap: 20,
     },
     divider: {
@@ -820,5 +848,22 @@ const styles = StyleSheet.create({
     },
     textSecondaryDark: {
         color: colors.dark_theme.text_secondary,
+    },
+    saveGoalFooter: {
+        minHeight: 90,
+        width: '100%',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 20,
+        borderTopWidth: 1,
+    },
+    saveGoalFooterLight: {
+        borderTopColor: colors.light_theme.tertiary_background,
+        backgroundColor: colors.light_theme.background
+    },
+    saveGoalFooterDark: {
+        borderTopColor: colors.dark_theme.border_input,
+        backgroundColor: colors.dark_theme.background
     },
 });

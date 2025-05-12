@@ -354,10 +354,10 @@ export const createGoal = async (goal: Omit<Goal, 'id' | 'created_at' | 'updated
     const db = await getDatabase();
     const now = new Date().toISOString();
     const newGoal: Goal = {
+      ...goal,
       id: generateUUID(),
       created_at: now,
       updated_at: now,
-      ...goal,
     };
 
     await db.runAsync(
@@ -489,10 +489,10 @@ export const createHabit = async (habit: Omit<Habit, 'id' | 'created_at' | 'upda
     const db = await getDatabase();
     const now = new Date().toISOString();
     const newHabit: Habit = {
+      ...habit,
       id: generateUUID(),
       created_at: now,
       updated_at: now,
-      ...habit,
     };
 
     await db.runAsync(
@@ -602,11 +602,11 @@ export const createTask = async (task: Omit<Task, 'id' | 'created_at' | 'updated
     const db = await getDatabase();
     const now = new Date().toISOString();
     const newTask: Task = {
+      ...task,
       id: generateUUID(),
       created_at: now,
       updated_at: now,
       completed: false,
-      ...task,
     };
 
     await db.runAsync(
@@ -819,32 +819,32 @@ export const getPremadeGoalById = async (id: string): Promise<Goal | null> => {
 /**
  * Add a premade goal to the user's goals
  */
-export const addPremadeGoalToUserGoals = async (premadeGoalId: string): Promise<Goal | null> => {
-  try {
-    // Get the premade goal
-    const premadeGoal = await getPremadeGoalById(premadeGoalId);
+// export const addPremadeGoalToUserGoals = async (premadeGoalId: string): Promise<Goal | null> => {
+//   try {
+//     // Get the premade goal
+//     const premadeGoal = await getPremadeGoalById(premadeGoalId);
 
-    if (!premadeGoal) {
-      throw new Error('Premade goal not found');
-    }
+//     if (!premadeGoal) {
+//       throw new Error('Premade goal not found');
+//     }
 
-    // Create a new goal based on the premade goal
-    const newGoal: Omit<Goal, 'id' | 'created_at' | 'updated_at'> = {
-      title: premadeGoal.title,
-      category: premadeGoal.category,
-      due_date: null, // Reset the due date for the user to set
-      achieved: false,
-      image_small: premadeGoal.image_small,
-      image_large: premadeGoal.image_large,
-    };
+//     // Create a new goal based on the premade goal
+//     const newGoal: Omit<Goal, 'id' | 'created_at' | 'updated_at'> = {
+//       title: premadeGoal.title,
+//       category: premadeGoal.category,
+//       due_date: null, // Reset the due date for the user to set
+//       achieved: false,
+//       image_small: premadeGoal.image_small,
+//       image_large: premadeGoal.image_large,
+//     };
 
-    // Add to user goals
-    return await createGoal(newGoal);
-  } catch (error) {
-    console.error(`Error adding premade goal with ID ${premadeGoalId} to user goals:`, error);
-    return null;
-  }
-};
+//     // Add to user goals
+//     return await createGoal(newGoal);
+//   } catch (error) {
+//     console.error(`Error adding premade goal with ID ${premadeGoalId} to user goals:`, error);
+//     return null;
+//   }
+// };
 
 // PREMADE TASKS Functions
 

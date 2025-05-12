@@ -47,7 +47,7 @@ interface DatabaseContextType {
   /**
    * Add a premade goal to user goals
    */
-  addPremadeGoalToUserGoals: typeof DB.addPremadeGoalToUserGoals;
+  addPremadeGoalToUserGoals: (premadeGoalId: string) => Promise<void>;
 
   // Premade task operations
   /**
@@ -423,6 +423,38 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     }
   };
 
+  const addPremadeGoalToUserGoals = async (premadeGoalId: string) => {
+    try {
+      const premadeGoal = await DB.getPremadeGoalById(premadeGoalId);
+      const tasks = await DB.getPremadeTasksForGoalIds([premadeGoalId]);
+      const habits = await DB.getPremadeHabitsForGoalIds([premadeGoalId]);
+      let newGoal: Goal | null = null;
+      // Create goal
+      if (premadeGoal) {
+        newGoal = await DB.createGoal(premadeGoal);
+      }
+      // Create tasks
+      if (tasks.length > 0 && newGoal) {
+        for (const task of tasks) {
+          const newTask = await DB.createTask({ ...task, goal_id: newGoal.id });
+          console.log('New task created:', newTask);
+        }
+      }
+      // Create habits
+      if (habits.length > 0 && newGoal) {
+        for (const habit of habits) {
+          const newHabit = await DB.createHabit({ ...habit, goal_id: newGoal.id });
+          console.log('New habit created:', newHabit);
+        }
+      }
+
+      // Refresh data
+      await refreshData();
+    } catch (error) {
+      handleError(error, 'adding premade goal to user goals');
+    }
+  };
+
   // Check if database is initialized on component mount
   useEffect(() => {
     const checkDatabase = async () => {
@@ -470,7 +502,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     // Premade goal operations
     getPremadeGoals: DB.getPremadeGoals,
     getPremadeGoalById: DB.getPremadeGoalById,
-    addPremadeGoalToUserGoals: DB.addPremadeGoalToUserGoals,
+    addPremadeGoalToUserGoals: addPremadeGoalToUserGoals,
     // Premade task operations
     getPremadeTasks: DB.getPremadeTasks,
     getPremadeTasksForGoalIds: DB.getPremadeTasksForGoalIds,

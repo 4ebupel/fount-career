@@ -50,7 +50,7 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
                 </Text>
 
                 {'reminder_days' in item ? (
-                    <View style={{ flexDirection: width >= 390 ? 'row' : 'column', alignItems: 'flex-start', justifyContent: 'center', gap: width >= 390 ? 0 : 4 }}>
+                    <View style={{ flexDirection: width >= 390 ? 'row' : 'column', alignItems: 'center', justifyContent: 'flex-start', gap: width >= 390 ? 0 : 4 }}>
                         <View style={styles.daysContainer}>
                             {DAYS_OF_WEEK.map((day, index) => (
                                 <View

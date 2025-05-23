@@ -18,7 +18,34 @@ export default function GetDone() {
     const [dataLoaded, setDataLoaded] = useState(false);
     const [filterType, setFilterType] = useState<'all' | 'habits' | 'tasks'>('all');
     const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'pending'>('all');
+    const [localHabits, setLocalHabits] = useState<Habit[]>([]);
+    const [localTasks, setLocalTasks] = useState<Task[]>([]);
     const { openModal } = useModal();
+
+    useEffect(() => {
+        console.log("Component mounted");
+
+        const loadData = async () => {
+            try {
+                await setLocalHabits(Object.values(habits).flat());
+                await setLocalTasks(Object.values(tasks).flat());
+
+                console.log("Local habits:", localHabits.length);
+                console.log("Local tasks:", localTasks.length);
+
+                setDataLoaded(true);
+            } catch (error) {
+                console.error("Error loading data:", error);
+                setDataLoaded(true); // Still mark as loaded to show content
+            }
+        };
+
+        loadData();
+
+        return () => {
+            console.log("Component unmounting");
+        };
+    }, [goals, tasks, habits]);
 
     const handleFloatingButtonPress = () => {
         openModal({
@@ -39,24 +66,24 @@ export default function GetDone() {
 
     // Get total tasks and habits
     const totalHabits = useMemo(() =>
-        Object.values(habits).flat().length,
-        [habits]
+        localHabits.length,
+        [localHabits]
     );
 
     const totalTasks = useMemo(() =>
-        Object.values(tasks).flat().length,
-        [tasks]
+        localTasks.length,
+        [localTasks]
     );
 
     // Get completed tasks and habits
     const completedHabits = useMemo(() =>
-        Object.values(habits).flat().filter(habit => habit.completed).length,
-        [habits]
+        localHabits.filter(habit => habit.completed).length,
+        [localHabits]
     );
 
     const completedTasks = useMemo(() =>
-        Object.values(tasks).flat().filter(task => task.completed).length,
-        [tasks]
+        localTasks.filter(task => task.completed).length,
+        [localTasks]
     );
 
     // Total for today
@@ -65,45 +92,22 @@ export default function GetDone() {
 
     // Toggle habit completion
     const toggleHabitCompletion = async (habitId: string, goalId: string) => {
-        const habitList = habits[goalId] || [];
+        const habitList = localHabits.filter(h => h.goal_id === goalId);
         const habit = habitList.find(h => h.id === habitId);
         if (habit) {
+            setLocalHabits(localHabits.map(h => h.id === habitId ? { ...h, completed: !habit.completed } : h));
             await updateHabit(habitId, { completed: !habit.completed });
         }
     };
 
     const toggleTaskCompletion = async (taskId: string, goalId: string) => {
-        const taskList = tasks[goalId] || [];
+        const taskList = localTasks.filter(t => t.goal_id === goalId);
         const task = taskList.find(t => t.id === taskId);
         if (task) {
+            setLocalTasks(localTasks.map(t => t.id === taskId ? { ...t, completed: !task.completed } : t));
             await updateTask(taskId, { completed: !task.completed });
         }
     };
-
-    // Use getGoals instead of refreshData since it's more reliable
-    useEffect(() => {
-        console.log("Component mounted, starting async data loading");
-
-        const loadData = async () => {
-            try {
-                console.log("Fetching goals directly...");
-                const fetchedGoals = await getGoals();
-                console.log(`Fetched ${fetchedGoals.length} goals successfully`);
-
-
-                setDataLoaded(true);
-            } catch (error) {
-                console.error("Error loading data:", error);
-                setDataLoaded(true); // Still mark as loaded to show content
-            }
-        };
-
-        loadData();
-
-        return () => {
-            console.log("Component unmounting");
-        };
-    }, []);
 
     // Simplified progress indicator style
     const progressBarWidth = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
@@ -111,8 +115,8 @@ export default function GetDone() {
     // Filtering and sorting logic
     const filteredGoals = useMemo(() => {
         return goals.filter(goal => {
-            const goalTasks = tasks[goal.id] || [];
-            const goalHabits = habits[goal.id] || [];
+            const goalTasks = localTasks.filter(t => t.goal_id === goal.id);
+            const goalHabits = localHabits.filter(h => h.goal_id === goal.id);
 
             // Check if this goal has any items matching our filters
             const hasMatchingItems = (() => {
@@ -148,8 +152,8 @@ export default function GetDone() {
 
     const renderItemsList = () => {
         return filteredGoals.map(goal => {
-            const goalTasks = tasks[goal.id] || [];
-            const goalHabits = habits[goal.id] || [];
+            const goalTasks = localTasks.filter(t => t.goal_id === goal.id);
+            const goalHabits = localHabits.filter(h => h.goal_id === goal.id);
 
             // Apply filters to tasks and habits
             const filteredTasks = goalTasks.filter(task => {

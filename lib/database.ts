@@ -10,28 +10,75 @@ const DATABASE_NAME = 'fount_career.db';
 let dbInstance: SQLite.SQLiteDatabase | null = null;
 
 /**
- * Initialize and get the database instance
+ * Initialize and get the database instance with better error handling
  */
 export const getDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
   if (!dbInstance) {
     try {
-      dbInstance = await SQLite.openDatabaseAsync(DATABASE_NAME);
+      dbInstance = await SQLite.openDatabaseAsync(DATABASE_NAME, {
+        useNewConnection: true
+      });
       console.log('Database opened successfully:', DATABASE_NAME);
     } catch (error) {
       console.error('Error opening database:', error);
       throw error;
     }
   }
-  return dbInstance;
+  
+  // Test the connection before returning
+  try {
+    await dbInstance.getFirstAsync('SELECT 1');
+    return dbInstance;
+  } catch (error) {
+    console.warn('Database connection test failed, reopening...', error);
+    // Reset the instance and try again
+    dbInstance = null;
+    try {
+      dbInstance = await SQLite.openDatabaseAsync(DATABASE_NAME, {
+        useNewConnection: true
+      });
+      console.log('Database reopened successfully');
+      return dbInstance;
+    } catch (reopenError) {
+      console.error('Failed to reopen database:', reopenError);
+      throw reopenError;
+    }
+  }
+};
+
+/**
+ * Wrapper for database operations with automatic retry
+ */
+const withDatabaseRetry = async <T>(
+  operation: (db: SQLite.SQLiteDatabase) => Promise<T>,
+  maxRetries: number = 2
+): Promise<T> => {
+  let lastError: Error;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const db = await getDatabase();
+      return await operation(db);
+    } catch (error) {
+      lastError = error as Error;
+      console.warn(`Database operation failed (attempt ${attempt + 1}/${maxRetries + 1}):`, error);
+      
+      if (attempt < maxRetries) {
+        // Reset database instance for retry
+        dbInstance = null;
+        await new Promise(resolve => setTimeout(resolve, 100)); // Small delay
+      }
+    }
+  }
+  
+  throw lastError!;
 };
 
 /**
  * Initialize the database with required tables
  */
 export const initDatabase = async (): Promise<void> => {
-  try {
-    const db = await getDatabase();
-
+  return withDatabaseRetry(async (db) => {
     console.log('Creating database tables if they don\'t exist...');
 
     // Use execAsync for bulk operations
@@ -123,10 +170,7 @@ export const initDatabase = async (): Promise<void> => {
     await populatePremadeGoals();
     await populatePremadeTasks();
     await populatePremadeHabits();
-  } catch (error) {
-    console.error('Error initializing database:', error);
-    throw error;
-  }
+  });
 };
 
 // Populate the premade tables with predefined data
@@ -322,16 +366,12 @@ export const populatePremadeHabits = async (): Promise<void> => {
  * Check if the database has been initialized by checking if tables exist
  */
 export const isDatabaseInitialized = async (): Promise<boolean> => {
-  try {
-    const db = await getDatabase();
+  return withDatabaseRetry(async (db) => {
     const result = await db.getFirstAsync<{ name: string }>(
       "SELECT name FROM sqlite_master WHERE type='table' AND name='goals';"
     );
     return !!result;
-  } catch (error) {
-    console.error('Error checking database initialization:', error);
-    return false;
-  }
+  });
 };
 
 /**
@@ -350,8 +390,7 @@ export const generateUUID = (): string => {
  * Create a new goal
  */
 export const createGoal = async (goal: Omit<Goal, 'id' | 'created_at' | 'updated_at'>): Promise<Goal> => {
-  try {
-    const db = await getDatabase();
+  return withDatabaseRetry(async (db) => {
     const now = new Date().toISOString();
     const newGoal: Goal = {
       ...goal,
@@ -377,18 +416,14 @@ export const createGoal = async (goal: Omit<Goal, 'id' | 'created_at' | 'updated
     );
 
     return newGoal;
-  } catch (error) {
-    console.error('Error creating goal:', error);
-    throw error;
-  }
+  });
 };
 
 /**
  * Get all goals
  */
 export const getGoals = async (): Promise<Goal[]> => {
-  try {
-    const db = await getDatabase();
+  return withDatabaseRetry(async (db) => {
     const goals = await db.getAllAsync<Goal>('SELECT * FROM goals ORDER BY created_at DESC;');
 
     // Convert SQLite integers to booleans
@@ -396,18 +431,14 @@ export const getGoals = async (): Promise<Goal[]> => {
       ...goal,
       achieved: Boolean(goal.achieved),
     }));
-  } catch (error) {
-    console.error('Error getting goals:', error);
-    return [];
-  }
+  });
 };
 
 /**
  * Get a goal by its ID
  */
 export const getGoalById = async (id: string): Promise<Goal | null> => {
-  try {
-    const db = await getDatabase();
+  return withDatabaseRetry(async (db) => {
     const goal = await db.getFirstAsync<Goal>('SELECT * FROM goals WHERE id = ?;', [id]);
 
     if (!goal) {
@@ -418,18 +449,14 @@ export const getGoalById = async (id: string): Promise<Goal | null> => {
       ...goal,
       achieved: Boolean(goal.achieved),
     };
-  } catch (error) {
-    console.error(`Error getting goal with ID ${id}:`, error);
-    return null;
-  }
+  });
 };
 
 /**
  * Update a goal
  */
 export const updateGoal = async (id: string, updates: Partial<Omit<Goal, 'id' | 'created_at'>>): Promise<Goal> => {
-  try {
-    const db = await getDatabase();
+  return withDatabaseRetry(async (db) => {
     const now = new Date().toISOString();
 
     const existingGoal = await getGoalById(id);
@@ -460,23 +487,16 @@ export const updateGoal = async (id: string, updates: Partial<Omit<Goal, 'id' | 
     );
 
     return updatedGoal;
-  } catch (error) {
-    console.error(`Error updating goal with ID ${id}:`, error);
-    throw error;
-  }
+  });
 };
 
 /**
  * Delete a goal
  */
 export const deleteGoal = async (id: string): Promise<void> => {
-  try {
-    const db = await getDatabase();
+  return withDatabaseRetry(async (db) => {
     await db.runAsync('DELETE FROM goals WHERE id = ?;', [id]);
-  } catch (error) {
-    console.error(`Error deleting goal with ID ${id}:`, error);
-    throw error;
-  }
+  });
 };
 
 // HABITS CRUD Operations
@@ -485,8 +505,7 @@ export const deleteGoal = async (id: string): Promise<void> => {
  * Create a new habit
  */
 export const createHabit = async (habit: Omit<Habit, 'id' | 'created_at' | 'updated_at'>): Promise<Habit> => {
-  try {
-    const db = await getDatabase();
+  return withDatabaseRetry(async (db) => {
     const now = new Date().toISOString();
     const newHabit: Habit = {
       ...habit,
@@ -512,44 +531,40 @@ export const createHabit = async (habit: Omit<Habit, 'id' | 'created_at' | 'upda
     );
 
     return newHabit;
-  } catch (error) {
-    console.error('Error creating habit:', error);
-    throw error;
-  }
+  });
 };
 
 /**
  * Get habits by goal ID
  */
 export const getHabitsByGoalId = async (goalId: string): Promise<Habit[]> => {
-  try {
-    const db = await getDatabase();
-    return await db.getAllAsync<Habit>(
+  return withDatabaseRetry(async (db) => {
+    const habits = await db.getAllAsync<Habit>(
       'SELECT * FROM habits WHERE goal_id = ? ORDER BY created_at DESC;',
       [goalId]
     );
-  } catch (error) {
-    console.error(`Error getting habits for goal ID ${goalId}:`, error);
-    return [];
-  }
+
+    // Convert SQLite integers to booleans
+    return habits.map(habit => ({
+      ...habit,
+      completed: Boolean(habit.completed),
+    }));
+  });
 };
 
 /**
  * Update a habit
  */
 export const updateHabit = async (id: string, updates: Partial<Omit<Habit, 'id' | 'created_at'>>): Promise<Habit> => {
-  try {
-    const db = await getDatabase();
+  return withDatabaseRetry(async (db) => {
     const now = new Date().toISOString();
 
-    // First check if habit exists and get its goal_id
     const existingHabit = await db.getFirstAsync<Habit>('SELECT * FROM habits WHERE id = ?;', [id]);
 
     if (!existingHabit) {
       throw new Error('Habit not found');
     }
 
-    // Ensure goal_id cannot be changed even if provided in updates
     const updatedHabit = {
       ...existingHabit,
       ...updates,
@@ -572,24 +587,17 @@ export const updateHabit = async (id: string, updates: Partial<Omit<Habit, 'id' 
       ]
     );
 
-    return updatedHabit; // Returns complete habit with goal_id
-  } catch (error) {
-    console.error(`Error updating habit with ID ${id}:`, error);
-    throw error;
-  }
+    return updatedHabit;
+  });
 };
 
 /**
  * Delete a habit
  */
 export const deleteHabit = async (id: string): Promise<void> => {
-  try {
-    const db = await getDatabase();
+  return withDatabaseRetry(async (db) => {
     await db.runAsync('DELETE FROM habits WHERE id = ?;', [id]);
-  } catch (error) {
-    console.error(`Error deleting habit with ID ${id}:`, error);
-    throw error;
-  }
+  });
 };
 
 // TASKS CRUD Operations
@@ -598,8 +606,7 @@ export const deleteHabit = async (id: string): Promise<void> => {
  * Create a new task
  */
 export const createTask = async (task: Omit<Task, 'id' | 'created_at' | 'updated_at' | 'completed'>): Promise<Task> => {
-  try {
-    const db = await getDatabase();
+  return withDatabaseRetry(async (db) => {
     const now = new Date().toISOString();
     const newTask: Task = {
       ...task,
@@ -627,18 +634,14 @@ export const createTask = async (task: Omit<Task, 'id' | 'created_at' | 'updated
     );
 
     return newTask;
-  } catch (error) {
-    console.error('Error creating task:', error);
-    throw error;
-  }
+  });
 };
 
 /**
  * Get tasks by goal ID
  */
 export const getTasksByGoalId = async (goalId: string): Promise<Task[]> => {
-  try {
-    const db = await getDatabase();
+  return withDatabaseRetry(async (db) => {
     const tasks = await db.getAllAsync<Task>(
       'SELECT * FROM tasks WHERE goal_id = ? ORDER BY created_at DESC;',
       [goalId]
@@ -649,18 +652,14 @@ export const getTasksByGoalId = async (goalId: string): Promise<Task[]> => {
       ...task,
       completed: Boolean(task.completed),
     }));
-  } catch (error) {
-    console.error(`Error getting tasks for goal ID ${goalId}:`, error);
-    return [];
-  }
+  });
 };
 
 /**
  * Update a task
  */
 export const updateTask = async (id: string, updates: Partial<Omit<Task, 'id' | 'created_at'>>): Promise<Task> => {
-  try {
-    const db = await getDatabase();
+  return withDatabaseRetry(async (db) => {
     const now = new Date().toISOString();
 
     const existingTask = await db.getFirstAsync<Task>('SELECT * FROM tasks WHERE id = ?;', [id]);
@@ -693,23 +692,16 @@ export const updateTask = async (id: string, updates: Partial<Omit<Task, 'id' | 
     );
 
     return updatedTask;
-  } catch (error) {
-    console.error(`Error updating task with ID ${id}:`, error);
-    throw error;
-  }
+  });
 };
 
 /**
  * Delete a task
  */
 export const deleteTask = async (id: string): Promise<void> => {
-  try {
-    const db = await getDatabase();
+  return withDatabaseRetry(async (db) => {
     await db.runAsync('DELETE FROM tasks WHERE id = ?;', [id]);
-  } catch (error) {
-    console.error(`Error deleting task with ID ${id}:`, error);
-    throw error;
-  }
+  });
 };
 
 /**
@@ -798,8 +790,7 @@ export const getPremadeGoals = async (page = 1, limit = 20): Promise<{ goals: Go
  * Get a premade goal by its ID
  */
 export const getPremadeGoalById = async (id: string): Promise<Goal | null> => {
-  try {
-    const db = await getDatabase();
+  return withDatabaseRetry(async (db) => {
     const goal = await db.getFirstAsync<Goal>('SELECT * FROM premadeGoals WHERE id = ?;', [id]);
 
     if (!goal) {
@@ -810,10 +801,7 @@ export const getPremadeGoalById = async (id: string): Promise<Goal | null> => {
       ...goal,
       achieved: Boolean(goal.achieved),
     };
-  } catch (error) {
-    console.error(`Error getting premade goal with ID ${id}:`, error);
-    return null;
-  }
+  });
 };
 
 /**
@@ -885,13 +873,12 @@ export const getPremadeTasksForGoalIds = async (
   goalIds: string[],
   batchSize: number = 500
 ): Promise<Task[]> => {
-  try {
+  return withDatabaseRetry(async (db) => {
     // Input validation
     if (!Array.isArray(goalIds) || goalIds.length === 0) {
       return [];
     }
 
-    const db = await getDatabase();
     let allTasks: Task[] = [];
 
     // Process in batches if the array is large
@@ -911,22 +898,14 @@ export const getPremadeTasksForGoalIds = async (
     }
 
     return allTasks;
-
-  } catch (error) {
-    console.error(
-      `Error getting premade tasks for goal IDs: ${goalIds.slice(0, 3).join(', ')}${goalIds.length > 3 ? '...' : ''}`,
-      error
-    );
-    throw new Error(`Failed to fetch premade tasks: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
+  });
 };
 
 /**
  * Get a premade task by its ID
  */
 export const getPremadeTaskById = async (id: string): Promise<Task | null> => {
-  try {
-    const db = await getDatabase();
+  return withDatabaseRetry(async (db) => {
     const task = await db.getFirstAsync<Task>('SELECT * FROM premadeTasks WHERE id = ?;', [id]);
 
     if (!task) {
@@ -937,10 +916,7 @@ export const getPremadeTaskById = async (id: string): Promise<Task | null> => {
       ...task,
       completed: Boolean(task.completed),
     };
-  } catch (error) {
-    console.error(`Error getting premade task with ID ${id}:`, error);
-    return null;
-  }
+  });
 };
 
 // PREMADE HABITS Functions
@@ -955,13 +931,12 @@ export const getPremadeHabitsForGoalIds = async (
   goalIds: string[],
   batchSize: number = 500
 ): Promise<Habit[]> => {
-  try {
+  return withDatabaseRetry(async (db) => {
     // Input validation
     if (!Array.isArray(goalIds) || goalIds.length === 0) {
       return [];
     }
 
-    const db = await getDatabase();
     let allHabits: Habit[] = [];
 
     // Process in batches if the array is large
@@ -981,14 +956,7 @@ export const getPremadeHabitsForGoalIds = async (
     }
 
     return allHabits;
-
-  } catch (error) {
-    console.error(
-      `Error getting premade habits for goal IDs: ${goalIds.slice(0, 3).join(', ')}${goalIds.length > 3 ? '...' : ''}`,
-      error
-    );
-    throw new Error(`Failed to fetch premade habits: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
+  });
 };
 
 // DEVELOPMENT UTILITY FUNCTIONS

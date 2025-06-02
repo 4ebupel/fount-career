@@ -1,5 +1,6 @@
 import React, { useState, useContext, useEffect, useMemo } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, ScrollView, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/lib/colors';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
@@ -15,9 +16,16 @@ const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'S
 
 export default function Habit() {
     const { goalId, habitId, title, emoji, reminder_days, reminder_time } = useLocalSearchParams();
-    const { theme } = useContext(ThemeContext);
+    const router = useRouter();
+
     const [habitTitle, setHabitTitle] = useState<string>(title as string || '');
     const [selectedEmoji, setSelectedEmoji] = useState<string>(emoji as string || '🔄');
+    const [showTimePicker, setShowTimePicker] = useState(false);
+    const [selectedTime, setSelectedTime] = useState<string>(reminder_time as string || '');
+
+    const { openModal, closeModal } = useModal();
+    const { createHabit, updateHabit, deleteHabit } = useDatabase();
+    const { theme } = useContext(ThemeContext);
 
     const isPremadeGoal = useMemo(() => {
         return !isNaN(Number(goalId));
@@ -36,15 +44,16 @@ export default function Habit() {
         return [];
     });
 
-    const [hour, setHour] = useState<string>('10');
-    const [minute, setMinute] = useState<string>('00');
-    const [period, setPeriod] = useState<string>('AM');
-    const router = useRouter();
-    const { openModal, closeModal } = useModal();
-    const { createHabit, updateHabit, deleteHabit } = useDatabase();
-
-    // Format the time for display and storage
-    const habitReminderTime = `${hour}:${minute} ${period}`;
+    const onChangeTime = (event: DateTimePickerEvent, selectedDate: Date | undefined) => {
+        if (!selectedDate) {
+            return;
+        }
+        const currentDate = selectedDate;
+        const time = currentDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+        setShowTimePicker(false);
+        setSelectedTime(time);
+        console.log('onChangeTime', event, 'selectedDate', selectedDate, 'currentDate', currentDate, 'time', time);
+    };
 
     // Handle emoji selection
     const handleEmojiSelect = () => {
@@ -85,32 +94,32 @@ export default function Habit() {
     };
 
     // Handle time picker for reminder time
-    const handleTimeSelection = () => {
-        if (isPremadeGoal) {
-            return;
-        }
-        Keyboard.dismiss();
-        openModal({
-            modalName: TIME_PICKER_MODAL,
-            props: {
-                theme,
-                title: 'Reminder Time',
-                content: '',
-                description: '',
-                primaryCTA: 'OK',
-                secondaryCTA: 'Cancel',
-                initialHour: hour,
-                initialMinute: minute,
-                onTimeSelected: (selectedHour, selectedMinute) => {
-                    setHour(selectedHour);
-                    setMinute(selectedMinute);
-                },
-                onConfirm: () => { },
-                onCancel: () => { },
-                onClose: () => { },
-            }
-        });
-    };
+    // const handleTimeSelection = () => {
+    //     if (isPremadeGoal) {
+    //         return;
+    //     }
+    //     Keyboard.dismiss();
+    //     openModal({
+    //         modalName: TIME_PICKER_MODAL,
+    //         props: {
+    //             theme,
+    //             title: 'Reminder Time',
+    //             content: '',
+    //             description: '',
+    //             primaryCTA: 'OK',
+    //             secondaryCTA: 'Cancel',
+    //             initialHour: hour,
+    //             initialMinute: minute,
+    //             onTimeSelected: (selectedHour, selectedMinute) => {
+    //                 setHour(selectedHour);
+    //                 setMinute(selectedMinute);
+    //             },
+    //             onConfirm: () => { },
+    //             onCancel: () => { },
+    //             onClose: () => { },
+    //         }
+    //     });
+    // };
 
     // Delete the habit
     const handleDelete = async () => {
@@ -157,7 +166,7 @@ export default function Habit() {
                 title: habitTitle.trim(),
                 selected_emoji: selectedEmoji,
                 reminder_days: JSON.stringify(habitReminderDays), // Store as JSON string
-                reminder_time: habitReminderTime,
+                reminder_time: selectedTime,
                 completed: false,
             });
 
@@ -182,7 +191,7 @@ export default function Habit() {
                 title: habitTitle.trim(),
                 selected_emoji: selectedEmoji,
                 reminder_days: JSON.stringify(habitReminderDays),
-                reminder_time: habitReminderTime,
+                reminder_time: selectedTime,
             };
 
             if (habitId) {
@@ -192,7 +201,7 @@ export default function Habit() {
             // Navigate back to the goal details page after successful creation
             router.back();
         } catch (error) {
-            console.error('Error creating habit:', error);
+            console.error('Error updating habit:', error);
             // In a production app, you would show an error message to the user
         }
     };
@@ -416,8 +425,7 @@ export default function Habit() {
                                                 borderColor: colors.light_theme.border_input
                                             }
                                     ]}
-                                // Time picker is broken
-                                // onPress={handleTimeSelection}
+                                    onPress={() => setShowTimePicker(true)}
                                 >
                                     <Text style={[
                                         styles.timeText,
@@ -425,7 +433,7 @@ export default function Habit() {
                                             ? { color: colors.dark_theme.text_primary }
                                             : { color: colors.light_theme.text_primary }
                                     ]}>
-                                        {habitReminderTime}
+                                        {selectedTime}
                                     </Text>
                                     <AntDesign
                                         name="clockcircleo"
@@ -447,8 +455,6 @@ export default function Habit() {
                                                 borderColor: colors.light_theme.border_input
                                             }
                                     ]}
-                                // Time picker is broken
-                                // onPress={handleTimeSelection}
                                 >
                                     <Text style={[
                                         styles.timeText,
@@ -456,7 +462,7 @@ export default function Habit() {
                                             ? { color: colors.dark_theme.text_primary }
                                             : { color: colors.light_theme.text_primary }
                                     ]}>
-                                        {habitReminderTime}
+                                        {selectedTime}
                                     </Text>
                                     <AntDesign
                                         name="clockcircleo"
@@ -467,6 +473,17 @@ export default function Habit() {
                             )}
                         </View>
                     </ScrollView>
+
+                    {showTimePicker ? (
+                        <DateTimePicker
+                            testID="dateTimePicker"
+                            value={new Date()}
+                            mode={'time'}
+                            display='default'
+                            is24Hour={true}
+                            onChange={onChangeTime}
+                        />
+                    ) : null}
 
                     {!isPremadeGoal && (
                         <View style={styles.buttonContainer}>

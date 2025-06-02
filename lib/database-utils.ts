@@ -67,4 +67,21 @@ export const parseJSON = <T>(jsonString: string | null): T | null => {
 export const formatJSONForStorage = <T>(value: T | null): string | null => {
   if (value === null || value === undefined) return null;
   return JSON.stringify(value);
+};
+
+// Reminder time validation and utilities
+export type ReminderTime = string; // Format: HH:MM (24-hour)
+
+// Validate reminder time format (HH:MM in 24-hour format)
+export const isValidReminderTime = (time: string): boolean => {
+  const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+  return timeRegex.test(time);
+};
+
+// Format reminder time to ensure consistent HH:MM format
+export const formatReminderTime = (time: string): ReminderTime | null => {
+  if (isValidReminderTime(time)) return time;
+  
+  const [hours, minutes] = time.split(':');
+  return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
 }; 

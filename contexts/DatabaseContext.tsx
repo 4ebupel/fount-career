@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { Alert } from 'react-native';
 import { Goal, Habit, Task } from '../types/database';
 import * as DB from '../lib/database';
+import { formatReminderTime, isValidReminderTime } from '../lib/database-utils';
 
 // Define the context type
 interface DatabaseContextType {
@@ -38,7 +39,7 @@ interface DatabaseContextType {
   // Premade goal operations
   /**
    * Get all premade goals
-   */ 
+   */
   getPremadeGoals: typeof DB.getPremadeGoals;
   /**
    * Get a premade goal by id
@@ -224,7 +225,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
   /**
   * Create a new goal and update local state
   */
-  const createGoalWithRefresh = async (goal: Parameters<typeof DB.createGoal>[0]) => {
+  const createGoalWithRefresh = async (goal: Omit<Goal, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       clearError();
       const newGoal = await DB.createGoal(goal);
@@ -244,7 +245,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
   /**
    * Update a goal and update local state
    */
-  const updateGoalWithRefresh = async (id: string, updates: Parameters<typeof DB.updateGoal>[1]) => {
+  const updateGoalWithRefresh = async (id: string, updates: Partial<Omit<Goal, 'id' | 'created_at'>>) => {
     try {
       clearError();
       const updatedGoal = await DB.updateGoal(id, updates);
@@ -290,9 +291,22 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
   /**
    * Create a new habit and update local state
    */
-  const createHabitWithRefresh = async (habit: Parameters<typeof DB.createHabit>[0]) => {
+  const createHabitWithRefresh = async (habit: Omit<Habit, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       clearError();
+
+      // Ensure we have valid habit to process
+      if (Object.keys(habit).length === 0) {
+        throw new Error('No valid habit provided');
+      }
+
+      if (habit.reminder_time) {
+        const isValidTime = isValidReminderTime(habit.reminder_time);
+        if (!isValidTime) {
+          const formattedTime = formatReminderTime(habit.reminder_time);
+          habit.reminder_time = formattedTime || '';
+        }
+      }
       const newHabit = await DB.createHabit(habit);
 
       // Update local state
@@ -314,11 +328,25 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
   /**
    * Update a habit and update local state
    */
-  const updateHabitWithRefresh = async (id: string, updates: Parameters<typeof DB.updateHabit>[1]) => {
+  const updateHabitWithRefresh = async (id: string, updates: Partial<Omit<Habit, 'id' | 'created_at'>>) => {
     try {
       clearError();
       // Explicitly remove goal_id from updates to prevent accidental modifications
       const { goal_id, ...safeUpdates } = updates;
+
+      // Ensure we have valid updates to process
+      if (Object.keys(safeUpdates).length === 0) {
+        throw new Error('No valid updates provided');
+      }
+
+      if (safeUpdates.reminder_time) {
+        const isValidTime = isValidReminderTime(safeUpdates.reminder_time);
+        if (!isValidTime) {
+          const formattedTime = formatReminderTime(safeUpdates.reminder_time);
+          safeUpdates.reminder_time = formattedTime || undefined;
+        }
+      }
+
       const updatedHabit = await DB.updateHabit(id, safeUpdates);
 
       // Update local state with direct access to goal_id
@@ -358,7 +386,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
   /**
    * Create a new task and update local state
    */
-  const createTaskWithRefresh = async (task: Parameters<typeof DB.createTask>[0]) => {
+  const createTaskWithRefresh = async (task: Omit<Task, 'id' | 'created_at' | 'updated_at' | 'completed'>) => {
     try {
       clearError();
       const newTask = await DB.createTask(task);
@@ -382,7 +410,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
   /**
    * Update a task and update local state
    */
-  const updateTaskWithRefresh = async (id: string, updates: Parameters<typeof DB.updateTask>[1]) => {
+  const updateTaskWithRefresh = async (id: string, updates: Partial<Omit<Task, 'id' | 'created_at'>>) => {
     try {
       clearError();
       // Explicitly remove goal_id from updates

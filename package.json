@@ -13,6 +13,7 @@
   "dependencies": {
     "@expo/config-plugins": "~10.0.0",
     "@react-native-async-storage/async-storage": "2.1.2",
+    "@react-native-community/datetimepicker": "^8.4.1",
     "@supabase/supabase-js": "^2.49.5-next.1",
     "date-fns": "^4.1.0",
     "dotenv": "^16.4.7",

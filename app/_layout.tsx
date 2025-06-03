@@ -14,11 +14,23 @@ import { DatabaseProvider } from '@/contexts/DatabaseContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
+
+import * as Notifications from "expo-notifications";
+
 // Status bar component to change the color of the status bar based on the theme since default 'auto' option doesn't work
 function AppStatusBar() {
   const { theme } = useContext(ThemeContext);
   return <StatusBar style={theme === "dark" ? "light" : "dark"} />;
 }
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
 
 SplashScreen.preventAutoHideAsync();
 

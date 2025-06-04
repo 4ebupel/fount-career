@@ -1,4 +1,7 @@
 import { Platform } from 'react-native';
+import { initializeApp } from 'firebase/app';
+import { FirebaseApp } from 'firebase/app';
+const firebaseConfig = require('../google-services.json');
 
 // Firebase initialization for React Native
 // This ensures Firebase is properly initialized before any Firebase services are used
@@ -11,6 +14,8 @@ export const initializeFirebase = async () => {
 
   try {
     if (Platform.OS === 'android') {
+      const app = await initializeApp(firebaseConfig, 'com.fount.career');
+      console.log(app);
       // Firebase is automatically initialized on Android through google-services.json
       // But we can add additional configuration here if needed
       console.log('Firebase auto-initialized on Android');

@@ -26,13 +26,13 @@
       }
     },
     "android": {
+      "package": "com.fount.career",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/icons/adaptive-icon.png",
         "monochromeImage": "./assets/icons/ios-tinted.png",
         "backgroundColor": "#ffffff"
-      },
-      "package": "com.fount.career",
-      "googleServicesFile": "./google-services.json"
+      }
     },
     "web": {
       "favicon": "./assets/icons/splash-icon.png"

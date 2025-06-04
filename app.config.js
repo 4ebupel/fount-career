@@ -12,6 +12,7 @@ export default ({ config }) => ({
   },
   android: {
     package: "com.fount.career",
+    googleServicesFile: "./google-services.json",
   },
   plugins: ['expo-sqlite', 'expo-router'],
 });

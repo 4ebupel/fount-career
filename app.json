@@ -30,7 +30,9 @@
         "foregroundImage": "./assets/icons/adaptive-icon.png",
         "monochromeImage": "./assets/icons/ios-tinted.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.mfshoom.fountcareer",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/icons/splash-icon.png"

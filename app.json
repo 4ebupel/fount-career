@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mfshoom.fountcareer",
+      "bundleIdentifier": "com.fount.career",
       "icon": {
         "dark": "./assets/icons/ios-dark.png",
         "light": "./assets/icons/ios-light.png",
@@ -31,7 +31,7 @@
         "monochromeImage": "./assets/icons/ios-tinted.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.mfshoom.fountcareer",
+      "package": "com.fount.career",
       "googleServicesFile": "./google-services.json"
     },
     "web": {
@@ -58,7 +58,8 @@
           "image": "./assets/icons/splash-icon.png",
           "imageWidth": 200
         }
-      ]
+      ],
+      "@react-native-firebase/app"
     ],
     "extra": {
       "eas": {

@@ -15,6 +15,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from 'expo-splash-screen';
+import { initializeFirebase } from '@/lib/firebaseConfig';
 
 import * as Notifications from "expo-notifications";
 
@@ -46,9 +47,10 @@ export default function RootLayout() {
   useEffect(() => {
     async function prepare() {
       try {
-
+        // Initialize Firebase before any other Firebase services
+        await initializeFirebase();
       } catch (error) {
-        console.warn(error);
+        console.warn('Firebase initialization error:', error);
       } finally {
         setAppIsReady(true);
       }

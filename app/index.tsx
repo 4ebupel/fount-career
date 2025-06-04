@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { ThemeContext } from '@/contexts/ThemeContext';
 import { useDatabase } from '@/hooks/useDatabase';
 import { colors } from '@/lib/colors';
+import { registerForPushNotificationsAsync } from '@/lib/registerForPushNotificationsAsync';
 
 export default function Index() {
     const { theme } = useContext(ThemeContext);
@@ -38,7 +39,7 @@ export default function Index() {
                 <Text style={[styles.subtitle, theme === 'light' ? styles.subtitle_light : styles.subtitle_dark]}>Let's dive in into your account</Text>
 
                 <View style={styles.buttonContainer}>
-                    <SocialButton icon="google" label="Continue with Google" onPress={() => { }} theme={theme} />
+                    <SocialButton icon="google" label="Continue with Google" onPress={() => { registerForPushNotificationsAsync() }} theme={theme} />
                     <SocialButton icon="apple" label="Continue with Apple" onPress={() => { }} theme={theme} />
                     <SocialButton icon="linkedin" label="Continue with LinkedIn" onPress={() => { }} theme={theme} />
                 </View>

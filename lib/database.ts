@@ -118,6 +118,7 @@ export const initDatabase = async (): Promise<void> => {
         selected_emoji TEXT NOT NULL,
         reminder_days TEXT NOT NULL,
         reminder_time TEXT NOT NULL,
+        reminder_ids TEXT NOT NULL,
         completed INTEGER NOT NULL DEFAULT 0,
         FOREIGN KEY (goal_id) REFERENCES premadeGoals (id) ON DELETE CASCADE
       );
@@ -145,6 +146,7 @@ export const initDatabase = async (): Promise<void> => {
         selected_emoji TEXT NOT NULL,
         reminder_days TEXT NOT NULL,
         reminder_time TEXT NOT NULL,
+        reminder_ids TEXT NOT NULL,
         completed INTEGER NOT NULL DEFAULT 0,
         FOREIGN KEY (goal_id) REFERENCES goals (id) ON DELETE CASCADE
       );
@@ -328,7 +330,7 @@ export const populatePremadeHabits = async (): Promise<void> => {
         const params: any[] = [];
 
         for (const habitData of batch) {
-          valueGroups.push('(?, ?, ?, ?, ?, ?, ?, ?, ?)');
+          valueGroups.push('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
           params.push(
             habitData.id,
             now,
@@ -337,6 +339,7 @@ export const populatePremadeHabits = async (): Promise<void> => {
             habitData.selected_emoji,
             habitData.reminder_days,
             habitData.reminder_time,
+            habitData.reminder_ids,
             habitData.completed ? 1 : 0,
             habitData.goal_id
           );
@@ -344,7 +347,7 @@ export const populatePremadeHabits = async (): Promise<void> => {
 
         // Execute the batch insert
         const query = `
-          INSERT INTO premadeHabits (id, created_at, updated_at, title, selected_emoji, reminder_days, reminder_time, completed, goal_id)
+          INSERT INTO premadeHabits (id, created_at, updated_at, title, selected_emoji, reminder_days, reminder_time, reminder_ids, completed, goal_id)
           VALUES ${valueGroups.join(', ')};
         `;
 
@@ -515,8 +518,8 @@ export const createHabit = async (habit: Omit<Habit, 'id' | 'created_at' | 'upda
     };
 
     await db.runAsync(
-      `INSERT INTO habits (id, goal_id, created_at, updated_at, title, selected_emoji, reminder_days, reminder_time, completed)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      `INSERT INTO habits (id, goal_id, created_at, updated_at, title, selected_emoji, reminder_days, reminder_time, reminder_ids, completed)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
       [
         newHabit.id,
         newHabit.goal_id,
@@ -526,6 +529,7 @@ export const createHabit = async (habit: Omit<Habit, 'id' | 'created_at' | 'upda
         newHabit.selected_emoji,
         newHabit.reminder_days,
         newHabit.reminder_time,
+        newHabit.reminder_ids,
         0,
       ]
     );
@@ -574,7 +578,7 @@ export const updateHabit = async (id: string, updates: Partial<Omit<Habit, 'id' 
 
     await db.runAsync(
       `UPDATE habits 
-       SET updated_at = ?, title = ?, selected_emoji = ?, reminder_days = ?, reminder_time = ?, completed = ?
+       SET updated_at = ?, title = ?, selected_emoji = ?, reminder_days = ?, reminder_time = ?, reminder_ids = ?, completed = ?
        WHERE id = ?;`,
       [
         updatedHabit.updated_at,
@@ -582,6 +586,7 @@ export const updateHabit = async (id: string, updates: Partial<Omit<Habit, 'id' 
         updatedHabit.selected_emoji,
         updatedHabit.reminder_days,
         updatedHabit.reminder_time,
+        updatedHabit.reminder_ids,
         updatedHabit.completed ? 1 : 0,
         id,
       ]
@@ -725,29 +730,50 @@ export const closeDatabase = async (): Promise<void> => {
  */
 export const resetDatabase = async (): Promise<void> => {
   try {
-    const db = await getDatabase();
     console.log('Dropping all tables and resetting database...');
 
-    // First close the existing connection
-    await closeDatabase();
-
-    // For Expo SQLite, delete the database file
     if (Platform.OS === 'web') {
-      // Web implementation
+      // Web implementation - drop tables instead of deleting file
       const db = await getDatabase();
       await db.execAsync(`
         DROP TABLE IF EXISTS tasks;
         DROP TABLE IF EXISTS habits;
         DROP TABLE IF EXISTS goals;
         DROP TABLE IF EXISTS premadeGoals;
+        DROP TABLE IF EXISTS premadeTasks;
+        DROP TABLE IF EXISTS premadeHabits;
       `);
+      // Close after dropping tables
+      await closeDatabase();
     } else {
-      // Native implementation
-      await SQLite.deleteDatabaseAsync(DATABASE_NAME);
+      // Native implementation - close database first, then delete file
+      await closeDatabase();
+      
+      // Add a small delay to ensure the database is fully closed
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      try {
+        await SQLite.deleteDatabaseAsync(DATABASE_NAME);
+        console.log('Database file deleted successfully');
+      } catch (deleteError) {
+        console.warn('Database deletion failed, falling back to table dropping:', deleteError);
+        // Fallback: reopen and drop tables if deletion fails
+        dbInstance = null;
+        const db = await getDatabase();
+        await db.execAsync(`
+          DROP TABLE IF EXISTS tasks;
+          DROP TABLE IF EXISTS habits;
+          DROP TABLE IF EXISTS goals;
+          DROP TABLE IF EXISTS premadeGoals;
+          DROP TABLE IF EXISTS premadeTasks;
+          DROP TABLE IF EXISTS premadeHabits;
+        `);
+        await closeDatabase();
+      }
     }
 
-    // Reinitialize the database
-    dbInstance = null; // Reset the instance
+    // Reset the instance and reinitialize
+    dbInstance = null;
     await initDatabase();
 
     console.log('Database reset successfully');

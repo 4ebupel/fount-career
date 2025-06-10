@@ -1,6 +1,7 @@
 import React, { useContext, useEffect } from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Notifications from 'expo-notifications';
 import Button from '@/components/Button';
 import SocialButton from '@/components/SocialButton';
 import { useRouter } from 'expo-router';
@@ -40,7 +41,7 @@ export default function Index() {
 
                 <View style={styles.buttonContainer}>
                     <SocialButton icon="google" label="Continue with Google" onPress={() => { registerForPushNotificationsAsync() }} theme={theme} />
-                    <SocialButton icon="apple" label="Continue with Apple" onPress={() => { }} theme={theme} />
+                    <SocialButton icon="apple" label="Continue with Apple" onPress={() => { Notifications.cancelAllScheduledNotificationsAsync(); console.log('Cancelled all scheduled notifications') }} theme={theme} />
                     <SocialButton icon="linkedin" label="Continue with LinkedIn" onPress={() => { }} theme={theme} />
                 </View>
 

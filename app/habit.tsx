@@ -10,6 +10,7 @@ import { DEFAULT_MODAL, EMOJI_SELECTOR_MODAL, TIME_PICKER_MODAL } from '@/lib/mo
 import Button from '@/components/Button';
 import { ThemeContext } from '@/contexts/ThemeContext';
 import { useDatabase } from '@/hooks/useDatabase';
+import { scheduleWeeklyReminders } from '@/lib/scheduleWeeklyReminders';
 
 // Days of the week for habit reminders
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -22,15 +23,6 @@ export default function Habit() {
     const [selectedEmoji, setSelectedEmoji] = useState<string>(emoji as string || '🔄');
     const [showTimePicker, setShowTimePicker] = useState(false);
     const [selectedTime, setSelectedTime] = useState<string>(reminder_time as string || '');
-
-    const { openModal, closeModal } = useModal();
-    const { createHabit, updateHabit, deleteHabit } = useDatabase();
-    const { theme } = useContext(ThemeContext);
-
-    const isPremadeGoal = useMemo(() => {
-        return !isNaN(Number(goalId));
-    }, [goalId]);
-
     // Parse the reminder_days string to an array if it exists
     const [habitReminderDays, setHabitReminderDays] = useState<string[]>(() => {
         if (reminder_days) {
@@ -44,6 +36,27 @@ export default function Habit() {
         return [];
     });
 
+    const { openModal, closeModal } = useModal();
+    const { createHabit, updateHabit, deleteHabit } = useDatabase();
+    const { theme } = useContext(ThemeContext);
+
+    const isPremadeGoal = useMemo(() => {
+        return !isNaN(Number(goalId));
+    }, [goalId]);
+
+    // Schedule the reminders
+    const scheduleReminders = async () => {
+        const ids = await scheduleWeeklyReminders({
+            title: habitTitle,
+            reminderTime: selectedTime,
+            reminderDays: habitReminderDays,
+        });
+        console.log('Scheduled reminders', ids);
+
+        return ids;
+    }
+
+    // Handle time picker for reminder time
     const onChangeTime = (event: DateTimePickerEvent, selectedDate: Date | undefined) => {
         if (!selectedDate) {
             return;
@@ -93,34 +106,6 @@ export default function Habit() {
         }
     };
 
-    // Handle time picker for reminder time
-    // const handleTimeSelection = () => {
-    //     if (isPremadeGoal) {
-    //         return;
-    //     }
-    //     Keyboard.dismiss();
-    //     openModal({
-    //         modalName: TIME_PICKER_MODAL,
-    //         props: {
-    //             theme,
-    //             title: 'Reminder Time',
-    //             content: '',
-    //             description: '',
-    //             primaryCTA: 'OK',
-    //             secondaryCTA: 'Cancel',
-    //             initialHour: hour,
-    //             initialMinute: minute,
-    //             onTimeSelected: (selectedHour, selectedMinute) => {
-    //                 setHour(selectedHour);
-    //                 setMinute(selectedMinute);
-    //             },
-    //             onConfirm: () => { },
-    //             onCancel: () => { },
-    //             onClose: () => { },
-    //         }
-    //     });
-    // };
-
     // Delete the habit
     const handleDelete = async () => {
         if (!habitId || isPremadeGoal) {
@@ -160,6 +145,10 @@ export default function Habit() {
         }
 
         try {
+            let ids: string[] = [];
+            if (habitReminderDays.length > 0) {
+                ids = await scheduleReminders();
+            }
             // Create the new habit using the database context
             await createHabit({
                 goal_id: goalId as string,
@@ -167,6 +156,7 @@ export default function Habit() {
                 selected_emoji: selectedEmoji,
                 reminder_days: JSON.stringify(habitReminderDays), // Store as JSON string
                 reminder_time: selectedTime,
+                reminder_ids: JSON.stringify(ids),
                 completed: false,
             });
 
@@ -186,12 +176,18 @@ export default function Habit() {
         }
 
         try {
+            let ids: string[] = [];
+            if (habitReminderDays.length > 0) {
+                ids = await scheduleReminders();
+            }
+
             // Prepare the updated habit data
             const updatedHabit = {
                 title: habitTitle.trim(),
                 selected_emoji: selectedEmoji,
                 reminder_days: JSON.stringify(habitReminderDays),
                 reminder_time: selectedTime,
+                reminder_ids: JSON.stringify(ids),
             };
 
             if (habitId) {

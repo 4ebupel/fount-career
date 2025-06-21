@@ -24,7 +24,7 @@ export const getDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
       throw error;
     }
   }
-  
+
   // Test the connection before returning
   try {
     await dbInstance.getFirstAsync('SELECT 1');
@@ -54,7 +54,7 @@ const withDatabaseRetry = async <T>(
   maxRetries: number = 2
 ): Promise<T> => {
   let lastError: Error;
-  
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       const db = await getDatabase();
@@ -62,7 +62,7 @@ const withDatabaseRetry = async <T>(
     } catch (error) {
       lastError = error as Error;
       console.warn(`Database operation failed (attempt ${attempt + 1}/${maxRetries + 1}):`, error);
-      
+
       if (attempt < maxRetries) {
         // Reset database instance for retry
         dbInstance = null;
@@ -70,7 +70,7 @@ const withDatabaseRetry = async <T>(
       }
     }
   }
-  
+
   throw lastError!;
 };
 
@@ -206,7 +206,7 @@ export const populatePremadeGoals = async (): Promise<void> => {
           // Use a placeholder string that our image component can recognize
           // const imagePath = Platform.OS === 'ios' ? `asset:/assets/${goalData.image_small}` : `file:///android_asset/assets/${goalData.image_small}`;
           // const imagePath =`asset:/fount.career/assets/${goalData.image_small}`;
-          
+
           valueGroups.push('(?, ?, ?, ?, ?, ?, ?, ?, ?)');
           params.push(
             goalData.id,
@@ -557,6 +557,38 @@ export const getHabitsByGoalId = async (goalId: string): Promise<Habit[]> => {
 };
 
 /**
+   * Get a habit by its ID
+   * @param id - The ID of the habit to get
+   * @returns {Promise<Habit | null>} A Promise that resolves to:
+   * - A Habit object with properties:
+   *   - id: string - Unique identifier
+   *   - goal_id: string - ID of associated goal
+   *   - created_at: string - Creation timestamp
+   *   - updated_at: string - Last update timestamp
+   *   - title: string - Habit title
+   *   - selected_emoji: string - Selected emoji icon
+   *   - reminder_days: string - JSON string of reminder days
+   *   - reminder_time: string - Reminder time
+   *   - reminder_ids: string - JSON string of reminder IDs
+   *   - completed: boolean - Completion status
+   * - null if no habit found with given ID
+   */
+export const getHabitById = async (id: string): Promise<Habit | null> => {
+  return withDatabaseRetry(async (db) => {
+    const habit = await db.getFirstAsync<Habit>('SELECT * FROM habits WHERE id = ?;', [id]);
+
+    if (!habit) {
+      return null;
+    }
+
+    return {
+      ...habit,
+      completed: Boolean(habit.completed),
+    };
+  });
+};
+
+/**
  * Update a habit
  */
 export const updateHabit = async (id: string, updates: Partial<Omit<Habit, 'id' | 'created_at'>>): Promise<Habit> => {
@@ -748,10 +780,10 @@ export const resetDatabase = async (): Promise<void> => {
     } else {
       // Native implementation - close database first, then delete file
       await closeDatabase();
-      
+
       // Add a small delay to ensure the database is fully closed
       await new Promise(resolve => setTimeout(resolve, 100));
-      
+
       try {
         await SQLite.deleteDatabaseAsync(DATABASE_NAME);
         console.log('Database file deleted successfully');

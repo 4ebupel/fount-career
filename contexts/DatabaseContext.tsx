@@ -78,6 +78,24 @@ interface DatabaseContextType {
    */
   getHabitsByGoalId: typeof DB.getHabitsByGoalId;
   /**
+   * Get a habit by its ID
+   * @param id - The ID of the habit to get
+   * @returns {Promise<Habit | null>} A Promise that resolves to:
+   * - A Habit object with properties:
+   *   - id: string - Unique identifier
+   *   - goal_id: string - ID of associated goal
+   *   - created_at: string - Creation timestamp
+   *   - updated_at: string - Last update timestamp
+   *   - title: string - Habit title
+   *   - selected_emoji: string - Selected emoji icon
+   *   - reminder_days: string - JSON string of reminder days
+   *   - reminder_time: string - Reminder time
+   *   - reminder_ids: string - JSON string of reminder IDs
+   *   - completed: boolean - Completion status
+   * - null if no habit found with given ID
+   */
+  getHabitById: typeof DB.getHabitById;
+  /**
    * Update a habit
    */
   updateHabit: typeof DB.updateHabit;
@@ -540,6 +558,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     // Habit operations
     createHabit: createHabitWithRefresh,
     getHabitsByGoalId: DB.getHabitsByGoalId,
+    getHabitById: DB.getHabitById,
     updateHabit: updateHabitWithRefresh,
     deleteHabit: deleteHabitWithRefresh,
     // Task operations

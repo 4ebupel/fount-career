@@ -1,6 +1,7 @@
 import React, { useState, useContext, useEffect, useMemo } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, ScrollView, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import * as Notifications from 'expo-notifications';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/lib/colors';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
@@ -11,6 +12,7 @@ import Button from '@/components/Button';
 import { ThemeContext } from '@/contexts/ThemeContext';
 import { useDatabase } from '@/hooks/useDatabase';
 import { scheduleWeeklyReminders } from '@/lib/scheduleWeeklyReminders';
+import { checkForExistingReminders } from '@/lib/checkForExistingReminders';
 
 // Days of the week for habit reminders
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -46,14 +48,58 @@ export default function Habit() {
 
     // Schedule the reminders
     const scheduleReminders = async () => {
-        const ids = await scheduleWeeklyReminders({
-            title: habitTitle,
-            reminderTime: selectedTime,
-            reminderDays: habitReminderDays,
-        });
-        console.log('Scheduled reminders', ids);
+        const existingReminderDays: string[] = reminder_days ? JSON.parse(reminder_days as string) : [];
+        const newReminders: string[] = habitReminderDays.filter((day) => !existingReminderDays.includes(day));
+        let newIds: string[] = [];
+        let existingReminders: any[] = [];
 
-        return ids;
+        try {
+            existingReminders = await checkForExistingReminders(habitId as string);
+            newIds.push(...existingReminders.map((reminder) => reminder.id));
+            console.log('Existing reminders', existingReminders);
+        } catch (error) {
+            console.error('Error checking for existing reminders', error);
+        }
+
+        if (newReminders.length > 0) {
+            try {
+                const ids = await scheduleWeeklyReminders({
+                    title: habitTitle,
+                    reminderTime: selectedTime,
+                    reminderDays: newReminders,
+                });
+                newIds.push(...ids);
+                console.log('Scheduled reminders', ids);
+            } catch (error) {
+                console.error('Error scheduling reminders', error);
+            }
+        }
+
+        if (existingReminders.length > habitReminderDays.length) {
+            try {
+                console.log('--------------------------------');
+                console.log('Removing unscheduled reminders');
+                console.log('--------------------------------');
+
+                const unscheduledReminders = existingReminders.filter((reminder) => !habitReminderDays.includes(reminder.weekday));
+                console.log('Unscheduled reminders', unscheduledReminders);
+
+                unscheduledReminders.forEach(async (reminder) => {
+                    await Notifications.cancelScheduledNotificationAsync(reminder.id);
+                });
+
+                newIds = newIds.filter((id) => !unscheduledReminders.map((reminder) => reminder.id).includes(id));
+
+                console.log('--------------------------------');
+                console.log('Unscheduled reminders removed');
+                console.log('--------------------------------');
+            } catch (error) {
+                console.error('Error removing unscheduled reminders', error);
+            }
+        }
+
+        console.log('New list of ids', newIds);
+        return newIds;
     }
 
     // Handle time picker for reminder time
@@ -492,6 +538,15 @@ export default function Habit() {
                             />
                         </View>
                     )}
+                    <View style={[styles.buttonContainer, { marginTop: 16 }]}>
+                        <Button
+                            label="Check for existing reminders"
+                            variant="primary"
+                            theme={theme}
+                            onPress={() => checkForExistingReminders(habitId as string)}
+                            disabled={!habitId}
+                        />
+                    </View>
                 </View>
             </TouchableWithoutFeedback>
         </SafeAreaView>

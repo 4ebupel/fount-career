@@ -3,6 +3,7 @@ import { Alert } from 'react-native';
 import { Goal, Habit, Task } from '../types/database';
 import * as DB from '../lib/database';
 import { formatReminderTime, isValidReminderTime } from '../lib/database-utils';
+import * as Notifications from 'expo-notifications';
 
 // Define the context type
 interface DatabaseContextType {
@@ -388,6 +389,19 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
   const deleteHabitWithRefresh = async (id: string, goal_id: string) => {
     try {
       clearError();
+      // Cancel all reminders for the habit before deleting it
+      const habit = await DB.getHabitById(id);
+
+      if (!habit) {
+        throw new Error('Habit not found');
+      }
+
+      const reminders = JSON.parse(habit.reminder_ids);
+      for (const reminder of reminders) {
+        await Notifications.cancelScheduledNotificationAsync(reminder);
+        console.log('Reminder cancelled:', reminder);
+      }
+
       await DB.deleteHabit(id);
 
       // Update local state using provided goal_id

@@ -1,13 +1,13 @@
-import React, { useState, useContext, useEffect, useMemo } from 'react';
+import React, { useState, useContext, useMemo } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, ScrollView, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import * as Notifications from 'expo-notifications';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/lib/colors';
-import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
-import { AntDesign, FontAwesome, Ionicons } from '@expo/vector-icons';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { AntDesign, FontAwesome } from '@expo/vector-icons';
 import { useModal } from '@/hooks/useModal';
-import { DEFAULT_MODAL, EMOJI_SELECTOR_MODAL, TIME_PICKER_MODAL } from '@/lib/modals';
+import { DEFAULT_MODAL, EMOJI_SELECTOR_MODAL } from '@/lib/modals';
 import Button from '@/components/Button';
 import { ThemeContext } from '@/contexts/ThemeContext';
 import { useDatabase } from '@/hooks/useDatabase';
@@ -168,9 +168,8 @@ export default function Habit() {
                 description: 'Are you sure you want to delete this habit? \n This action cannot be undone.',
                 primaryCTA: 'Delete',
                 secondaryCTA: 'Cancel',
-                onConfirm: () => {
-                    // TODO: should be "awaited" in the modal code (maybe add an additional "onSuccess" callback?)
-                    deleteHabit(habitId as string, goalId as string);
+                onConfirm: async () => {
+                    await deleteHabit(habitId as string, goalId as string);
                     closeModal();
                     router.back();
                 },

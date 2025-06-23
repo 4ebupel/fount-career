@@ -4,6 +4,7 @@ import { Goal, Habit, Task } from '../types/database';
 import * as DB from '../lib/database';
 import { formatReminderTime, isValidReminderTime } from '../lib/database-utils';
 import * as Notifications from 'expo-notifications';
+import { scheduleWeeklyReminders } from '@/lib/scheduleWeeklyReminders';
 
 // Define the context type
 interface DatabaseContextType {
@@ -503,7 +504,28 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
       // Create habits
       if (habits.length > 0 && newGoal) {
         for (const habit of habits) {
-          const newHabit = await DB.createHabit({ ...habit, goal_id: newGoal.id });
+          let ids: string[] = [];
+
+          // Schedule reminders
+          if (habit.reminder_time) {
+            const reminderDays = JSON.parse(habit.reminder_days);
+
+            ids = await scheduleWeeklyReminders({
+              title: habit.title,
+              reminderTime: habit.reminder_time,
+              reminderDays,
+            });
+            console.log('Reminder scheduled:', ids);
+          }
+
+          const newHabit = await DB.createHabit(
+            {
+              ...habit,
+              goal_id: newGoal.id,
+              reminder_ids: JSON.stringify(ids || [])
+            }
+          );
+
           console.log('New habit created:', newHabit);
         }
       }

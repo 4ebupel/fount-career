@@ -18,12 +18,13 @@ export const checkForExistingReminders = async (habitId: string) => {
 
             return {
                 id: reminder.identifier,
-                title: reminder.content.title,
-                body: reminder.content.body,
+                title: reminder.content.title || 'Habit Reminder',
+                body: reminder.content.body || 'Hey, do not forget to complete your habit!',
                 weekday
             }
         })
         console.log('Parsed reminder objects', parsedReminderObjs);
+        console.log('Non parsed reminder objects', existingHabitReminders);
         return parsedReminderObjs;
     } catch (error) {
         console.error('Error checking for existing reminders', error);

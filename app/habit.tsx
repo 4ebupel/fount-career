@@ -11,7 +11,7 @@ import { DEFAULT_MODAL, EMOJI_SELECTOR_MODAL } from '@/lib/modals';
 import Button from '@/components/Button';
 import { ThemeContext } from '@/contexts/ThemeContext';
 import { useDatabase } from '@/hooks/useDatabase';
-import { scheduleWeeklyReminders } from '@/lib/scheduleWeeklyReminders';
+import { scheduleWeeklyReminders, WeekdaysInNumbers } from '@/lib/scheduleWeeklyReminders';
 import { checkForExistingReminders } from '@/lib/checkForExistingReminders';
 
 // Days of the week for habit reminders
@@ -49,32 +49,25 @@ export default function Habit() {
     // Schedule the reminders
     const scheduleReminders = async () => {
         const existingReminderDays: string[] = reminder_days ? JSON.parse(reminder_days as string) : [];
-        const newReminders: string[] = habitReminderDays.filter((day) => !existingReminderDays.includes(day));
+        let newReminders: string[] = habitReminderDays.filter((day) => !existingReminderDays.includes(day));
         let newIds: string[] = [];
-        let existingReminders: any[] = [];
+        let existingReminders: {
+            id: string;
+            title: string;
+            body: string;
+            weekday: keyof typeof WeekdaysInNumbers;
+        }[] = [];
 
+        // Check for existing reminders
         try {
             existingReminders = await checkForExistingReminders(habitId as string);
             newIds.push(...existingReminders.map((reminder) => reminder.id));
-            console.log('Existing reminders', existingReminders);
+            console.log('Existing reminders', existingReminders.length, existingReminders.map((reminder) => reminder.weekday));
         } catch (error) {
             console.error('Error checking for existing reminders', error);
         }
 
-        if (newReminders.length > 0) {
-            try {
-                const ids = await scheduleWeeklyReminders({
-                    title: habitTitle,
-                    reminderTime: selectedTime,
-                    reminderDays: newReminders,
-                });
-                newIds.push(...ids);
-                console.log('Scheduled reminders', ids);
-            } catch (error) {
-                console.error('Error scheduling reminders', error);
-            }
-        }
-
+        // If the number of reminders has changed, remove the unscheduled reminders
         if (existingReminders.length > habitReminderDays.length) {
             try {
                 console.log('--------------------------------');
@@ -95,6 +88,56 @@ export default function Habit() {
                 console.log('--------------------------------');
             } catch (error) {
                 console.error('Error removing unscheduled reminders', error);
+            }
+        }
+
+
+        // If the reminder time has changed, delete the existing reminders and schedule new ones
+        if (selectedTime !== reminder_time && reminder_time) {
+            try {
+                console.log('--------------------------------');
+                console.log('Deleting existing reminders');
+                console.log('--------------------------------');
+
+                await Promise.all(newIds.map(async (id) => {
+                    await Notifications.cancelScheduledNotificationAsync(id);
+                    console.log('Removed reminder:', id);
+                }));
+
+                newIds = [];
+
+                console.log('--------------------------------');
+                console.log('Scheduling new reminders');
+                console.log('--------------------------------');
+
+                const ids = await scheduleWeeklyReminders({
+                    title: habitTitle,
+                    reminderTime: selectedTime,
+                    reminderDays: habitReminderDays,
+                });
+                newIds.push(...ids);
+                // Reset the new reminders to an empty array so the next if statement doesn't schedule the same reminders again
+                // Absolute Spazierstock :raised_hands:
+                newReminders = [];
+                console.log('--------------------------------');
+                console.log('New reminders scheduled', ids);
+                console.log('--------------------------------');
+            } catch (error) {
+                console.error('Error scheduling reminders', error);
+            }
+        }
+
+        if (newReminders.length > 0) {
+            try {
+                const ids = await scheduleWeeklyReminders({
+                    title: habitTitle,
+                    reminderTime: selectedTime,
+                    reminderDays: newReminders,
+                });
+                newIds.push(...ids);
+                console.log('Scheduled reminders', ids);
+            } catch (error) {
+                console.error('Error scheduling reminders', error);
             }
         }
 

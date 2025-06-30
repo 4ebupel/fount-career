@@ -580,15 +580,17 @@ export default function Habit() {
                             />
                         </View>
                     )}
-                    <View style={[styles.buttonContainer, { marginTop: 16 }]}>
-                        <Button
-                            label="Check for existing reminders"
-                            variant="primary"
-                            theme={theme}
-                            onPress={() => checkForExistingReminders(habitId as string)}
-                            disabled={!habitId}
-                        />
-                    </View>
+                    {__DEV__ && (
+                        <View style={[styles.buttonContainer, { marginTop: 16 }]}>
+                            <Button
+                                label="Check for existing reminders"
+                                variant="primary"
+                                theme={theme}
+                                onPress={() => checkForExistingReminders(habitId as string)}
+                                disabled={!habitId}
+                            />
+                        </View>
+                    )}
                 </View>
             </TouchableWithoutFeedback>
         </SafeAreaView>

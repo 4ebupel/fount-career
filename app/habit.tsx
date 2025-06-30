@@ -1,15 +1,18 @@
-import React, { useState, useContext, useEffect, useMemo } from 'react';
+import React, { useState, useContext, useMemo } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, ScrollView, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import * as Notifications from 'expo-notifications';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/lib/colors';
-import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
-import { AntDesign, FontAwesome, Ionicons } from '@expo/vector-icons';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { AntDesign, FontAwesome } from '@expo/vector-icons';
 import { useModal } from '@/hooks/useModal';
-import { DEFAULT_MODAL, EMOJI_SELECTOR_MODAL, TIME_PICKER_MODAL } from '@/lib/modals';
+import { DEFAULT_MODAL, EMOJI_SELECTOR_MODAL } from '@/lib/modals';
 import Button from '@/components/Button';
 import { ThemeContext } from '@/contexts/ThemeContext';
 import { useDatabase } from '@/hooks/useDatabase';
+import { scheduleWeeklyReminders, WeekdaysInNumbers } from '@/lib/scheduleWeeklyReminders';
+import { checkForExistingReminders } from '@/lib/checkForExistingReminders';
 
 // Days of the week for habit reminders
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -22,15 +25,6 @@ export default function Habit() {
     const [selectedEmoji, setSelectedEmoji] = useState<string>(emoji as string || '🔄');
     const [showTimePicker, setShowTimePicker] = useState(false);
     const [selectedTime, setSelectedTime] = useState<string>(reminder_time as string || '');
-
-    const { openModal, closeModal } = useModal();
-    const { createHabit, updateHabit, deleteHabit } = useDatabase();
-    const { theme } = useContext(ThemeContext);
-
-    const isPremadeGoal = useMemo(() => {
-        return !isNaN(Number(goalId));
-    }, [goalId]);
-
     // Parse the reminder_days string to an array if it exists
     const [habitReminderDays, setHabitReminderDays] = useState<string[]>(() => {
         if (reminder_days) {
@@ -44,6 +38,114 @@ export default function Habit() {
         return [];
     });
 
+    const { openModal, closeModal } = useModal();
+    const { createHabit, updateHabit, deleteHabit } = useDatabase();
+    const { theme } = useContext(ThemeContext);
+
+    const isPremadeGoal = useMemo(() => {
+        return !isNaN(Number(goalId));
+    }, [goalId]);
+
+    // Schedule the reminders
+    const scheduleReminders = async () => {
+        const existingReminderDays: string[] = reminder_days ? JSON.parse(reminder_days as string) : [];
+        let newReminders: string[] = habitReminderDays.filter((day) => !existingReminderDays.includes(day));
+        let newIds: string[] = [];
+        let existingReminders: {
+            id: string;
+            title: string;
+            body: string;
+            weekday: keyof typeof WeekdaysInNumbers;
+        }[] = [];
+
+        // Check for existing reminders
+        try {
+            existingReminders = await checkForExistingReminders(habitId as string);
+            newIds.push(...existingReminders.map((reminder) => reminder.id));
+            console.log('Existing reminders', existingReminders.length, existingReminders.map((reminder) => reminder.weekday));
+        } catch (error) {
+            console.error('Error checking for existing reminders', error);
+        }
+
+        // If the number of reminders has changed, remove the unscheduled reminders
+        if (existingReminders.length > habitReminderDays.length) {
+            try {
+                console.log('--------------------------------');
+                console.log('Removing unscheduled reminders');
+                console.log('--------------------------------');
+
+                const unscheduledReminders = existingReminders.filter((reminder) => !habitReminderDays.includes(reminder.weekday));
+                console.log('Unscheduled reminders', unscheduledReminders);
+
+                unscheduledReminders.forEach(async (reminder) => {
+                    await Notifications.cancelScheduledNotificationAsync(reminder.id);
+                });
+
+                newIds = newIds.filter((id) => !unscheduledReminders.map((reminder) => reminder.id).includes(id));
+
+                console.log('--------------------------------');
+                console.log('Unscheduled reminders removed');
+                console.log('--------------------------------');
+            } catch (error) {
+                console.error('Error removing unscheduled reminders', error);
+            }
+        }
+
+
+        // If the reminder time has changed, delete the existing reminders and schedule new ones
+        if (selectedTime !== reminder_time && reminder_time) {
+            try {
+                console.log('--------------------------------');
+                console.log('Deleting existing reminders');
+                console.log('--------------------------------');
+
+                await Promise.all(newIds.map(async (id) => {
+                    await Notifications.cancelScheduledNotificationAsync(id);
+                    console.log('Removed reminder:', id);
+                }));
+
+                newIds = [];
+
+                console.log('--------------------------------');
+                console.log('Scheduling new reminders');
+                console.log('--------------------------------');
+
+                const ids = await scheduleWeeklyReminders({
+                    title: habitTitle,
+                    reminderTime: selectedTime,
+                    reminderDays: habitReminderDays,
+                });
+                newIds.push(...ids);
+                // Reset the new reminders to an empty array so the next if statement doesn't schedule the same reminders again
+                // Absolute Spazierstock :raised_hands:
+                newReminders = [];
+                console.log('--------------------------------');
+                console.log('New reminders scheduled', ids);
+                console.log('--------------------------------');
+            } catch (error) {
+                console.error('Error scheduling reminders', error);
+            }
+        }
+
+        if (newReminders.length > 0) {
+            try {
+                const ids = await scheduleWeeklyReminders({
+                    title: habitTitle,
+                    reminderTime: selectedTime,
+                    reminderDays: newReminders,
+                });
+                newIds.push(...ids);
+                console.log('Scheduled reminders', ids);
+            } catch (error) {
+                console.error('Error scheduling reminders', error);
+            }
+        }
+
+        console.log('New list of ids', newIds);
+        return newIds;
+    }
+
+    // Handle time picker for reminder time
     const onChangeTime = (event: DateTimePickerEvent, selectedDate: Date | undefined) => {
         if (!selectedDate) {
             return;
@@ -93,34 +195,6 @@ export default function Habit() {
         }
     };
 
-    // Handle time picker for reminder time
-    // const handleTimeSelection = () => {
-    //     if (isPremadeGoal) {
-    //         return;
-    //     }
-    //     Keyboard.dismiss();
-    //     openModal({
-    //         modalName: TIME_PICKER_MODAL,
-    //         props: {
-    //             theme,
-    //             title: 'Reminder Time',
-    //             content: '',
-    //             description: '',
-    //             primaryCTA: 'OK',
-    //             secondaryCTA: 'Cancel',
-    //             initialHour: hour,
-    //             initialMinute: minute,
-    //             onTimeSelected: (selectedHour, selectedMinute) => {
-    //                 setHour(selectedHour);
-    //                 setMinute(selectedMinute);
-    //             },
-    //             onConfirm: () => { },
-    //             onCancel: () => { },
-    //             onClose: () => { },
-    //         }
-    //     });
-    // };
-
     // Delete the habit
     const handleDelete = async () => {
         if (!habitId || isPremadeGoal) {
@@ -137,9 +211,8 @@ export default function Habit() {
                 description: 'Are you sure you want to delete this habit? \n This action cannot be undone.',
                 primaryCTA: 'Delete',
                 secondaryCTA: 'Cancel',
-                onConfirm: () => {
-                    // TODO: should be "awaited" in the modal code (maybe add an additional "onSuccess" callback?)
-                    deleteHabit(habitId as string, goalId as string);
+                onConfirm: async () => {
+                    await deleteHabit(habitId as string, goalId as string);
                     closeModal();
                     router.back();
                 },
@@ -160,6 +233,10 @@ export default function Habit() {
         }
 
         try {
+            let ids: string[] = [];
+            if (habitReminderDays.length > 0) {
+                ids = await scheduleReminders();
+            }
             // Create the new habit using the database context
             await createHabit({
                 goal_id: goalId as string,
@@ -167,6 +244,7 @@ export default function Habit() {
                 selected_emoji: selectedEmoji,
                 reminder_days: JSON.stringify(habitReminderDays), // Store as JSON string
                 reminder_time: selectedTime,
+                reminder_ids: JSON.stringify(ids),
                 completed: false,
             });
 
@@ -186,12 +264,18 @@ export default function Habit() {
         }
 
         try {
+            let ids: string[] = [];
+            if (habitReminderDays.length > 0) {
+                ids = await scheduleReminders();
+            }
+
             // Prepare the updated habit data
             const updatedHabit = {
                 title: habitTitle.trim(),
                 selected_emoji: selectedEmoji,
                 reminder_days: JSON.stringify(habitReminderDays),
                 reminder_time: selectedTime,
+                reminder_ids: JSON.stringify(ids),
             };
 
             if (habitId) {
@@ -493,6 +577,17 @@ export default function Habit() {
                                 theme={theme}
                                 onPress={habitId ? handleUpdate : handleSave}
                                 disabled={!habitTitle.trim()}
+                            />
+                        </View>
+                    )}
+                    {__DEV__ && (
+                        <View style={[styles.buttonContainer, { marginTop: 16 }]}>
+                            <Button
+                                label="Check for existing reminders"
+                                variant="primary"
+                                theme={theme}
+                                onPress={() => checkForExistingReminders(habitId as string)}
+                                disabled={!habitId}
                             />
                         </View>
                     )}

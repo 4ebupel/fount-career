@@ -260,6 +260,7 @@ export const premadeHabitsSeedData: Omit<Habit, 'created_at' | 'updated_at'>[] =
         selected_emoji: '🗣️',
         reminder_time: '08:00',
         reminder_days: '["Monday", "Wednesday", "Friday"]',
+        reminder_ids: '',
         completed: false
     },
     {
@@ -269,6 +270,7 @@ export const premadeHabitsSeedData: Omit<Habit, 'created_at' | 'updated_at'>[] =
         selected_emoji: '📖',
         reminder_time: '19:30',
         reminder_days: '["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]',
+        reminder_ids: '',
         completed: false
     },
     {
@@ -278,6 +280,7 @@ export const premadeHabitsSeedData: Omit<Habit, 'created_at' | 'updated_at'>[] =
         selected_emoji: '👀',
         reminder_time: '12:30',
         reminder_days: '["Tuesday", "Thursday", "Saturday"]',
+        reminder_ids: '',
         completed: false
     },
     
@@ -289,6 +292,7 @@ export const premadeHabitsSeedData: Omit<Habit, 'created_at' | 'updated_at'>[] =
         selected_emoji: '💻',
         reminder_time: '20:00',
         reminder_days: '["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]',
+        reminder_ids: '',
         completed: false
     },
     {
@@ -298,6 +302,7 @@ export const premadeHabitsSeedData: Omit<Habit, 'created_at' | 'updated_at'>[] =
         selected_emoji: '📑',
         reminder_time: '17:00',
         reminder_days: '["Wednesday", "Sunday"]',
+        reminder_ids: '',
         completed: false
     },
     {
@@ -307,6 +312,7 @@ export const premadeHabitsSeedData: Omit<Habit, 'created_at' | 'updated_at'>[] =
         selected_emoji: '🔢',
         reminder_time: '18:30',
         reminder_days: '["Tuesday", "Thursday", "Saturday"]',
+        reminder_ids: '',
         completed: false
     },
     
@@ -318,6 +324,7 @@ export const premadeHabitsSeedData: Omit<Habit, 'created_at' | 'updated_at'>[] =
         selected_emoji: '🔗',
         reminder_time: '09:15',
         reminder_days: '["Monday", "Wednesday", "Friday"]',
+        reminder_ids: '',
         completed: false
     },
     {
@@ -327,6 +334,7 @@ export const premadeHabitsSeedData: Omit<Habit, 'created_at' | 'updated_at'>[] =
         selected_emoji: '📧',
         reminder_time: '16:00',
         reminder_days: '["Tuesday", "Thursday"]',
+        reminder_ids: '',
         completed: false
     }
 ];

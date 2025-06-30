@@ -3,6 +3,8 @@ import { Alert } from 'react-native';
 import { Goal, Habit, Task } from '../types/database';
 import * as DB from '../lib/database';
 import { formatReminderTime, isValidReminderTime } from '../lib/database-utils';
+import * as Notifications from 'expo-notifications';
+import { scheduleWeeklyReminders } from '@/lib/scheduleWeeklyReminders';
 
 // Define the context type
 interface DatabaseContextType {
@@ -77,6 +79,24 @@ interface DatabaseContextType {
    * Get habits by goal id
    */
   getHabitsByGoalId: typeof DB.getHabitsByGoalId;
+  /**
+   * Get a habit by its ID
+   * @param id - The ID of the habit to get
+   * @returns {Promise<Habit | null>} A Promise that resolves to:
+   * - A Habit object with properties:
+   *   - id: string - Unique identifier
+   *   - goal_id: string - ID of associated goal
+   *   - created_at: string - Creation timestamp
+   *   - updated_at: string - Last update timestamp
+   *   - title: string - Habit title
+   *   - selected_emoji: string - Selected emoji icon
+   *   - reminder_days: string - JSON string of reminder days
+   *   - reminder_time: string - Reminder time
+   *   - reminder_ids: string - JSON string of reminder IDs
+   *   - completed: boolean - Completion status
+   * - null if no habit found with given ID
+   */
+  getHabitById: typeof DB.getHabitById;
   /**
    * Update a habit
    */
@@ -370,6 +390,19 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
   const deleteHabitWithRefresh = async (id: string, goal_id: string) => {
     try {
       clearError();
+      // Cancel all reminders for the habit before deleting it
+      const habit = await DB.getHabitById(id);
+
+      if (!habit) {
+        throw new Error('Habit not found');
+      }
+
+      const reminders = JSON.parse(habit.reminder_ids);
+      for (const reminder of reminders) {
+        await Notifications.cancelScheduledNotificationAsync(reminder);
+        console.log('Reminder cancelled:', reminder);
+      }
+
       await DB.deleteHabit(id);
 
       // Update local state using provided goal_id
@@ -471,7 +504,28 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
       // Create habits
       if (habits.length > 0 && newGoal) {
         for (const habit of habits) {
-          const newHabit = await DB.createHabit({ ...habit, goal_id: newGoal.id });
+          let ids: string[] = [];
+
+          // Schedule reminders
+          if (habit.reminder_time) {
+            const reminderDays = JSON.parse(habit.reminder_days);
+
+            ids = await scheduleWeeklyReminders({
+              title: habit.title,
+              reminderTime: habit.reminder_time,
+              reminderDays,
+            });
+            console.log('Reminder scheduled:', ids);
+          }
+
+          const newHabit = await DB.createHabit(
+            {
+              ...habit,
+              goal_id: newGoal.id,
+              reminder_ids: JSON.stringify(ids || [])
+            }
+          );
+
           console.log('New habit created:', newHabit);
         }
       }
@@ -540,6 +594,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     // Habit operations
     createHabit: createHabitWithRefresh,
     getHabitsByGoalId: DB.getHabitsByGoalId,
+    getHabitById: DB.getHabitById,
     updateHabit: updateHabitWithRefresh,
     deleteHabit: deleteHabitWithRefresh,
     // Task operations

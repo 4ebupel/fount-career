@@ -1,5 +1,6 @@
 import 'react-native-gesture-handler';
 import { enableScreens } from 'react-native-screens';
+import { EventProvider } from 'react-native-outside-press';
 
 // Enable screens for better navigation performance
 enableScreens();
@@ -74,28 +75,30 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
-      <SafeAreaProvider>
-        <ThemeProvider>
-          <NotificationProvider>
-            <DatabaseProvider>
-              <ModalProvider>
-                <Stack>
-                  <Stack.Screen name="index" options={{ headerShown: false }} />
-                  <Stack.Screen name="home" options={{ headerShown: false }} />
-                  <Stack.Screen name="goal/[id]" options={{ headerShown: false }} />
-                  <Stack.Screen name="task" options={{ headerShown: false }} />
-                  <Stack.Screen name="habit" options={{ headerShown: false }} />
-                  <Stack.Screen name="auth" options={{ headerShown: false }} />
-                  <Stack.Screen name="+not-found" />
-                </Stack>
-                <CustomModal />
-                <AppStatusBar />
-              </ModalProvider>
-            </DatabaseProvider>
-          </NotificationProvider>
-        </ThemeProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <EventProvider> {/* This is used to detect outside clicks */}
+      <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
+        <SafeAreaProvider>
+          <ThemeProvider>
+            <NotificationProvider>
+              <DatabaseProvider>
+                <ModalProvider>
+                  <Stack>
+                    <Stack.Screen name="index" options={{ headerShown: false }} />
+                    <Stack.Screen name="home" options={{ headerShown: false }} />
+                    <Stack.Screen name="goal/[id]" options={{ headerShown: false }} />
+                    <Stack.Screen name="task" options={{ headerShown: false }} />
+                    <Stack.Screen name="habit" options={{ headerShown: false }} />
+                    <Stack.Screen name="auth" options={{ headerShown: false }} />
+                    <Stack.Screen name="+not-found" />
+                  </Stack>
+                  <CustomModal />
+                  <AppStatusBar />
+                </ModalProvider>
+              </DatabaseProvider>
+            </NotificationProvider>
+          </ThemeProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </EventProvider>
   );
 }

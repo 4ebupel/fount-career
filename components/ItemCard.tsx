@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, useWindowDimensions, Pressable } from "react-native";
+import * as Haptics from 'expo-haptics';
 import { router } from "expo-router";
 import OutsidePressHandler from 'react-native-outside-press';
 import { Feather } from "@expo/vector-icons";
@@ -64,7 +65,10 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
                     }
                     setBeenLongPressed(false);
                 }}
-                onLongPress={() => setBeenLongPressed(true)}
+                onLongPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setBeenLongPressed(true);
+                }}
             >
                 {/* Checkbox */}
                 {displayCheckbox && (

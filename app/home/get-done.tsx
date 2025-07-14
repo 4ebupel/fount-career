@@ -20,6 +20,9 @@ export default function GetDone() {
     const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'pending'>('all');
     const [localHabits, setLocalHabits] = useState<Habit[]>([]);
     const [localTasks, setLocalTasks] = useState<Task[]>([]);
+    // Scroll enabled is used to disable the scroll when the user is long pressing an item card.
+    // TODO: This is a hacky solution and should be improved.
+    const [scrollEnabled, setScrollEnabled] = useState(true);
     const { openModal } = useModal();
 
     useEffect(() => {
@@ -196,6 +199,7 @@ export default function GetDone() {
                             theme={theme}
                             displayCheckbox={true}
                             displayBorders={false}
+                            scrollEnabler={setScrollEnabled}
                             onPress={() => toggleHabitCompletion(habit.id, goal.id)}
                         />
                     ))}
@@ -208,6 +212,7 @@ export default function GetDone() {
                             theme={theme}
                             displayCheckbox={true}
                             displayBorders={false}
+                            scrollEnabler={setScrollEnabled}
                             onPress={() => toggleTaskCompletion(task.id, goal.id)}
                         />
                     ))}
@@ -261,7 +266,7 @@ export default function GetDone() {
                     </View>
                 </View>
             ) : (
-                <ScrollView style={styles.scrollView}>
+                <ScrollView style={styles.scrollView} scrollEnabled={scrollEnabled}>
                     {/* Today's progress */}
                     <View style={styles.todayProgressContainer}>
                         <View style={styles.progressHeader}>

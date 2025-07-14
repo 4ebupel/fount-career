@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { View, Text, StyleSheet, useWindowDimensions, PanResponder } from "react-native";
 import * as Haptics from 'expo-haptics';
 import { router } from "expo-router";
@@ -19,13 +19,89 @@ const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'S
 
 export default function ItemCard({ item, theme, displayCheckbox, displayBorders, scrollEnabler, onPress }: props) {
     const [isLongPressed, setIsLongPressed] = useState(false);
+    const [greenButtonLayout, setGreenButtonLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
+    const [redButtonLayout, setRedButtonLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
+    const [mainButtonLayout, setMainButtonLayout] = useState({ pageX: 0, pageY: 0, width: 0, height: 0 });
+    const [layoutSet, setLayoutSet] = useState(false);
     const { width } = useWindowDimensions();
 
-    const testGreenButtonRef = useRef<View>(null);
-    const testRedButtonRef = useRef<View>(null);
-    const testMainButtonRef = useRef<View>(null);
-
     let timer: NodeJS.Timeout;
+
+    const greenButtonRef = useRef<View>(null);
+    const redButtonRef = useRef<View>(null);
+    const mainButtonRef = useRef<View>(null);
+    
+    // Use refs to store layout information that persists across re-renders
+    const layoutRef = useRef({
+        mainButton: { pageX: 0, pageY: 0, width: 0, height: 0 },
+        greenButton: { x: 0, y: 0, width: 0, height: 0 },
+        redButton: { x: 0, y: 0, width: 0, height: 0 },
+        isSet: false
+    });
+    
+    // Use ref to track long press state that persists across re-renders
+    const longPressRef = useRef(false);
+
+    const handleMainButtonLayout = (event: any) => {
+        const { x, y, width, height } = event.nativeEvent.layout;
+        console.log('onLayout event:', { x, y, width, height });
+        
+        // Use measure to get the actual page coordinates
+        mainButtonRef.current?.measure((localX, localY, localWidth, localHeight, pageX, pageY) => {
+            console.log('Measure result:', { localX, localY, localWidth, localHeight, pageX, pageY });
+            
+            // Store in both state (for UI updates) and ref (for persistent access)
+            setMainButtonLayout({ pageX, pageY, width, height });
+            
+            // Calculate green and red button positions using page coordinates
+            // Since they're positioned absolutely within the main button
+            const greenButtonPos = {
+                x: pageX + width / 2, // Right half of the main button
+                y: pageY, // Use pageY for screen coordinates
+                width: width / 2,
+                height: height
+            };
+            
+            const redButtonPos = {
+                x: pageX, // Left half of the main button
+                y: pageY, // Use pageY for screen coordinates
+                width: width / 2,
+                height: height
+            };
+            
+            setGreenButtonLayout(greenButtonPos);
+            setRedButtonLayout(redButtonPos);
+            setLayoutSet(true);
+            
+            // Store in ref for persistent access
+            layoutRef.current = {
+                mainButton: { pageX, pageY, width, height },
+                greenButton: greenButtonPos,
+                redButton: redButtonPos,
+                isSet: true
+            };
+            
+            console.log('Calculated green button position (with page coords):', greenButtonPos);
+            console.log('Calculated red button position (with page coords):', redButtonPos);
+            console.log('Layout has been set!');
+            console.log('Layout ref updated:', layoutRef.current);
+        });
+    };
+
+    // // Monitor when mainButtonLayout changes
+    // useEffect(() => {
+    //     console.log('mainButtonLayout updated:', mainButtonLayout);
+    // }, [mainButtonLayout]);
+
+    // // Monitor when green button layout changes
+    // useEffect(() => {
+    //     console.log('greenButtonLayout updated:', greenButtonLayout);
+    // }, [greenButtonLayout]);
+
+    // // Monitor when red button layout changes
+    // useEffect(() => {
+    //     console.log('redButtonLayout updated:', redButtonLayout);
+    // }, [redButtonLayout]);
 
     const panResponder = useRef(
         PanResponder.create({
@@ -37,6 +113,7 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
                 timer = setTimeout(() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     setIsLongPressed(true);
+                    longPressRef.current = true; // Set ref as well
                     scrollEnabler?.(false);
                 }, 250);
             },
@@ -50,7 +127,7 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
                 console.log('gestureState prop', gestureState.dx, gestureState.dy);
             },
             onPanResponderRelease: (event, gestureState) => {
-                if ((Math.abs(gestureState.dx) < 0.5 || Math.abs(gestureState.dy) < 0.5) && !isLongPressed) {
+                if ((Math.abs(gestureState.dx) < 0.5 || Math.abs(gestureState.dy) < 0.5) && !longPressRef.current) {
                     'reminder_days' in item ? (
                         router.push({
                             pathname: '/habit',
@@ -80,14 +157,77 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
 
                 }
                 clearTimeout(timer);
-                setIsLongPressed(false);
-                scrollEnabler?.(true);
+                
                 // Check if we are currently over the green or red button and trigger the appropriate action.
+                // Use ref for reliable long press state
+                if (longPressRef.current) {
+                    const touchX = event.nativeEvent.pageX;
+                    const touchY = event.nativeEvent.pageY;
+                    
+                    // Use ref values for reliable access
+                    const currentLayout = layoutRef.current;
+                    
+                    console.log('Touch position:', { touchX, touchY });
+                    console.log('Layout ref state:', currentLayout);
+                    console.log('Green button bounds (from ref):', currentLayout.greenButton);
+                    console.log('Red button bounds (from ref):', currentLayout.redButton);
+                    
+                    if (currentLayout.isSet) {
+                        // Debug the coordinate calculations
+                        const greenXInRange = touchX > currentLayout.greenButton.x && touchX < currentLayout.greenButton.x + currentLayout.greenButton.width;
+                        const greenYInRange = touchY > currentLayout.greenButton.y && touchY < currentLayout.greenButton.y + currentLayout.greenButton.height;
+                        const redXInRange = touchX > currentLayout.redButton.x && touchX < currentLayout.redButton.x + currentLayout.redButton.width;
+                        const redYInRange = touchY > currentLayout.redButton.y && touchY < currentLayout.redButton.y + currentLayout.redButton.height;
+                        
+                        // console.log('Coordinate checks:', {
+                        //     greenXInRange,
+                        //     greenYInRange,
+                        //     redXInRange,
+                        //     redYInRange,
+                        //     greenXRange: [currentLayout.greenButton.x, currentLayout.greenButton.x + currentLayout.greenButton.width],
+                        //     greenYRange: [currentLayout.greenButton.y, currentLayout.greenButton.y + currentLayout.greenButton.height],
+                        //     redXRange: [currentLayout.redButton.x, currentLayout.redButton.x + currentLayout.redButton.width],
+                        //     redYRange: [currentLayout.redButton.y, currentLayout.redButton.y + currentLayout.redButton.height]
+                        // });
+                        
+                        if (greenXInRange && greenYInRange) {
+                            console.log('✅ Over green button!');
+                            onPress(item.id, item.goal_id);
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        }
+                        if (redXInRange && redYInRange) {
+                            console.log('❌ Over red button!');
+                        }
+                    } else {
+                        console.log('⚠️ Layout not set in ref!');
+                    }
+                }
+                
+                // Reset long press state
+                setIsLongPressed(false);
+                longPressRef.current = false;
+                scrollEnabler?.(true);
+                console.log('=== PAN RELEASE DEBUG ===');
+                console.log('isLongPressed (state):', isLongPressed);
+                console.log('isLongPressed (ref):', longPressRef.current);
+                console.log('layoutSet:', layoutSet);
+                console.log('mainButtonLayout on Release', mainButtonLayout);
+                console.log('greenButtonLayout on Release', greenButtonLayout);
+                console.log('redButtonLayout on Release', redButtonLayout);
+                console.log('Layout ref state:', layoutRef.current);
+                console.log('Layout values are zero?', {
+                    mainZero: mainButtonLayout.width === 0,
+                    greenZero: greenButtonLayout.width === 0,
+                    redZero: redButtonLayout.width === 0,
+                    refSet: layoutRef.current.isSet,
+                    refMainZero: layoutRef.current.mainButton.width === 0
+                });
                 console.log('onPanResponderRelease');
             },
             onPanResponderTerminate: () => {
                 clearTimeout(timer);
                 setIsLongPressed(false);
+                longPressRef.current = false;
                 scrollEnabler?.(true);
                 console.log('onPanResponderTerminate');
             }
@@ -97,7 +237,8 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
     return (
         <View
             {...panResponder.panHandlers}
-            ref={testMainButtonRef}
+            ref={mainButtonRef}
+            onLayout={handleMainButtonLayout}
             style={[
                 styles.itemCard,
                 theme === 'dark' ? styles.itemCardDark : styles.itemCardLight,
@@ -184,31 +325,30 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
             </View>
 
             {/* Long pressed content */}
-            {/* {beenLongPressed && ( */}
-            <View style={[styles.longPressedContent]}>
-                <View
-                    id="red-button"
-                    ref={testRedButtonRef}
-                    style={[styles.longPressedContentLeft, !isLongPressed && { backgroundColor: 'transparent' }]}
-                >
-                    <Text style={[{ display: isLongPressed ? 'flex' : 'none' }]}>
-                        <Feather name="trash" size={'reminder_days' in item ? 64 : 32} color="#FFFFFF" />
-                    </Text>
+            {isLongPressed && (
+                <View style={[styles.longPressedContent]}>
+                    <View
+                        ref={redButtonRef}
+                        style={[styles.longPressedContentLeft]}
+                    >
+                        <Text>
+                            <Feather name="trash" size={'reminder_days' in item ? 64 : 32} color="#FFFFFF" />
+                        </Text>
+                    </View>
+                    <View
+                        ref={greenButtonRef}
+                        style={[styles.longPressedContentRight]}
+                    >
+                        <Text>
+                            {item.completed ? (
+                                <Feather name="x" size={'reminder_days' in item ? 64 : 32} color="#FFFFFF" />
+                            ) : (
+                                <Feather name="check" size={'reminder_days' in item ? 64 : 32} color="#FFFFFF" />
+                            )}
+                        </Text>
+                    </View>
                 </View>
-                <View
-                    id="green-button"
-                    ref={testGreenButtonRef}
-                    style={[styles.longPressedContentRight, !isLongPressed && { backgroundColor: 'transparent' }]}
-                >
-                    <Text style={[{ display: isLongPressed ? 'flex' : 'none' }]}>
-                        {item.completed ? (
-                            <Feather name="x" size={'reminder_days' in item ? 64 : 32} color="#FFFFFF" />
-                        ) : (
-                            <Feather name="check" size={'reminder_days' in item ? 64 : 32} color="#FFFFFF" />
-                        )}
-                    </Text>
-                </View>
-            </View>
+            )}
 
             {/* Colored stripe */}
             <View style={[styles.colorStripe, 'reminder_days' in item ? (theme === 'dark' ? { backgroundColor: colors.dark_theme.text_accent } : { backgroundColor: colors.light_theme.text_accent }) : { backgroundColor: '#1A96F0' }]} />

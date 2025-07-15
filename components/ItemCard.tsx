@@ -19,16 +19,14 @@ const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'S
 
 export default function ItemCard({ item, theme, displayCheckbox, displayBorders, scrollEnabler, onPress }: props) {
     const [isLongPressed, setIsLongPressed] = useState(false);
-    const [greenButtonLayout, setGreenButtonLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
-    const [redButtonLayout, setRedButtonLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
-    const [mainButtonLayout, setMainButtonLayout] = useState({ pageX: 0, pageY: 0, width: 0, height: 0 });
+    // const [greenButtonLayout, setGreenButtonLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
+    // const [redButtonLayout, setRedButtonLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
+    // const [mainButtonLayout, setMainButtonLayout] = useState({ pageX: 0, pageY: 0, width: 0, height: 0 });
     const [layoutSet, setLayoutSet] = useState(false);
     const { width } = useWindowDimensions();
 
     let timer: NodeJS.Timeout;
 
-    const greenButtonRef = useRef<View>(null);
-    const redButtonRef = useRef<View>(null);
     const mainButtonRef = useRef<View>(null);
     
     // Use refs to store layout information that persists across re-renders
@@ -42,51 +40,51 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
     // Use ref to track long press state that persists across re-renders
     const longPressRef = useRef(false);
 
-    const handleMainButtonLayout = (event: any) => {
-        const { x, y, width, height } = event.nativeEvent.layout;
-        console.log('onLayout event:', { x, y, width, height });
+    // const handleMainButtonLayout = (event: any) => {
+    //     const { x, y, width, height } = event.nativeEvent.layout;
+    //     console.log('onLayout event:', { x, y, width, height });
         
-        // Use measure to get the actual page coordinates
-        mainButtonRef.current?.measure((localX, localY, localWidth, localHeight, pageX, pageY) => {
-            console.log('Measure result:', { localX, localY, localWidth, localHeight, pageX, pageY });
+    //     // Use measure to get the actual page coordinates
+    //     mainButtonRef.current?.measure((localX, localY, localWidth, localHeight, pageX, pageY) => {
+    //         console.log('Measure result:', { localX, localY, localWidth, localHeight, pageX, pageY });
             
-            // Store in both state (for UI updates) and ref (for persistent access)
-            setMainButtonLayout({ pageX, pageY, width, height });
+    //         // Store in both state (for UI updates) and ref (for persistent access)
+    //         setMainButtonLayout({ pageX, pageY, width, height });
             
-            // Calculate green and red button positions using page coordinates
-            // Since they're positioned absolutely within the main button
-            const greenButtonPos = {
-                x: pageX + width / 2, // Right half of the main button
-                y: pageY, // Use pageY for screen coordinates
-                width: width / 2,
-                height: height
-            };
+    //         // Calculate green and red button positions using page coordinates
+    //         // Since they're positioned absolutely within the main button
+    //         const greenButtonPos = {
+    //             x: pageX + width / 2, // Right half of the main button
+    //             y: pageY, // Use pageY for screen coordinates
+    //             width: width / 2,
+    //             height: height
+    //         };
             
-            const redButtonPos = {
-                x: pageX, // Left half of the main button
-                y: pageY, // Use pageY for screen coordinates
-                width: width / 2,
-                height: height
-            };
+    //         const redButtonPos = {
+    //             x: pageX, // Left half of the main button
+    //             y: pageY, // Use pageY for screen coordinates
+    //             width: width / 2,
+    //             height: height
+    //         };
             
-            setGreenButtonLayout(greenButtonPos);
-            setRedButtonLayout(redButtonPos);
-            setLayoutSet(true);
+    //         setGreenButtonLayout(greenButtonPos);
+    //         setRedButtonLayout(redButtonPos);
+    //         setLayoutSet(true);
             
-            // Store in ref for persistent access
-            layoutRef.current = {
-                mainButton: { pageX, pageY, width, height },
-                greenButton: greenButtonPos,
-                redButton: redButtonPos,
-                isSet: true
-            };
+    //         // Store in ref for persistent access
+    //         layoutRef.current = {
+    //             mainButton: { pageX, pageY, width, height },
+    //             greenButton: greenButtonPos,
+    //             redButton: redButtonPos,
+    //             isSet: true
+    //         };
             
-            console.log('Calculated green button position (with page coords):', greenButtonPos);
-            console.log('Calculated red button position (with page coords):', redButtonPos);
-            console.log('Layout has been set!');
-            console.log('Layout ref updated:', layoutRef.current);
-        });
-    };
+    //         console.log('Calculated green button position (with page coords):', greenButtonPos);
+    //         console.log('Calculated red button position (with page coords):', redButtonPos);
+    //         console.log('Layout has been set!');
+    //         console.log('Layout ref updated:', layoutRef.current);
+    //     });
+    // };
 
     // // Monitor when mainButtonLayout changes
     // useEffect(() => {
@@ -156,8 +154,7 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
                     )
 
                 }
-                clearTimeout(timer);
-                
+
                 // Check if we are currently over the green or red button and trigger the appropriate action.
                 // Use ref for reliable long press state
                 if (longPressRef.current) {
@@ -165,19 +162,55 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
                     const touchY = event.nativeEvent.pageY;
                     
                     // Use ref values for reliable access
-                    const currentLayout = layoutRef.current;
+                    // const currentLayout = layoutRef.current;
                     
                     console.log('Touch position:', { touchX, touchY });
-                    console.log('Layout ref state:', currentLayout);
-                    console.log('Green button bounds (from ref):', currentLayout.greenButton);
-                    console.log('Red button bounds (from ref):', currentLayout.redButton);
+                    // console.log('Layout ref state:', currentLayout);
+                    // console.log('Green button bounds (from ref):', currentLayout.greenButton);
+                    // console.log('Red button bounds (from ref):', currentLayout.redButton);
+
+                    // test area start
+
+                    let mainButtonLayout: { 
+                        localX: number, 
+                        localY: number, 
+                        localWidth: number, 
+                        localHeight: number, 
+                        pageX: number, 
+                        pageY: number 
+                    } = { localX: 0, localY: 0, localWidth: 0, localHeight: 0, pageX: 0, pageY: 0 };
+
+                    let greenButtonPos: { 
+                        x: number,
+                        y: number,
+                        width: number,
+                        height: number
+                    } = { x: 0, y: 0, width: 0, height: 0 };
+
+                    let redButtonPos: { 
+                        x: number,
+                        y: number,
+                        width: number,
+                        height: number
+                    } = { x: 0, y: 0, width: 0, height: 0 };
+
+                    mainButtonRef.current?.measure((localX, localY, localWidth, localHeight, pageX, pageY) => {
+                        console.log('Measure result inside:', { localX, localY, localWidth, localHeight, pageX, pageY });
+                        mainButtonLayout = { localX, localY, localWidth, localHeight, pageX, pageY };
+                        greenButtonPos = { x: pageX + localWidth / 2, y: pageY, width: localWidth / 2, height: localHeight };
+                        redButtonPos = { x: pageX, y: pageY, width: localWidth / 2, height: localHeight };
+                    });
+
+                    console.log('Measure result outside:', mainButtonLayout);
+
+                    // test area end
                     
-                    if (currentLayout.isSet) {
+                    if (mainButtonLayout.localWidth > 0) {
                         // Debug the coordinate calculations
-                        const greenXInRange = touchX > currentLayout.greenButton.x && touchX < currentLayout.greenButton.x + currentLayout.greenButton.width;
-                        const greenYInRange = touchY > currentLayout.greenButton.y && touchY < currentLayout.greenButton.y + currentLayout.greenButton.height;
-                        const redXInRange = touchX > currentLayout.redButton.x && touchX < currentLayout.redButton.x + currentLayout.redButton.width;
-                        const redYInRange = touchY > currentLayout.redButton.y && touchY < currentLayout.redButton.y + currentLayout.redButton.height;
+                        const greenXInRange = touchX > greenButtonPos.x && touchX < greenButtonPos.x + greenButtonPos.width;
+                        const greenYInRange = touchY > greenButtonPos.y && touchY < greenButtonPos.y + greenButtonPos.height;
+                        const redXInRange = touchX > redButtonPos.x && touchX < redButtonPos.x + redButtonPos.width;
+                        const redYInRange = touchY > redButtonPos.y && touchY < redButtonPos.y + redButtonPos.height;
                         
                         // console.log('Coordinate checks:', {
                         //     greenXInRange,
@@ -207,21 +240,22 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
                 setIsLongPressed(false);
                 longPressRef.current = false;
                 scrollEnabler?.(true);
+                clearTimeout(timer);
                 console.log('=== PAN RELEASE DEBUG ===');
                 console.log('isLongPressed (state):', isLongPressed);
                 console.log('isLongPressed (ref):', longPressRef.current);
                 console.log('layoutSet:', layoutSet);
-                console.log('mainButtonLayout on Release', mainButtonLayout);
-                console.log('greenButtonLayout on Release', greenButtonLayout);
-                console.log('redButtonLayout on Release', redButtonLayout);
-                console.log('Layout ref state:', layoutRef.current);
-                console.log('Layout values are zero?', {
-                    mainZero: mainButtonLayout.width === 0,
-                    greenZero: greenButtonLayout.width === 0,
-                    redZero: redButtonLayout.width === 0,
-                    refSet: layoutRef.current.isSet,
-                    refMainZero: layoutRef.current.mainButton.width === 0
-                });
+                // console.log('mainButtonLayout on Release', mainButtonLayout);
+                // console.log('greenButtonLayout on Release', greenButtonLayout);
+                // console.log('redButtonLayout on Release', redButtonLayout);
+                // console.log('Layout ref state:', layoutRef.current);
+                // console.log('Layout values are zero?', {
+                //     mainZero: mainButtonLayout.width === 0,
+                //     greenZero: greenButtonLayout.width === 0,
+                //     redZero: redButtonLayout.width === 0,
+                //     refSet: layoutRef.current.isSet,
+                //     refMainZero: layoutRef.current.mainButton.width === 0
+                // });
                 console.log('onPanResponderRelease');
             },
             onPanResponderTerminate: () => {
@@ -238,7 +272,7 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
         <View
             {...panResponder.panHandlers}
             ref={mainButtonRef}
-            onLayout={handleMainButtonLayout}
+            // onLayout={handleMainButtonLayout}
             style={[
                 styles.itemCard,
                 theme === 'dark' ? styles.itemCardDark : styles.itemCardLight,
@@ -328,7 +362,7 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
             {isLongPressed && (
                 <View style={[styles.longPressedContent]}>
                     <View
-                        ref={redButtonRef}
+                        // ref={redButtonRef}
                         style={[styles.longPressedContentLeft]}
                     >
                         <Text>
@@ -336,7 +370,7 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
                         </Text>
                     </View>
                     <View
-                        ref={greenButtonRef}
+                        // ref={greenButtonRef}
                         style={[styles.longPressedContentRight]}
                     >
                         <Text>

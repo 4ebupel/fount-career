@@ -1,10 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import { View, Text, StyleSheet, useWindowDimensions, PanResponder } from "react-native";
+import { useDatabase } from "@/hooks/useDatabase";
+import { useModal } from "@/hooks/useModal";
 import * as Haptics from 'expo-haptics';
 import { router } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { colors } from "@/lib/colors";
 import { Habit, Task } from "@/types/database";
+import { DEFAULT_MODAL } from "@/lib/modals";
 
 interface props {
     item: Task | Habit,
@@ -19,16 +22,19 @@ const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'S
 
 export default function ItemCard({ item, theme, displayCheckbox, displayBorders, scrollEnabler, onPress }: props) {
     const [isLongPressed, setIsLongPressed] = useState(false);
+    const [isCompleted, setIsCompleted] = useState(item.completed);
     // const [greenButtonLayout, setGreenButtonLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
     // const [redButtonLayout, setRedButtonLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
     // const [mainButtonLayout, setMainButtonLayout] = useState({ pageX: 0, pageY: 0, width: 0, height: 0 });
     const [layoutSet, setLayoutSet] = useState(false);
     const { width } = useWindowDimensions();
+    const { updateHabit, updateTask, deleteHabit, deleteTask } = useDatabase();
+    const { openModal, closeModal } = useModal();
 
     let timer: NodeJS.Timeout;
 
     const mainButtonRef = useRef<View>(null);
-    
+
     // Use refs to store layout information that persists across re-renders
     const layoutRef = useRef({
         mainButton: { pageX: 0, pageY: 0, width: 0, height: 0 },
@@ -36,21 +42,21 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
         redButton: { x: 0, y: 0, width: 0, height: 0 },
         isSet: false
     });
-    
+
     // Use ref to track long press state that persists across re-renders
     const longPressRef = useRef(false);
 
     // const handleMainButtonLayout = (event: any) => {
     //     const { x, y, width, height } = event.nativeEvent.layout;
     //     console.log('onLayout event:', { x, y, width, height });
-        
+
     //     // Use measure to get the actual page coordinates
     //     mainButtonRef.current?.measure((localX, localY, localWidth, localHeight, pageX, pageY) => {
     //         console.log('Measure result:', { localX, localY, localWidth, localHeight, pageX, pageY });
-            
+
     //         // Store in both state (for UI updates) and ref (for persistent access)
     //         setMainButtonLayout({ pageX, pageY, width, height });
-            
+
     //         // Calculate green and red button positions using page coordinates
     //         // Since they're positioned absolutely within the main button
     //         const greenButtonPos = {
@@ -59,18 +65,18 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
     //             width: width / 2,
     //             height: height
     //         };
-            
+
     //         const redButtonPos = {
     //             x: pageX, // Left half of the main button
     //             y: pageY, // Use pageY for screen coordinates
     //             width: width / 2,
     //             height: height
     //         };
-            
+
     //         setGreenButtonLayout(greenButtonPos);
     //         setRedButtonLayout(redButtonPos);
     //         setLayoutSet(true);
-            
+
     //         // Store in ref for persistent access
     //         layoutRef.current = {
     //             mainButton: { pageX, pageY, width, height },
@@ -78,7 +84,7 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
     //             redButton: redButtonPos,
     //             isSet: true
     //         };
-            
+
     //         console.log('Calculated green button position (with page coords):', greenButtonPos);
     //         console.log('Calculated red button position (with page coords):', redButtonPos);
     //         console.log('Layout has been set!');
@@ -100,6 +106,48 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
     // useEffect(() => {
     //     console.log('redButtonLayout updated:', redButtonLayout);
     // }, [redButtonLayout]);
+    const handleOpenDeletionModal = (itemType: 'habit' | 'task', itemId: string, goalId: string) => {
+        openModal({
+            modalName: DEFAULT_MODAL,
+            props: {
+                theme,
+                title: `Delete ${itemType}`,
+                content: '',
+                description: 'Are you sure you want to delete this ' + itemType + '? \n This action cannot be undone.',
+                primaryCTA: 'Delete',
+                secondaryCTA: 'Cancel',
+                onConfirm: async () => {
+                    if (itemType === 'habit') {
+                        await deleteHabit(itemId, goalId);
+                    } else {
+                        await deleteTask(itemId, goalId);
+                    }
+                    closeModal();
+                },
+                onCancel: () => {
+                    closeModal();
+                },
+                onClose: () => { },
+            }
+        });
+    }
+
+    const handleToggleCompletion = async (itemType: 'habit' | 'task') => {
+        setIsCompleted(!isCompleted);
+        if (itemType === 'habit') {
+            updateHabit(item.id, { completed: !isCompleted });
+        } else {
+            updateTask(item.id, { completed: !isCompleted });
+        }
+    };
+
+    const handleDelete = async (itemType: 'habit' | 'task') => {
+        if (itemType === 'habit') {
+            handleOpenDeletionModal('habit', item.id, item.goal_id);
+        } else {
+            handleOpenDeletionModal('task', item.id, item.goal_id);
+        }
+    };
 
     const panResponder = useRef(
         PanResponder.create({
@@ -160,10 +208,10 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
                 if (longPressRef.current) {
                     const touchX = event.nativeEvent.pageX;
                     const touchY = event.nativeEvent.pageY;
-                    
+
                     // Use ref values for reliable access
                     // const currentLayout = layoutRef.current;
-                    
+
                     console.log('Touch position:', { touchX, touchY });
                     // console.log('Layout ref state:', currentLayout);
                     // console.log('Green button bounds (from ref):', currentLayout.greenButton);
@@ -171,23 +219,23 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
 
                     // test area start
 
-                    let mainButtonLayout: { 
-                        localX: number, 
-                        localY: number, 
-                        localWidth: number, 
-                        localHeight: number, 
-                        pageX: number, 
-                        pageY: number 
+                    let mainButtonLayout: {
+                        localX: number,
+                        localY: number,
+                        localWidth: number,
+                        localHeight: number,
+                        pageX: number,
+                        pageY: number
                     } = { localX: 0, localY: 0, localWidth: 0, localHeight: 0, pageX: 0, pageY: 0 };
 
-                    let greenButtonPos: { 
+                    let greenButtonPos: {
                         x: number,
                         y: number,
                         width: number,
                         height: number
                     } = { x: 0, y: 0, width: 0, height: 0 };
 
-                    let redButtonPos: { 
+                    let redButtonPos: {
                         x: number,
                         y: number,
                         width: number,
@@ -204,14 +252,14 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
                     console.log('Measure result outside:', mainButtonLayout);
 
                     // test area end
-                    
+
                     if (mainButtonLayout.localWidth > 0) {
                         // Debug the coordinate calculations
                         const greenXInRange = touchX > greenButtonPos.x && touchX < greenButtonPos.x + greenButtonPos.width;
                         const greenYInRange = touchY > greenButtonPos.y && touchY < greenButtonPos.y + greenButtonPos.height;
                         const redXInRange = touchX > redButtonPos.x && touchX < redButtonPos.x + redButtonPos.width;
                         const redYInRange = touchY > redButtonPos.y && touchY < redButtonPos.y + redButtonPos.height;
-                        
+
                         // console.log('Coordinate checks:', {
                         //     greenXInRange,
                         //     greenYInRange,
@@ -222,20 +270,30 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
                         //     redXRange: [currentLayout.redButton.x, currentLayout.redButton.x + currentLayout.redButton.width],
                         //     redYRange: [currentLayout.redButton.y, currentLayout.redButton.y + currentLayout.redButton.height]
                         // });
-                        
+
+                        let itemType: 'habit' | 'task' = 'habit';
+                        if ('reminder_days' in item) {
+                            itemType = 'habit';
+                        } else {
+                            itemType = 'task';
+                        }
+
                         if (greenXInRange && greenYInRange) {
                             console.log('✅ Over green button!');
-                            onPress(item.id, item.goal_id);
+                            console.log('current title:', item.title);
+
+                            handleToggleCompletion(itemType);
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                         }
                         if (redXInRange && redYInRange) {
                             console.log('❌ Over red button!');
+                            handleDelete(itemType);
                         }
                     } else {
                         console.log('⚠️ Layout not set in ref!');
                     }
                 }
-                
+
                 // Reset long press state
                 setIsLongPressed(false);
                 longPressRef.current = false;
@@ -283,9 +341,9 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
             {displayCheckbox && (
                 <View style={[
                     styles.checkbox,
-                    item.completed ? styles.checkboxCompleted : styles.checkboxUncompleted
+                    isCompleted ? styles.checkboxCompleted : styles.checkboxUncompleted
                 ]}>
-                    {item.completed ? (
+                    {isCompleted ? (
                         <Text>
                             <Feather name="check" size={16} color="#FFFFFF" />
                         </Text>
@@ -297,7 +355,7 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
             <View style={styles.itemContent}>
                 <Text style={[
                     styles.itemTitle,
-                    item.completed ? styles.itemTitleCompleted : theme === 'dark' ? styles.textDark : styles.textLight
+                    isCompleted ? styles.itemTitleCompleted : theme === 'dark' ? styles.textDark : styles.textLight
                 ]}>
                     {item.selected_emoji} {item.title}
                 </Text>
@@ -374,7 +432,7 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
                         style={[styles.longPressedContentRight]}
                     >
                         <Text>
-                            {item.completed ? (
+                            {isCompleted ? (
                                 <Feather name="x" size={'reminder_days' in item ? 64 : 32} color="#FFFFFF" />
                             ) : (
                                 <Feather name="check" size={'reminder_days' in item ? 64 : 32} color="#FFFFFF" />

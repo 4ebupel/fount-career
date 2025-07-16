@@ -31,9 +31,30 @@ export default function GetDone() {
         const loadData = async () => {
             try {
                 await setLocalHabits(Object.values(habits).flat());
-                await setLocalTasks(Object.values(tasks).flat());
 
                 console.log("Local habits:", localHabits.length);
+
+                setDataLoaded(true);
+            } catch (error) {
+                console.error("Error loading data:", error);
+                setDataLoaded(true); // Still mark as loaded to show content
+            }
+        };
+
+        loadData();
+
+        return () => {
+            console.log("Component unmounting");
+        };
+    }, [habits]);
+
+    useEffect(() => {
+        console.log("Component mounted");
+
+        const loadData = async () => {
+            try {
+                await setLocalTasks(Object.values(tasks).flat());
+
                 console.log("Local tasks:", localTasks.length);
 
                 setDataLoaded(true);
@@ -48,7 +69,7 @@ export default function GetDone() {
         return () => {
             console.log("Component unmounting");
         };
-    }, [goals, tasks, habits]);
+    }, [tasks]);
 
     const handleFloatingButtonPress = () => {
         openModal({

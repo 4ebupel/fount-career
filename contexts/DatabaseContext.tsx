@@ -350,6 +350,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
    */
   const updateHabitWithRefresh = async (id: string, updates: Partial<Omit<Habit, 'id' | 'created_at'>>) => {
     try {
+      console.log('updateHabitWithRefresh start', id, updates);
       clearError();
       // Explicitly remove goal_id from updates to prevent accidental modifications
       const { goal_id, ...safeUpdates } = updates;
@@ -368,7 +369,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
       }
 
       const updatedHabit = await DB.updateHabit(id, safeUpdates);
-
+      console.log('updateHabitWithRefresh end', updatedHabit);
       // Update local state with direct access to goal_id
       setHabits(prevHabits => ({
         ...prevHabits,

@@ -23,10 +23,7 @@ const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'S
 export default function ItemCard({ item, theme, displayCheckbox, displayBorders, scrollEnabler, onPress }: props) {
     const [isLongPressed, setIsLongPressed] = useState(false);
     const [isCompleted, setIsCompleted] = useState(item.completed);
-    // const [greenButtonLayout, setGreenButtonLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
-    // const [redButtonLayout, setRedButtonLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
-    // const [mainButtonLayout, setMainButtonLayout] = useState({ pageX: 0, pageY: 0, width: 0, height: 0 });
-    const [layoutSet, setLayoutSet] = useState(false);
+
     const { width } = useWindowDimensions();
     const { updateHabit, updateTask, deleteHabit, deleteTask } = useDatabase();
     const { openModal, closeModal } = useModal();
@@ -35,77 +32,10 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
 
     const mainButtonRef = useRef<View>(null);
 
-    // Use refs to store layout information that persists across re-renders
-    const layoutRef = useRef({
-        mainButton: { pageX: 0, pageY: 0, width: 0, height: 0 },
-        greenButton: { x: 0, y: 0, width: 0, height: 0 },
-        redButton: { x: 0, y: 0, width: 0, height: 0 },
-        isSet: false
-    });
-
     // Use ref to track long press state that persists across re-renders
     const longPressRef = useRef(false);
+    const isCompletedRef = useRef(item.completed);
 
-    // const handleMainButtonLayout = (event: any) => {
-    //     const { x, y, width, height } = event.nativeEvent.layout;
-    //     console.log('onLayout event:', { x, y, width, height });
-
-    //     // Use measure to get the actual page coordinates
-    //     mainButtonRef.current?.measure((localX, localY, localWidth, localHeight, pageX, pageY) => {
-    //         console.log('Measure result:', { localX, localY, localWidth, localHeight, pageX, pageY });
-
-    //         // Store in both state (for UI updates) and ref (for persistent access)
-    //         setMainButtonLayout({ pageX, pageY, width, height });
-
-    //         // Calculate green and red button positions using page coordinates
-    //         // Since they're positioned absolutely within the main button
-    //         const greenButtonPos = {
-    //             x: pageX + width / 2, // Right half of the main button
-    //             y: pageY, // Use pageY for screen coordinates
-    //             width: width / 2,
-    //             height: height
-    //         };
-
-    //         const redButtonPos = {
-    //             x: pageX, // Left half of the main button
-    //             y: pageY, // Use pageY for screen coordinates
-    //             width: width / 2,
-    //             height: height
-    //         };
-
-    //         setGreenButtonLayout(greenButtonPos);
-    //         setRedButtonLayout(redButtonPos);
-    //         setLayoutSet(true);
-
-    //         // Store in ref for persistent access
-    //         layoutRef.current = {
-    //             mainButton: { pageX, pageY, width, height },
-    //             greenButton: greenButtonPos,
-    //             redButton: redButtonPos,
-    //             isSet: true
-    //         };
-
-    //         console.log('Calculated green button position (with page coords):', greenButtonPos);
-    //         console.log('Calculated red button position (with page coords):', redButtonPos);
-    //         console.log('Layout has been set!');
-    //         console.log('Layout ref updated:', layoutRef.current);
-    //     });
-    // };
-
-    // // Monitor when mainButtonLayout changes
-    // useEffect(() => {
-    //     console.log('mainButtonLayout updated:', mainButtonLayout);
-    // }, [mainButtonLayout]);
-
-    // // Monitor when green button layout changes
-    // useEffect(() => {
-    //     console.log('greenButtonLayout updated:', greenButtonLayout);
-    // }, [greenButtonLayout]);
-
-    // // Monitor when red button layout changes
-    // useEffect(() => {
-    //     console.log('redButtonLayout updated:', redButtonLayout);
-    // }, [redButtonLayout]);
     const handleOpenDeletionModal = (itemType: 'habit' | 'task', itemId: string, goalId: string) => {
         openModal({
             modalName: DEFAULT_MODAL,
@@ -133,19 +63,19 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
     }
 
     const handleToggleCompletion = async (itemType: 'habit' | 'task') => {
-        setIsCompleted(!isCompleted);
-        if (itemType === 'habit') {
-            updateHabit(item.id, { completed: !isCompleted });
-        } else {
-            updateTask(item.id, { completed: !isCompleted });
-        }
-    };
-
-    const handleDelete = async (itemType: 'habit' | 'task') => {
-        if (itemType === 'habit') {
-            handleOpenDeletionModal('habit', item.id, item.goal_id);
-        } else {
-            handleOpenDeletionModal('task', item.id, item.goal_id);
+        let newItem;
+        console.log('isCompleted start', isCompleted);
+        setIsCompleted(!isCompletedRef.current);
+        isCompletedRef.current = !isCompletedRef.current;
+        try {
+            if (itemType === 'habit') {
+                newItem = await updateHabit(item.id, { completed: isCompletedRef.current });
+            } else {
+                newItem = await updateTask(item.id, { completed: isCompletedRef.current });
+            }
+            console.log('isCompleted end', isCompleted);
+        } catch (error) {
+            console.error('Error toggling completion:', error);
         }
     };
 
@@ -200,24 +130,13 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
                             }
                         })
                     )
-
                 }
 
-                // Check if we are currently over the green or red button and trigger the appropriate action.
-                // Use ref for reliable long press state
                 if (longPressRef.current) {
                     const touchX = event.nativeEvent.pageX;
                     const touchY = event.nativeEvent.pageY;
 
-                    // Use ref values for reliable access
-                    // const currentLayout = layoutRef.current;
-
                     console.log('Touch position:', { touchX, touchY });
-                    // console.log('Layout ref state:', currentLayout);
-                    // console.log('Green button bounds (from ref):', currentLayout.greenButton);
-                    // console.log('Red button bounds (from ref):', currentLayout.redButton);
-
-                    // test area start
 
                     let mainButtonLayout: {
                         localX: number,
@@ -251,43 +170,28 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
 
                     console.log('Measure result outside:', mainButtonLayout);
 
-                    // test area end
-
                     if (mainButtonLayout.localWidth > 0) {
-                        // Debug the coordinate calculations
                         const greenXInRange = touchX > greenButtonPos.x && touchX < greenButtonPos.x + greenButtonPos.width;
                         const greenYInRange = touchY > greenButtonPos.y && touchY < greenButtonPos.y + greenButtonPos.height;
                         const redXInRange = touchX > redButtonPos.x && touchX < redButtonPos.x + redButtonPos.width;
                         const redYInRange = touchY > redButtonPos.y && touchY < redButtonPos.y + redButtonPos.height;
 
-                        // console.log('Coordinate checks:', {
-                        //     greenXInRange,
-                        //     greenYInRange,
-                        //     redXInRange,
-                        //     redYInRange,
-                        //     greenXRange: [currentLayout.greenButton.x, currentLayout.greenButton.x + currentLayout.greenButton.width],
-                        //     greenYRange: [currentLayout.greenButton.y, currentLayout.greenButton.y + currentLayout.greenButton.height],
-                        //     redXRange: [currentLayout.redButton.x, currentLayout.redButton.x + currentLayout.redButton.width],
-                        //     redYRange: [currentLayout.redButton.y, currentLayout.redButton.y + currentLayout.redButton.height]
-                        // });
-
                         let itemType: 'habit' | 'task' = 'habit';
-                        if ('reminder_days' in item) {
-                            itemType = 'habit';
-                        } else {
-                            itemType = 'task';
-                        }
+
+                        'reminder_days' in item ? itemType = 'habit' : itemType = 'task';
 
                         if (greenXInRange && greenYInRange) {
                             console.log('✅ Over green button!');
                             console.log('current title:', item.title);
+                            console.log('current isCompleted:', isCompletedRef.current);
 
                             handleToggleCompletion(itemType);
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            console.log('current isCompleted after toggle:', isCompletedRef.current);
                         }
                         if (redXInRange && redYInRange) {
                             console.log('❌ Over red button!');
-                            handleDelete(itemType);
+                            handleOpenDeletionModal(itemType, item.id, item.goal_id);
                         }
                     } else {
                         console.log('⚠️ Layout not set in ref!');
@@ -302,18 +206,7 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
                 console.log('=== PAN RELEASE DEBUG ===');
                 console.log('isLongPressed (state):', isLongPressed);
                 console.log('isLongPressed (ref):', longPressRef.current);
-                console.log('layoutSet:', layoutSet);
-                // console.log('mainButtonLayout on Release', mainButtonLayout);
-                // console.log('greenButtonLayout on Release', greenButtonLayout);
-                // console.log('redButtonLayout on Release', redButtonLayout);
-                // console.log('Layout ref state:', layoutRef.current);
-                // console.log('Layout values are zero?', {
-                //     mainZero: mainButtonLayout.width === 0,
-                //     greenZero: greenButtonLayout.width === 0,
-                //     redZero: redButtonLayout.width === 0,
-                //     refSet: layoutRef.current.isSet,
-                //     refMainZero: layoutRef.current.mainButton.width === 0
-                // });
+
                 console.log('onPanResponderRelease');
             },
             onPanResponderTerminate: () => {
@@ -321,6 +214,7 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
                 setIsLongPressed(false);
                 longPressRef.current = false;
                 scrollEnabler?.(true);
+                console.log('isCompleted Terminate', isCompletedRef.current);
                 console.log('onPanResponderTerminate');
             }
         })

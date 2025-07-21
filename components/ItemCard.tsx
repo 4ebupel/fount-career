@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { View, Text, StyleSheet, useWindowDimensions, PanResponder } from "react-native";
 import { useDatabase } from "@/hooks/useDatabase";
 import { useModal } from "@/hooks/useModal";
@@ -32,9 +32,35 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
 
     const mainButtonRef = useRef<View>(null);
 
-    // Use ref to track long press state that persists across re-renders
     const longPressRef = useRef(false);
     const isCompletedRef = useRef(item.completed);
+    const mainButtonLayoutRef = useRef<{
+        localX: number,
+        localY: number,
+        localWidth: number,
+        localHeight: number,
+        pageX: number,
+        pageY: number
+    }>({ localX: 0, localY: 0, localWidth: 0, localHeight: 0, pageX: 0, pageY: 0 });
+    const greenButtonPosRef = useRef<{
+        x: number,
+        y: number,
+        width: number,
+        height: number
+    }>({ x: 0, y: 0, width: 0, height: 0 });
+    const redButtonPosRef = useRef<{
+        x: number,
+        y: number,
+        width: number,
+        height: number
+    }>({ x: 0, y: 0, width: 0, height: 0 });
+
+    let prevTouchX: number | null = null;
+    let prevTouchY: number | null = null;
+
+    const isInsideBounds = (x: number, y: number, buttonPos: { x: number, y: number, width: number, height: number }) => {
+        return x > buttonPos.x && x < buttonPos.x + buttonPos.width && y > buttonPos.y && y < buttonPos.y + buttonPos.height;
+    }
 
     const handleOpenDeletionModal = (itemType: 'habit' | 'task', itemId: string, goalId: string) => {
         openModal({
@@ -63,15 +89,14 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
     }
 
     const handleToggleCompletion = async (itemType: 'habit' | 'task') => {
-        let newItem;
         console.log('isCompleted start', isCompleted);
         setIsCompleted(!isCompletedRef.current);
         isCompletedRef.current = !isCompletedRef.current;
         try {
             if (itemType === 'habit') {
-                newItem = await updateHabit(item.id, { completed: isCompletedRef.current });
+                await updateHabit(item.id, { completed: isCompletedRef.current });
             } else {
-                newItem = await updateTask(item.id, { completed: isCompletedRef.current });
+                await updateTask(item.id, { completed: isCompletedRef.current });
             }
             console.log('isCompleted end', isCompleted);
         } catch (error) {
@@ -83,24 +108,47 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
         PanResponder.create({
             onShouldBlockNativeResponder: () => false,
             onStartShouldSetPanResponder: () => true,
-            onMoveShouldSetPanResponder: (event, gestureState) => true,
-            onPanResponderGrant: (event, gestureState) => {
-                // Use Animated to darken the item card.
+            onMoveShouldSetPanResponder: () => true,
+            onPanResponderGrant: () => {
                 timer = setTimeout(() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     setIsLongPressed(true);
-                    longPressRef.current = true; // Set ref as well
+                    longPressRef.current = true;
                     scrollEnabler?.(false);
+                    mainButtonRef.current?.measure((localX, localY, localWidth, localHeight, pageX, pageY) => {
+                        console.log('Measure result inside:', { localX, localY, localWidth, localHeight, pageX, pageY });
+                        mainButtonLayoutRef.current = { localX, localY, localWidth, localHeight, pageX, pageY };
+                        greenButtonPosRef.current = { x: pageX + localWidth / 2, y: pageY, width: localWidth / 2, height: localHeight };
+                        redButtonPosRef.current = { x: pageX, y: pageY, width: localWidth / 2, height: localHeight };
+                    });
                 }, 250);
             },
             onPanResponderMove: (event, gestureState) => {
                 if (gestureState.dx > 4 || gestureState.dx < -4 || gestureState.dy > 4 || gestureState.dy < -4) {
                     clearTimeout(timer);
-
                 }
-                // I guess check if we "passed" through the border of either button and trigger haptic feedback if so.
-                console.log('event prop', event.nativeEvent.locationX, event.nativeEvent.locationY);
-                console.log('gestureState prop', gestureState.dx, gestureState.dy);
+
+                const touchX = event.nativeEvent.pageX;
+                const touchY = event.nativeEvent.pageY;
+
+                if (prevTouchX && prevTouchY) {
+                    const isInsideGreen = isInsideBounds(touchX, touchY, greenButtonPosRef.current);
+                    const isInsideRed = isInsideBounds(touchX, touchY, redButtonPosRef.current);
+
+                    const isPrevInsideGreen = isInsideBounds(prevTouchX, prevTouchY, greenButtonPosRef.current);
+                    const isPrevInsideRed = isInsideBounds(prevTouchX, prevTouchY, redButtonPosRef.current);
+
+                    if (isInsideGreen && !isPrevInsideGreen) {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        console.log('Haptic feedback for green button');
+                    } else if (isInsideRed && !isPrevInsideRed) {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        console.log('Haptic feedback for red button');  
+                    }
+                }
+
+                prevTouchX = touchX;
+                prevTouchY = touchY;
             },
             onPanResponderRelease: (event, gestureState) => {
                 if ((Math.abs(gestureState.dx) < 0.5 || Math.abs(gestureState.dy) < 0.5) && !longPressRef.current) {
@@ -138,58 +186,24 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
 
                     console.log('Touch position:', { touchX, touchY });
 
-                    let mainButtonLayout: {
-                        localX: number,
-                        localY: number,
-                        localWidth: number,
-                        localHeight: number,
-                        pageX: number,
-                        pageY: number
-                    } = { localX: 0, localY: 0, localWidth: 0, localHeight: 0, pageX: 0, pageY: 0 };
-
-                    let greenButtonPos: {
-                        x: number,
-                        y: number,
-                        width: number,
-                        height: number
-                    } = { x: 0, y: 0, width: 0, height: 0 };
-
-                    let redButtonPos: {
-                        x: number,
-                        y: number,
-                        width: number,
-                        height: number
-                    } = { x: 0, y: 0, width: 0, height: 0 };
-
-                    mainButtonRef.current?.measure((localX, localY, localWidth, localHeight, pageX, pageY) => {
-                        console.log('Measure result inside:', { localX, localY, localWidth, localHeight, pageX, pageY });
-                        mainButtonLayout = { localX, localY, localWidth, localHeight, pageX, pageY };
-                        greenButtonPos = { x: pageX + localWidth / 2, y: pageY, width: localWidth / 2, height: localHeight };
-                        redButtonPos = { x: pageX, y: pageY, width: localWidth / 2, height: localHeight };
-                    });
-
-                    console.log('Measure result outside:', mainButtonLayout);
-
-                    if (mainButtonLayout.localWidth > 0) {
-                        const greenXInRange = touchX > greenButtonPos.x && touchX < greenButtonPos.x + greenButtonPos.width;
-                        const greenYInRange = touchY > greenButtonPos.y && touchY < greenButtonPos.y + greenButtonPos.height;
-                        const redXInRange = touchX > redButtonPos.x && touchX < redButtonPos.x + redButtonPos.width;
-                        const redYInRange = touchY > redButtonPos.y && touchY < redButtonPos.y + redButtonPos.height;
+                    if (mainButtonLayoutRef.current.localWidth > 0) {
+                        const isInsideGreen = isInsideBounds(touchX, touchY, greenButtonPosRef.current);
+                        const isInsideRed = isInsideBounds(touchX, touchY, redButtonPosRef.current);
 
                         let itemType: 'habit' | 'task' = 'habit';
 
                         'reminder_days' in item ? itemType = 'habit' : itemType = 'task';
 
-                        if (greenXInRange && greenYInRange) {
+                        if (isInsideGreen) {
                             console.log('✅ Over green button!');
                             console.log('current title:', item.title);
                             console.log('current isCompleted:', isCompletedRef.current);
 
                             handleToggleCompletion(itemType);
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                             console.log('current isCompleted after toggle:', isCompletedRef.current);
                         }
-                        if (redXInRange && redYInRange) {
+                        if (isInsideRed) {
                             console.log('❌ Over red button!');
                             handleOpenDeletionModal(itemType, item.id, item.goal_id);
                         }
@@ -198,24 +212,22 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
                     }
                 }
 
-                // Reset long press state
                 setIsLongPressed(false);
                 longPressRef.current = false;
                 scrollEnabler?.(true);
                 clearTimeout(timer);
-                console.log('=== PAN RELEASE DEBUG ===');
-                console.log('isLongPressed (state):', isLongPressed);
-                console.log('isLongPressed (ref):', longPressRef.current);
-
-                console.log('onPanResponderRelease');
+                mainButtonLayoutRef.current = { localX: 0, localY: 0, localWidth: 0, localHeight: 0, pageX: 0, pageY: 0 };
+                greenButtonPosRef.current = { x: 0, y: 0, width: 0, height: 0 };
+                redButtonPosRef.current = { x: 0, y: 0, width: 0, height: 0 };
             },
             onPanResponderTerminate: () => {
                 clearTimeout(timer);
                 setIsLongPressed(false);
                 longPressRef.current = false;
                 scrollEnabler?.(true);
-                console.log('isCompleted Terminate', isCompletedRef.current);
-                console.log('onPanResponderTerminate');
+                mainButtonLayoutRef.current = { localX: 0, localY: 0, localWidth: 0, localHeight: 0, pageX: 0, pageY: 0 };
+                greenButtonPosRef.current = { x: 0, y: 0, width: 0, height: 0 };
+                redButtonPosRef.current = { x: 0, y: 0, width: 0, height: 0 };
             }
         })
     ).current;
@@ -224,7 +236,6 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
         <View
             {...panResponder.panHandlers}
             ref={mainButtonRef}
-            // onLayout={handleMainButtonLayout}
             style={[
                 styles.itemCard,
                 theme === 'dark' ? styles.itemCardDark : styles.itemCardLight,
@@ -314,7 +325,6 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
             {isLongPressed && (
                 <View style={[styles.longPressedContent]}>
                     <View
-                        // ref={redButtonRef}
                         style={[styles.longPressedContentLeft]}
                     >
                         <Text>
@@ -322,7 +332,6 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
                         </Text>
                     </View>
                     <View
-                        // ref={greenButtonRef}
                         style={[styles.longPressedContentRight]}
                     >
                         <Text>

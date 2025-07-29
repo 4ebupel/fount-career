@@ -1,6 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 import { Platform } from 'react-native';
-import { Goal, Habit, Task } from '../types/database';
+import { ConvertArraysToJSON, Goal, Habit, Task } from '../types/database';
 import { premadeGoalsSeedData, premadeTasksSeedData, premadeHabitsSeedData } from './seedData';
 
 // Database name
@@ -337,9 +337,9 @@ export const populatePremadeHabits = async (): Promise<void> => {
             now,
             habitData.title,
             habitData.selected_emoji,
-            habitData.reminder_days,
+            JSON.stringify(habitData.reminder_days),
             habitData.reminder_time,
-            habitData.reminder_ids,
+            JSON.stringify(habitData.reminder_ids),
             habitData.completed ? 1 : 0,
             habitData.goal_id
           );
@@ -527,9 +527,9 @@ export const createHabit = async (habit: Omit<Habit, 'id' | 'created_at' | 'upda
         newHabit.updated_at,
         newHabit.title,
         newHabit.selected_emoji,
-        newHabit.reminder_days,
+        JSON.stringify(newHabit.reminder_days),
         newHabit.reminder_time,
-        newHabit.reminder_ids,
+        JSON.stringify(newHabit.reminder_ids),
         0,
       ]
     );
@@ -543,7 +543,7 @@ export const createHabit = async (habit: Omit<Habit, 'id' | 'created_at' | 'upda
  */
 export const getHabitsByGoalId = async (goalId: string): Promise<Habit[]> => {
   return withDatabaseRetry(async (db) => {
-    const habits = await db.getAllAsync<Habit>(
+    const habits = await db.getAllAsync<ConvertArraysToJSON<Habit>>(
       'SELECT * FROM habits WHERE goal_id = ? ORDER BY created_at DESC;',
       [goalId]
     );
@@ -552,6 +552,8 @@ export const getHabitsByGoalId = async (goalId: string): Promise<Habit[]> => {
     return habits.map(habit => ({
       ...habit,
       completed: Boolean(habit.completed),
+      reminder_days: JSON.parse(habit.reminder_days),
+      reminder_ids: JSON.parse(habit.reminder_ids),
     }));
   });
 };
@@ -575,7 +577,7 @@ export const getHabitsByGoalId = async (goalId: string): Promise<Habit[]> => {
    */
 export const getHabitById = async (id: string): Promise<Habit | null> => {
   return withDatabaseRetry(async (db) => {
-    const habit = await db.getFirstAsync<Habit>('SELECT * FROM habits WHERE id = ?;', [id]);
+    const habit = await db.getFirstAsync<ConvertArraysToJSON<Habit>>('SELECT * FROM habits WHERE id = ?;', [id]);
 
     if (!habit) {
       return null;
@@ -584,6 +586,8 @@ export const getHabitById = async (id: string): Promise<Habit | null> => {
     return {
       ...habit,
       completed: Boolean(habit.completed),
+      reminder_days: JSON.parse(habit.reminder_days),
+      reminder_ids: JSON.parse(habit.reminder_ids),
     };
   });
 };
@@ -595,7 +599,7 @@ export const updateHabit = async (id: string, updates: Partial<Omit<Habit, 'id' 
   return withDatabaseRetry(async (db) => {
     const now = new Date().toISOString();
 
-    const existingHabit = await db.getFirstAsync<Habit>('SELECT * FROM habits WHERE id = ?;', [id]);
+    const existingHabit = await db.getFirstAsync<ConvertArraysToJSON<Habit>>('SELECT * FROM habits WHERE id = ?;', [id]);
 
     if (!existingHabit) {
       throw new Error('Habit not found');
@@ -606,6 +610,8 @@ export const updateHabit = async (id: string, updates: Partial<Omit<Habit, 'id' 
       ...updates,
       goal_id: existingHabit.goal_id, // Always keep the original goal_id
       updated_at: now,
+      reminder_days: updates.reminder_days || JSON.parse(existingHabit.reminder_days),
+      reminder_ids: updates.reminder_ids || JSON.parse(existingHabit.reminder_ids),
     };
 
     await db.runAsync(
@@ -616,9 +622,9 @@ export const updateHabit = async (id: string, updates: Partial<Omit<Habit, 'id' 
         updatedHabit.updated_at,
         updatedHabit.title,
         updatedHabit.selected_emoji,
-        updatedHabit.reminder_days,
+        JSON.stringify(updatedHabit.reminder_days),
         updatedHabit.reminder_time,
-        updatedHabit.reminder_ids,
+        JSON.stringify(updatedHabit.reminder_ids),
         updatedHabit.completed ? 1 : 0,
         id,
       ]
@@ -1007,9 +1013,9 @@ export const getPremadeHabitsForGoalIds = async (
         ORDER BY title ASC;
       `;
 
-      const batchHabits = await db.getAllAsync<Habit>(query, batchIds);
+      const batchHabits = await db.getAllAsync<ConvertArraysToJSON<Habit>>(query, batchIds);
       allHabits = allHabits.concat(
-        batchHabits.map(habit => ({ ...habit, completed: Boolean(habit.completed) }))
+        batchHabits.map(habit => ({ ...habit, completed: Boolean(habit.completed), reminder_days: JSON.parse(habit.reminder_days || '[]'), reminder_ids: JSON.parse(habit.reminder_ids || '[]') }))
       );
     }
 

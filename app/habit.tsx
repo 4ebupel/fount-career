@@ -26,17 +26,7 @@ export default function Habit() {
     const [showTimePicker, setShowTimePicker] = useState(false);
     const [selectedTime, setSelectedTime] = useState<string>(reminder_time as string || '');
     // Parse the reminder_days string to an array if it exists
-    const [habitReminderDays, setHabitReminderDays] = useState<string[]>(() => {
-        if (reminder_days) {
-            try {
-                return JSON.parse(reminder_days as string);
-            } catch (e) {
-                console.error('Error parsing reminder_days:', e);
-                return [];
-            }
-        }
-        return [];
-    });
+    const [habitReminderDays, setHabitReminderDays] = useState<string[]>(typeof reminder_days === 'string' ? reminder_days.split(',') : []);
 
     const { openModal, closeModal } = useModal();
     const { createHabit, updateHabit, deleteHabit } = useDatabase();
@@ -48,7 +38,7 @@ export default function Habit() {
 
     // Schedule the reminders
     const scheduleReminders = async () => {
-        const existingReminderDays: string[] = reminder_days ? JSON.parse(reminder_days as string) : [];
+        const existingReminderDays: string[] = typeof reminder_days === 'string' ? reminder_days.split(',') : [];
         let newReminders: string[] = habitReminderDays.filter((day) => !existingReminderDays.includes(day));
         let newIds: string[] = [];
         let existingReminders: {
@@ -242,9 +232,9 @@ export default function Habit() {
                 goal_id: goalId as string,
                 title: habitTitle.trim(),
                 selected_emoji: selectedEmoji,
-                reminder_days: JSON.stringify(habitReminderDays), // Store as JSON string
+                reminder_days: habitReminderDays, // Store as JSON string
                 reminder_time: selectedTime,
-                reminder_ids: JSON.stringify(ids),
+                reminder_ids: ids,
                 completed: false,
             });
 
@@ -273,9 +263,9 @@ export default function Habit() {
             const updatedHabit = {
                 title: habitTitle.trim(),
                 selected_emoji: selectedEmoji,
-                reminder_days: JSON.stringify(habitReminderDays),
+                reminder_days: habitReminderDays,
                 reminder_time: selectedTime,
-                reminder_ids: JSON.stringify(ids),
+                reminder_ids: ids,
             };
 
             if (habitId) {

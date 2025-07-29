@@ -259,8 +259,8 @@ export const premadeHabitsSeedData: Omit<Habit, 'created_at' | 'updated_at'>[] =
         title: 'Practice vocal exercises',
         selected_emoji: '🗣️',
         reminder_time: '08:00',
-        reminder_days: '["Monday", "Wednesday", "Friday"]',
-        reminder_ids: '',
+        reminder_days: ["Monday", "Wednesday", "Friday"],
+        reminder_ids: [],
         completed: false
     },
     {
@@ -269,8 +269,8 @@ export const premadeHabitsSeedData: Omit<Habit, 'created_at' | 'updated_at'>[] =
         title: 'Read aloud for 10 minutes',
         selected_emoji: '📖',
         reminder_time: '19:30',
-        reminder_days: '["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]',
-        reminder_ids: '',
+        reminder_days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+        reminder_ids: [],
         completed: false
     },
     {
@@ -279,8 +279,8 @@ export const premadeHabitsSeedData: Omit<Habit, 'created_at' | 'updated_at'>[] =
         title: 'Watch one TED talk',
         selected_emoji: '👀',
         reminder_time: '12:30',
-        reminder_days: '["Tuesday", "Thursday", "Saturday"]',
-        reminder_ids: '',
+        reminder_days: ["Tuesday", "Thursday", "Saturday"],
+        reminder_ids: [],
         completed: false
     },
     
@@ -291,8 +291,8 @@ export const premadeHabitsSeedData: Omit<Habit, 'created_at' | 'updated_at'>[] =
         title: 'Code for 30 minutes',
         selected_emoji: '💻',
         reminder_time: '20:00',
-        reminder_days: '["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]',
-        reminder_ids: '',
+        reminder_days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+        reminder_ids: [],
         completed: false
     },
     {
@@ -301,8 +301,8 @@ export const premadeHabitsSeedData: Omit<Habit, 'created_at' | 'updated_at'>[] =
         title: 'Read ML research paper',
         selected_emoji: '📑',
         reminder_time: '17:00',
-        reminder_days: '["Wednesday", "Sunday"]',
-        reminder_ids: '',
+        reminder_days: ["Wednesday", "Sunday"],
+        reminder_ids: [],
         completed: false
     },
     {
@@ -311,8 +311,8 @@ export const premadeHabitsSeedData: Omit<Habit, 'created_at' | 'updated_at'>[] =
         title: 'Practice with dataset',
         selected_emoji: '🔢',
         reminder_time: '18:30',
-        reminder_days: '["Tuesday", "Thursday", "Saturday"]',
-        reminder_ids: '',
+        reminder_days: ["Tuesday", "Thursday", "Saturday"],
+        reminder_ids: [],
         completed: false
     },
     
@@ -323,8 +323,8 @@ export const premadeHabitsSeedData: Omit<Habit, 'created_at' | 'updated_at'>[] =
         title: 'Engage on LinkedIn',
         selected_emoji: '🔗',
         reminder_time: '09:15',
-        reminder_days: '["Monday", "Wednesday", "Friday"]',
-        reminder_ids: '',
+        reminder_days: ["Monday", "Wednesday", "Friday"],
+        reminder_ids: [],
         completed: false
     },
     {
@@ -333,8 +333,8 @@ export const premadeHabitsSeedData: Omit<Habit, 'created_at' | 'updated_at'>[] =
         title: 'Send follow-up emails',
         selected_emoji: '📧',
         reminder_time: '16:00',
-        reminder_days: '["Tuesday", "Thursday"]',
-        reminder_ids: '',
+        reminder_days: ["Tuesday", "Thursday"],
+        reminder_ids: [],
         completed: false
     }
 ];

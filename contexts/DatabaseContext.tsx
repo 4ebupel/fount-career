@@ -398,7 +398,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
         throw new Error('Habit not found');
       }
 
-      const reminders = JSON.parse(habit.reminder_ids);
+      const reminders = habit.reminder_ids;
       for (const reminder of reminders) {
         await Notifications.cancelScheduledNotificationAsync(reminder);
         console.log('Reminder cancelled:', reminder);
@@ -509,7 +509,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
 
           // Schedule reminders
           if (habit.reminder_time) {
-            const reminderDays = JSON.parse(habit.reminder_days);
+            const reminderDays = habit.reminder_days;
 
             ids = await scheduleWeeklyReminders({
               title: habit.title,
@@ -523,7 +523,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
             {
               ...habit,
               goal_id: newGoal.id,
-              reminder_ids: JSON.stringify(ids || [])
+              reminder_ids: ids || []
             }
           );
 

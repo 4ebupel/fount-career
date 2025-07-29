@@ -10,6 +10,7 @@ import { Goal, Habit, Task } from "@/types/database";
 import { useModal } from "@/hooks/useModal";
 import React from "react";
 import ItemCard from "@/components/ItemCard";
+import { format } from "date-fns";
 
 export default function GetDone() {
     const [progressData, setProgressData] = useState([45, 20, 33, 40, 12, 90, 70]);
@@ -20,6 +21,7 @@ export default function GetDone() {
     const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'pending'>('all');
     const [localHabits, setLocalHabits] = useState<Habit[]>([]);
     const [localTasks, setLocalTasks] = useState<Task[]>([]);
+    const [selectedDay, setSelectedDay] = useState<string>(format(new Date(), 'EEEE'));
     // Scroll enabled is used to disable the scroll when the user is long pressing an item card.
     // TODO: This is a hacky solution and should be improved.
     const [scrollEnabled, setScrollEnabled] = useState(true);
@@ -112,7 +114,7 @@ export default function GetDone() {
     );
 
     // Total for today
-    const totalItems = totalHabits + totalTasks;
+    let totalItems = totalHabits + totalTasks;
     const completedItems = completedHabits + completedTasks;
 
     // Toggle habit completion
@@ -189,6 +191,7 @@ export default function GetDone() {
                 if (filterType === 'tasks') return false;
                 if (filterStatus === 'completed' && !habit.completed) return false;
                 if (filterStatus === 'pending' && habit.completed) return false;
+                if (!habit.reminder_days.includes(selectedDay)) return false;
                 return true;
             });
 
@@ -201,7 +204,7 @@ export default function GetDone() {
             }
         })
 
-    }, [goals, tasks, habits, filterType, filterStatus]);
+    }, [goals, tasks, habits, filterType, filterStatus, selectedDay]);
 
     return (
         <View style={[
@@ -209,7 +212,7 @@ export default function GetDone() {
             theme === 'dark' ? styles.containerDark : styles.containerLight
         ]}>
             <View style={{ maxHeight: 150 }}>
-                <WeeklyCalendarHeader progressData={progressData} />
+                <WeeklyCalendarHeader progressData={progressData} selectedDay={selectedDay} setSelectedDay={setSelectedDay} />
             </View>
 
             {isLoading && !dataLoaded ? (
@@ -265,6 +268,7 @@ export default function GetDone() {
                         </View>
                     </View>
                     <SectionList
+                        scrollEnabled={scrollEnabled}
                         sections={sectionListInnards}
                         ListHeaderComponent={
                             <View style={styles.filterContainer}>

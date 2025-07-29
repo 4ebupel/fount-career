@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { View, Text as RNText, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
+import { View, Text as RNText, StyleSheet, ScrollView, useWindowDimensions, Pressable } from 'react-native';
 import Svg, { Circle, Text as SvgText } from 'react-native-svg';
 import { format, startOfWeek, addDays } from 'date-fns';
 import { colors } from '@/lib/colors';
@@ -9,7 +9,7 @@ const radius = 20;
 const strokeWidth = 5;
 const circumference = 2 * Math.PI * radius;
 
-const WeeklyCalendarHeader = ({ progressData = [0, 0, 0, 0, 0, 0, 0] }) => {
+const WeeklyCalendarHeader = ({ progressData = [0, 0, 0, 0, 0, 0, 0], selectedDay, setSelectedDay }: { progressData: number[], selectedDay: string, setSelectedDay: (day: string) => void }) => {
   const { theme } = useContext(ThemeContext);
   const { width } = useWindowDimensions();
   // Calculate the start of the week (Monday)
@@ -25,15 +25,15 @@ const WeeklyCalendarHeader = ({ progressData = [0, 0, 0, 0, 0, 0, 0] }) => {
       {Array.from({ length: 7 }).map((_, index) => {
         const currentDate = addDays(start, index);
         const dayNumber = format(currentDate, 'd');
-        const dayName = format(currentDate, 'EEE'); // e.g., Mon, Tue
+        const dayName = format(currentDate, 'EEEE'); // e.g., Monday, Tuesday
         const percentage = progressData[index]; // Expects a number 0-100
         const strokeDashoffset = circumference * (1 - percentage / 100);
 
         return (
-          <View key={index} style={styles.dayContainer}>
+          <Pressable key={index} style={styles.dayContainer} onPress={() => setSelectedDay(dayName)}>
             {/* Day title above the circle */}
-            <View style={[styles.dayContainer, currentDate.toDateString() === new Date().toDateString() ? theme === 'dark' ? styles.dayContainerTodayDark : styles.dayContainerTodayLight : null]}>
-              <RNText style={[styles.weekDayText, theme === 'dark' ? styles.weekDayTextDark : styles.weekDayTextLight]}>{dayName}</RNText>
+            <View style={[styles.dayContainer, dayName === selectedDay ? theme === 'dark' ? styles.dayContainerTodayDark : styles.dayContainerTodayLight : null]}>
+              <RNText style={[styles.weekDayText, theme === 'dark' ? styles.weekDayTextDark : styles.weekDayTextLight]}>{dayName.slice(0, 3)}</RNText>
               <View style={styles.svgContainer}>
                 <Svg width={radius * 2 + strokeWidth * 2} height={radius * 2 + strokeWidth * 2}>
                   {/* Background Circle */}
@@ -74,8 +74,8 @@ const WeeklyCalendarHeader = ({ progressData = [0, 0, 0, 0, 0, 0, 0] }) => {
                 </Svg>
               </View>
             </View>
-              <View style={[styles.dayContainerTodayDot, currentDate.toDateString() === new Date().toDateString() ? theme === 'dark' ? styles.dayContainerTodayDotDark : styles.dayContainerTodayDotLight : null]} />
-          </View>
+              <View style={[styles.dayContainerTodayDot, dayName === selectedDay ? theme === 'dark' ? styles.dayContainerTodayDotDark : styles.dayContainerTodayDotLight : null]} />
+          </Pressable>
         );
       })}
     </ScrollView>
@@ -128,14 +128,15 @@ const styles = StyleSheet.create({
   dayContainerTodayDot: {
     width: 6,
     height: 6,
-    borderRadius: 6,
     marginTop: 3,
   },
   dayContainerTodayDotLight: {
     backgroundColor: colors.light_theme.text_accent,
+    borderRadius: 6,
   },
   dayContainerTodayDotDark: {
     backgroundColor: colors.dark_theme.text_accent,
+    borderRadius: 6,
   },
 });
 

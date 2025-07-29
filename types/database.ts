@@ -17,9 +17,9 @@ export interface Habit {
   updated_at: string;
   title: string;
   selected_emoji: string;
-  reminder_days: string; // Stored as JSON string of day names
+  reminder_days: string[]; // Stored as JSON string of day names
   reminder_time: string; // Format: HH:MM
-  reminder_ids: string; // Stored as JSON string of reminder IDs
+  reminder_ids: string[]; // Stored as JSON string of reminder IDs
   completed: boolean;
 }
 
@@ -34,4 +34,13 @@ export interface Task {
   due_date: string | null;
   description: string | null;
   completed: boolean;
-} 
+}
+
+/**
+ * Convert arrays to JSON strings
+ * @param T - The type arrays of which to convert
+ * @returns {ConvertArraysToJSON<T>} The converted type
+ */
+export type ConvertArraysToJSON<T> = {
+  [K in keyof T]: T[K] extends string[] ? string : T[K]
+}

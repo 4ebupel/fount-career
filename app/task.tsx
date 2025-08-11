@@ -1,5 +1,6 @@
 import React, { useState, useContext, useEffect, useMemo } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/lib/colors';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -9,6 +10,8 @@ import { DEFAULT_MODAL, EMOJI_SELECTOR_MODAL } from '@/lib/modals';
 import Button from '@/components/Button';
 import { ThemeContext } from '@/contexts/ThemeContext';
 import { useDatabase } from '@/hooks/useDatabase';
+import TimePickerButton from '@/components/TimePickerButton';
+import DateSelector from '@/components/DateSelector';
 
 // Add or edit a task or even simply look at a task
 export default function Task() {
@@ -18,6 +21,7 @@ export default function Task() {
     const [selectedEmoji, setSelectedEmoji] = useState<string>(emoji as string || '🔄');
     const [taskTitle, setTaskTitle] = useState<string>(title as string || '');
     const [taskDescription, setTaskDescription] = useState<string>(description as string || '');
+    const [dueDate, setDueDate] = useState<string>(due_date as string || '');
     const router = useRouter();
     const { openModal, closeModal } = useModal();
     const { createTask, updateTask, deleteTask } = useDatabase();
@@ -130,6 +134,10 @@ export default function Task() {
         } catch (error) {
             console.error('Error updating task:', error);
         }
+    };
+
+    const onSelectDate = (selectedDate: string) => {
+        setDueDate(selectedDate);
     };
 
     return (
@@ -294,6 +302,15 @@ export default function Task() {
                                     {taskDescription}
                                 </Text>
                             )}
+                        </View>
+
+                        <View style={styles.section}>
+                            <DateSelector
+                                theme={theme}
+                                date={dueDate}
+                                isDisabled={isPremadeGoal}
+                                onSelectDate={onSelectDate}
+                            />
                         </View>
                     </View>
 

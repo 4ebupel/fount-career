@@ -21,7 +21,7 @@ export default function DateSelector({ theme, date, isDisabled, onSelectDate, on
             props: {
                 theme,
                 onSelectDate,
-                content: '',
+                content: date,
                 description: '',
                 title: 'Choose Due Date',
                 primaryCTA: '',

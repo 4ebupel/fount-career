@@ -143,7 +143,7 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
                         console.log('Haptic feedback for green button');
                     } else if (isInsideRed && !isPrevInsideRed) {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        console.log('Haptic feedback for red button');  
+                        console.log('Haptic feedback for red button');
                     }
                 }
 

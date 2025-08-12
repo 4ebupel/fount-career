@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect, useMemo } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, Keyboard, TouchableWithoutFeedback, ActivityIndicator } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/lib/colors';
@@ -12,27 +12,64 @@ import { ThemeContext } from '@/contexts/ThemeContext';
 import { useDatabase } from '@/hooks/useDatabase';
 import TimePickerButton from '@/components/TimePickerButton';
 import DateSelector from '@/components/DateSelector';
+import { Task as TaskType } from '@/types/database';
 
 // Add or edit a task or even simply look at a task
 export default function Task() {
     // Will be undefined if nothing is passed (why is it typed as string | string[] then?)
-    const { goalId, taskId, title, description, emoji, due_date, reminder_time } = useLocalSearchParams();
+    const { goalId, taskId } = useLocalSearchParams();
     const { theme } = useContext(ThemeContext);
-    const [selectedEmoji, setSelectedEmoji] = useState<string>(emoji as string || '🔄');
-    const [taskTitle, setTaskTitle] = useState<string>(title as string || '');
-    const [taskDescription, setTaskDescription] = useState<string>(description as string || '');
-    const [dueDate, setDueDate] = useState<string>(due_date as string || '');
+    const [selectedEmoji, setSelectedEmoji] = useState<string>('🔄');
+    const [taskTitle, setTaskTitle] = useState<string>('');
+    const [taskDescription, setTaskDescription] = useState<string>('');
+    const [dueDate, setDueDate] = useState<string>('');
+    const [loading, setLoading] = useState<boolean>(true);
     const router = useRouter();
     const { openModal, closeModal } = useModal();
-    const { createTask, updateTask, deleteTask } = useDatabase();
+    const { createTask, updateTask, deleteTask, tasks, getPremadeTaskById } = useDatabase();
 
     const isPremadeGoal = useMemo(() => {
         return !isNaN(Number(goalId));
     }, [goalId]);
 
     useEffect(() => {
-        console.log('taskId', taskId);
-    }, [taskId]);
+        const goal_id = goalId as string;
+        const task_id = taskId as string;
+        if (!goal_id || !task_id) {
+            setLoading(false);
+            return;
+        }
+        setLoading(true);
+        const fetchTask = async () => {
+            try {
+                if (!isPremadeGoal && task_id) {
+                    const task = tasks[goal_id].find((task: TaskType) => task.id === task_id);
+                    if (task) {
+                        setSelectedEmoji(task.selected_emoji);
+                        setTaskTitle(task.title);
+                        setTaskDescription(task.description || '');
+                        setDueDate(task.due_date || '');
+                    }
+                }
+                if (isPremadeGoal && task_id) {
+                    const task = await getPremadeTaskById(task_id);
+                    if (task) {
+                        setSelectedEmoji(task.selected_emoji);
+                        setTaskTitle(task.title);
+                        setTaskDescription(task.description || '');
+                        setDueDate(task.due_date || '');
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching task:', error);
+                setLoading(false);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchTask();
+        setLoading(false);
+    }, [taskId, tasks]);
 
     const handleEmojiSelect = () => {
         if (!isPremadeGoal) {
@@ -99,7 +136,7 @@ export default function Task() {
                 description: taskDescription.trim(),
                 selected_emoji: selectedEmoji,
                 reminder_time: null,
-                due_date: null,
+                due_date: dueDate || null,
             });
 
             // Navigate back to the goal details page after successful creation
@@ -125,7 +162,7 @@ export default function Task() {
                 selected_emoji: selectedEmoji || '',
                 // Since we are not using those fields yet, we don't need to update them
                 // reminder_time: typeof reminder_time === 'string' ? reminder_time : null,
-                // due_date: typeof due_date === 'string' ? due_date : null,
+                due_date: dueDate || null,
             };
 
             await updateTask(taskId as string, updatedTask);
@@ -139,6 +176,14 @@ export default function Task() {
     const onSelectDate = (selectedDate: string) => {
         setDueDate(selectedDate);
     };
+
+    if (loading) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={theme === 'dark' ? colors.dark_theme.text_primary : colors.light_theme.text_primary} />
+            </View>
+        );
+    }
 
     return (
         <SafeAreaView style={[
@@ -305,6 +350,14 @@ export default function Task() {
                         </View>
 
                         <View style={styles.section}>
+                            <Text style={[
+                                styles.sectionTitle,
+                                theme === 'dark'
+                                    ? { color: colors.dark_theme.text_primary }
+                                    : { color: colors.light_theme.text_primary }
+                            ]}>
+                                Due Date
+                            </Text>
                             <DateSelector
                                 theme={theme}
                                 date={dueDate}

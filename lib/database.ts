@@ -928,7 +928,7 @@ export const getPremadeTasks = async (page = 1, limit = 20): Promise<{ tasks: Ta
 };
 
 /**
- * Get all premade tasks for an array of goal IDs with improved error handling and performance
+ * Get all premade tasks for an array of goal IDs
  * @param goalIds Array of goal IDs to fetch tasks for
  * @param batchSize Optional batch size for processing large arrays (default 500)
  * @returns Promise<Task[]> Array of tasks
@@ -986,7 +986,7 @@ export const getPremadeTaskById = async (id: string): Promise<Task | null> => {
 // PREMADE HABITS Functions
 
 /**
- * Get all premade habits for an array of goal IDs with improved error handling and performance
+ * Get all premade habits for an array of goal IDs
  * @param goalIds Array of goal IDs to fetch habits for
  * @param batchSize Optional batch size for processing large arrays (default 500)
  * @returns Promise<Habit[]> Array of habits

@@ -6,7 +6,7 @@ import { colors } from '@/lib/colors';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { AntDesign, FontAwesome } from '@expo/vector-icons';
 import { useModal } from '@/hooks/useModal';
-import { DEFAULT_MODAL, EMOJI_SELECTOR_MODAL } from '@/lib/modals';
+import { CATEGORY_SELECTOR_MODAL, DEFAULT_MODAL, EMOJI_SELECTOR_MODAL } from '@/lib/modals';
 import Button from '@/components/Button';
 import { ThemeContext } from '@/contexts/ThemeContext';
 import { useDatabase } from '@/hooks/useDatabase';
@@ -23,6 +23,7 @@ export default function Task() {
     const [taskTitle, setTaskTitle] = useState<string>('');
     const [taskDescription, setTaskDescription] = useState<string>('');
     const [dueDate, setDueDate] = useState<string>('');
+    const [reminderTime, setReminderTime] = useState<string>('None');
     const [loading, setLoading] = useState<boolean>(true);
     const router = useRouter();
     const { openModal, closeModal } = useModal();
@@ -31,6 +32,15 @@ export default function Task() {
     const isPremadeGoal = useMemo(() => {
         return !isNaN(Number(goalId));
     }, [goalId]);
+
+    const reminderTimes = useMemo(() => [
+        'None',
+        'Two weeks before the deadline',
+        'One week before the deadline',
+        'Two days before the deadline',
+        'One day before the deadline',
+        'On the deadline',
+    ], []);
 
     useEffect(() => {
         const goal_id = goalId as string;
@@ -91,6 +101,25 @@ export default function Task() {
                 }
             });
         }
+    };
+
+    const handleReminderTimePress = () => {
+        openModal({
+            modalName: CATEGORY_SELECTOR_MODAL,
+            props: {
+                theme,
+                categories: reminderTimes,
+                onSelectCategory: (selectedCategory: string) => {
+                    setReminderTime(selectedCategory);
+                },
+                title: 'Remind me...',
+                onConfirm: (category: string) => {
+                    setReminderTime(category);
+                },
+                onCancel: () => { },
+                onClose: () => closeModal(),
+            }
+        });
     };
 
     const handleDelete = async () => {
@@ -365,6 +394,40 @@ export default function Task() {
                                 onSelectDate={onSelectDate}
                             />
                         </View>
+
+                        <View style={styles.section}>
+                            <Text style={[
+                                styles.sectionTitle,
+                                theme === 'dark'
+                                    ? { color: colors.dark_theme.text_primary }
+                                    : { color: colors.light_theme.text_primary }
+                            ]}>
+                                Reminder Time
+                            </Text>
+                            {/* Fuze with DateSelector/TimePickerButton and make it a single component */}
+                            <TouchableOpacity
+                                style={[styles.categoryContainer, theme === 'light' ? styles.containerLight : styles.containerDark]}
+                                onPress={!isPremadeGoal ? handleReminderTimePress : undefined}
+                                disabled={isPremadeGoal}
+                            >
+                                <Text style={[
+                                    styles.text,
+                                    theme === 'light' ? styles.textLight : styles.textDark,
+                                    !reminderTime && (theme === 'light' ? styles.placeholderTextLight : styles.placeholderTextDark)
+                                ]}>
+                                    {reminderTime || 'None'}
+                                </Text>
+                                {reminderTime && (
+                                    <AntDesign
+                                        name="checkcircleo"
+                                        size={18}
+                                        color={theme === 'light'
+                                            ? colors.light_theme.text_accent
+                                            : colors.dark_theme.text_accent}
+                                    />
+                                )}
+                            </TouchableOpacity>
+                        </View>
                     </View>
 
                     {!isPremadeGoal && (
@@ -460,5 +523,41 @@ const styles = StyleSheet.create({
     },
     buttonContainer: {
         paddingVertical: 20,
+    },
+    // Decouple later
+    containerLight: {
+        backgroundColor: colors.light_theme.secondary_background,
+    },
+    containerDark: {
+        backgroundColor: colors.dark_theme.secondary_background,
+    },
+    categoryContainer: {
+        minHeight: 70,
+        width: '100%',
+        paddingHorizontal: 20,
+        paddingVertical: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderRadius: 10,
+    },
+    text: {
+        fontSize: 18,
+        fontWeight: '600',
+        textAlign: 'center',
+    },
+    textLight: {
+        color: colors.light_theme.text_primary,
+    },
+    textDark: {
+        color: colors.dark_theme.text_primary,
+    },
+    placeholderTextLight: {
+        color: colors.light_theme.text_secondary,
+        fontWeight: '400',
+    },
+    placeholderTextDark: {
+        color: colors.dark_theme.text_secondary,
+        fontWeight: '400',
     },
 }); 

@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect, useMemo } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, Keyboard, TouchableWithoutFeedback, ActivityIndicator } from 'react-native';
-import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import * as Notifications from 'expo-notifications';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/lib/colors';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -10,20 +10,23 @@ import { CATEGORY_SELECTOR_MODAL, DEFAULT_MODAL, EMOJI_SELECTOR_MODAL } from '@/
 import Button from '@/components/Button';
 import { ThemeContext } from '@/contexts/ThemeContext';
 import { useDatabase } from '@/hooks/useDatabase';
-import TimePickerButton from '@/components/TimePickerButton';
 import DateSelector from '@/components/DateSelector';
 import { Task as TaskType } from '@/types/database';
+
+type ReminderTimeType = 'None' | 'Two weeks before the deadline' | 'One week before the deadline' | 'Two days before the deadline' | 'One day before the deadline' | 'On the deadline';
 
 // Add or edit a task or even simply look at a task
 export default function Task() {
     // Will be undefined if nothing is passed (why is it typed as string | string[] then?)
     const { goalId, taskId } = useLocalSearchParams();
     const { theme } = useContext(ThemeContext);
+    const [task, setTask] = useState<TaskType | null>(null);
     const [selectedEmoji, setSelectedEmoji] = useState<string>('🔄');
     const [taskTitle, setTaskTitle] = useState<string>('');
     const [taskDescription, setTaskDescription] = useState<string>('');
     const [dueDate, setDueDate] = useState<string>('');
-    const [reminderTime, setReminderTime] = useState<string>('None');
+    const [reminderTime, setReminderTime] = useState<ReminderTimeType>('None');
+    const [reminderIds, setReminderIds] = useState<string[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const router = useRouter();
     const { openModal, closeModal } = useModal();
@@ -33,7 +36,7 @@ export default function Task() {
         return !isNaN(Number(goalId));
     }, [goalId]);
 
-    const reminderTimes = useMemo(() => [
+    const reminderTimes: ReminderTimeType[] = useMemo(() => [
         'None',
         'Two weeks before the deadline',
         'One week before the deadline',
@@ -41,6 +44,56 @@ export default function Task() {
         'One day before the deadline',
         'On the deadline',
     ], []);
+
+    const isValidReminderTime = (value: string): value is ReminderTimeType => {
+        return ['None', 'Two weeks before the deadline', 'One week before the deadline', 'Two days before the deadline', 'One day before the deadline', 'On the deadline'].includes(value);
+    };
+
+    const scheduleReminder = async (dueDate: string, relativeDate: ReminderTimeType) => {
+        let date;
+        let notificationId;
+        switch (relativeDate) {
+            case 'Two weeks before the deadline':
+                date = new Date(new Date(dueDate).setDate(new Date(dueDate).getDate() - 14));
+                break;
+            case 'One week before the deadline':
+                date = new Date(new Date(dueDate).setDate(new Date(dueDate).getDate() - 7));
+                break;
+            case 'Two days before the deadline':
+                date = new Date(new Date(dueDate).setDate(new Date(dueDate).getDate() - 2));
+                break;
+            case 'One day before the deadline':
+                date = new Date(new Date(dueDate).setDate(new Date(dueDate).getDate() - 1));
+                break;
+            case 'On the deadline':
+                date = new Date(dueDate);
+                break;
+            default:
+                date = new Date();
+                break;
+        };
+
+        if (new Date() > new Date(date)) {
+            return null;
+        }
+
+        notificationId = await Notifications.scheduleNotificationAsync({
+            content: {
+                title: taskTitle,
+                body: 'The deadline is calling. Will you pick up?',
+                data: {
+                    taskId: taskId,
+                    goalId: goalId,
+                },
+            },
+            trigger: {
+                type: Notifications.SchedulableTriggerInputTypes.DATE,
+                date: date,
+            },
+        });
+
+        return notificationId;
+    }
 
     useEffect(() => {
         const goal_id = goalId as string;
@@ -59,6 +112,9 @@ export default function Task() {
                         setTaskTitle(task.title);
                         setTaskDescription(task.description || '');
                         setDueDate(task.due_date || '');
+                        setReminderTime(task.reminder_relative_date);
+                        setReminderIds(task.reminder_ids);
+                        setTask(task);
                     }
                 }
                 if (isPremadeGoal && task_id) {
@@ -68,6 +124,9 @@ export default function Task() {
                         setTaskTitle(task.title);
                         setTaskDescription(task.description || '');
                         setDueDate(task.due_date || '');
+                        setReminderTime(task.reminder_relative_date);
+                        setReminderIds(task.reminder_ids);
+                        setTask(task);
                     }
                 }
             } catch (error) {
@@ -110,11 +169,19 @@ export default function Task() {
                 theme,
                 categories: reminderTimes,
                 onSelectCategory: (selectedCategory: string) => {
-                    setReminderTime(selectedCategory);
+                    if (isValidReminderTime(selectedCategory)) {
+                        setReminderTime(selectedCategory);
+                    } else {
+                        setReminderTime('None');
+                    }
                 },
                 title: 'Remind me...',
                 onConfirm: (category: string) => {
-                    setReminderTime(category);
+                    if (isValidReminderTime(category)) {
+                        setReminderTime(category);
+                    } else {
+                        setReminderTime('None');
+                    }
                 },
                 onCancel: () => { },
                 onClose: () => closeModal(),
@@ -159,12 +226,14 @@ export default function Task() {
 
         try {
             // Create the new task using the database context
+            const notificationId = await scheduleReminder(dueDate, reminderTime);
             await createTask({
                 goal_id: goalId as string,
                 title: taskTitle.trim(),
                 description: taskDescription.trim(),
                 selected_emoji: selectedEmoji,
-                reminder_time: null,
+                reminder_relative_date: reminderTime,
+                reminder_ids: notificationId ? [notificationId] : [],
                 due_date: dueDate || null,
             });
 
@@ -184,13 +253,21 @@ export default function Task() {
 
         try {
             // Update the task using the database context
+            let notificationId: string | null = null;
+            if (reminderTime !== task?.reminder_relative_date && task?.reminder_ids?.length) {
+                await Notifications.cancelScheduledNotificationAsync(task?.reminder_ids[0]);
+            }
+
+            if (reminderTime !== 'None') {
+                notificationId = await scheduleReminder(dueDate, reminderTime);
+            }
 
             const updatedTask = {
                 title: taskTitle.trim(),
                 description: taskDescription.trim(),
                 selected_emoji: selectedEmoji || '',
-                // Since we are not using those fields yet, we don't need to update them
-                // reminder_time: typeof reminder_time === 'string' ? reminder_time : null,
+                reminder_relative_date: reminderTime,
+                reminder_ids: notificationId ? [notificationId] : task?.reminder_ids,
                 due_date: dueDate || null,
             };
 

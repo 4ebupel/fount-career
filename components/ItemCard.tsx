@@ -170,11 +170,6 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
                             params: {
                                 goalId: item.goal_id,
                                 taskId: item.id,
-                                title: item.title,
-                                description: item.description,
-                                emoji: item.selected_emoji,
-                                due_date: item.due_date,
-                                reminder_time: item.reminder_time
                             }
                         })
                     )

@@ -472,6 +472,14 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
   const deleteTaskWithRefresh = async (id: string, goal_id: string) => {
     try {
       clearError();
+      const task = await DB.getTaskById(id);
+
+      if (task?.reminder_ids?.length) {
+        for (const reminder of task.reminder_ids) {
+          await Notifications.cancelScheduledNotificationAsync(reminder);
+          console.log('Reminder cancelled:', reminder);
+        }
+      }
       await DB.deleteTask(id);
 
       // Update local state using provided goal_id

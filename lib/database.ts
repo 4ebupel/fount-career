@@ -130,7 +130,8 @@ export const initDatabase = async (): Promise<void> => {
         updated_at TEXT NOT NULL,
         title TEXT NOT NULL,
         selected_emoji TEXT NOT NULL,
-        reminder_time TEXT,
+        reminder_relative_date TEXT NOT NULL,
+        reminder_ids TEXT NOT NULL,
         due_date TEXT,
         description TEXT,
         completed INTEGER NOT NULL DEFAULT 0,
@@ -158,7 +159,8 @@ export const initDatabase = async (): Promise<void> => {
         updated_at TEXT NOT NULL,
         title TEXT NOT NULL,
         selected_emoji TEXT NOT NULL,
-        reminder_time TEXT,
+        reminder_relative_date TEXT NOT NULL,
+        reminder_ids TEXT NOT NULL,
         due_date TEXT,
         description TEXT,
         completed INTEGER NOT NULL DEFAULT 0,
@@ -269,14 +271,15 @@ export const populatePremadeTasks = async (): Promise<void> => {
         const params: any[] = [];
 
         for (const taskData of batch) {
-          valueGroups.push('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+          valueGroups.push('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
           params.push(
             taskData.id,
             now,
             now,
             taskData.title,
             taskData.selected_emoji,
-            taskData.reminder_time,
+            taskData.reminder_relative_date,
+            JSON.stringify(taskData.reminder_ids),
             taskData.due_date,
             taskData.description,
             taskData.completed ? 1 : 0,
@@ -286,7 +289,7 @@ export const populatePremadeTasks = async (): Promise<void> => {
 
         // Execute the batch insert
         const query = `
-          INSERT INTO premadeTasks (id, created_at, updated_at, title, selected_emoji, reminder_time, due_date, description, completed, goal_id)
+          INSERT INTO premadeTasks (id, created_at, updated_at, title, selected_emoji, reminder_relative_date, reminder_ids, due_date, description, completed, goal_id)
           VALUES ${valueGroups.join(', ')};
         `;
 
@@ -660,8 +663,8 @@ export const createTask = async (task: Omit<Task, 'id' | 'created_at' | 'updated
     };
 
     await db.runAsync(
-      `INSERT INTO tasks (id, goal_id, created_at, updated_at, title, selected_emoji, reminder_time, due_date, description, completed)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      `INSERT INTO tasks (id, goal_id, created_at, updated_at, title, selected_emoji, reminder_relative_date, reminder_ids, due_date, description, completed)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
       [
         newTask.id,
         newTask.goal_id,
@@ -669,7 +672,8 @@ export const createTask = async (task: Omit<Task, 'id' | 'created_at' | 'updated
         newTask.updated_at,
         newTask.title,
         newTask.selected_emoji,
-        newTask.reminder_time,
+        newTask.reminder_relative_date,
+        JSON.stringify(newTask.reminder_ids),
         newTask.due_date,
         newTask.description,
         newTask.completed ? 1 : 0,
@@ -698,6 +702,22 @@ export const getTasksByGoalId = async (goalId: string): Promise<Task[]> => {
   });
 };
 
+export const getTaskById = async (id: string): Promise<Task | null> => {
+  return withDatabaseRetry(async (db) => {
+    const task = await db.getFirstAsync<ConvertArraysToJSON<Task>>('SELECT * FROM tasks WHERE id = ?;', [id]);
+
+    if (!task) {
+      return null;
+    }
+
+    return {
+      ...task,
+      completed: Boolean(task.completed),
+      reminder_ids: JSON.parse(task.reminder_ids),
+    };
+  });
+};
+
 /**
  * Update a task
  */
@@ -720,13 +740,14 @@ export const updateTask = async (id: string, updates: Partial<Omit<Task, 'id' | 
 
     await db.runAsync(
       `UPDATE tasks 
-       SET updated_at = ?, title = ?, selected_emoji = ?, reminder_time = ?, due_date = ?, description = ?, completed = ?
+       SET updated_at = ?, title = ?, selected_emoji = ?, reminder_relative_date = ?, reminder_ids = ?, due_date = ?, description = ?, completed = ?
        WHERE id = ?;`,
       [
         updatedTask.updated_at,
         updatedTask.title,
         updatedTask.selected_emoji,
-        updatedTask.reminder_time,
+        updatedTask.reminder_relative_date,
+        JSON.stringify(updatedTask.reminder_ids),
         updatedTask.due_date,
         updatedTask.description,
         updatedTask.completed ? 1 : 0,

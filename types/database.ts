@@ -30,7 +30,8 @@ export interface Task {
   updated_at: string;
   title: string;
   selected_emoji: string;
-  reminder_time: string | null; // Format: HH:MM
+  reminder_relative_date: 'None' | 'Two weeks before the deadline' | 'One week before the deadline' | 'Two days before the deadline' | 'One day before the deadline' | 'On the deadline';
+  reminder_ids: string[]; // Stored as JSON string of reminder IDs
   due_date: string | null;
   description: string | null;
   completed: boolean;

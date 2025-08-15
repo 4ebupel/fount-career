@@ -64,7 +64,8 @@ export const premadeTasksSeedData: Omit<Task, 'created_at' | 'updated_at'>[] = [
         goal_id: '1',
         title: 'Join a local Toastmasters club',
         selected_emoji: '🎤',
-        reminder_time: '18:00',
+        reminder_relative_date: 'None',
+        reminder_ids: [],
         due_date: null,
         description: 'Find and attend a local Toastmasters meeting to improve public speaking skills',
         completed: false
@@ -74,7 +75,8 @@ export const premadeTasksSeedData: Omit<Task, 'created_at' | 'updated_at'>[] = [
         goal_id: '1',
         title: 'Record a practice speech',
         selected_emoji: '📹',
-        reminder_time: '16:30',
+        reminder_relative_date: 'None',
+        reminder_ids: [],
         due_date: null,
         description: 'Record yourself giving a 5-minute speech and review for improvement areas',
         completed: false
@@ -84,7 +86,8 @@ export const premadeTasksSeedData: Omit<Task, 'created_at' | 'updated_at'>[] = [
         goal_id: '1',
         title: 'Read "Talk Like TED" book',
         selected_emoji: '📚',
-        reminder_time: '20:00',
+        reminder_relative_date: 'None',
+        reminder_ids: [],
         due_date: null,
         description: 'Read the book to learn techniques from successful TED speakers',
         completed: false
@@ -96,7 +99,8 @@ export const premadeTasksSeedData: Omit<Task, 'created_at' | 'updated_at'>[] = [
         goal_id: '2',
         title: 'Complete Andrew Ng\'s ML course',
         selected_emoji: '🧠',
-        reminder_time: '19:00',
+        reminder_relative_date: 'None',
+        reminder_ids: [],
         due_date: null,
         description: 'Finish the first 3 modules of the Coursera Machine Learning specialization',
         completed: false
@@ -106,7 +110,8 @@ export const premadeTasksSeedData: Omit<Task, 'created_at' | 'updated_at'>[] = [
         goal_id: '2',
         title: 'Build a simple linear regression model',
         selected_emoji: '📊',
-        reminder_time: '17:00',
+        reminder_relative_date: 'None',
+        reminder_ids: [],
         due_date: null,
         description: 'Create a linear regression model using Python and scikit-learn',
         completed: false
@@ -116,7 +121,8 @@ export const premadeTasksSeedData: Omit<Task, 'created_at' | 'updated_at'>[] = [
         goal_id: '2',
         title: 'Join an ML community forum',
         selected_emoji: '👥',
-        reminder_time: '12:00',
+        reminder_relative_date: 'None',
+        reminder_ids: [],
         due_date: null,
         description: 'Sign up for Kaggle or a similar platform to connect with other ML enthusiasts',
         completed: false
@@ -128,7 +134,8 @@ export const premadeTasksSeedData: Omit<Task, 'created_at' | 'updated_at'>[] = [
         goal_id: '3',
         title: 'Attend industry conference',
         selected_emoji: '🏢',
-        reminder_time: '09:00',
+        reminder_relative_date: 'None',
+        reminder_ids: [],
         due_date: null,
         description: 'Register and attend the upcoming tech conference in the city',
         completed: false
@@ -138,7 +145,8 @@ export const premadeTasksSeedData: Omit<Task, 'created_at' | 'updated_at'>[] = [
         goal_id: '3',
         title: 'Update LinkedIn profile',
         selected_emoji: '💼',
-        reminder_time: '14:00',
+        reminder_relative_date: 'None',
+        reminder_ids: [],
         due_date: null,
         description: 'Refresh profile with recent accomplishments and a professional photo',
         completed: false
@@ -148,7 +156,8 @@ export const premadeTasksSeedData: Omit<Task, 'created_at' | 'updated_at'>[] = [
         goal_id: '3',
         title: 'Schedule coffee meetings',
         selected_emoji: '☕',
-        reminder_time: '10:30',
+        reminder_relative_date: 'None',
+        reminder_ids: [],
         due_date: null,
         description: 'Reach out to 3 industry professionals for informal networking meetings',
         completed: false
@@ -160,7 +169,8 @@ export const premadeTasksSeedData: Omit<Task, 'created_at' | 'updated_at'>[] = [
         goal_id: '4',
         title: 'Research market opportunities',
         selected_emoji: '🔍',
-        reminder_time: '20:30',
+        reminder_relative_date: 'None',
+        reminder_ids: [],
         due_date: null,
         description: 'Identify 3 potential niches for your side business based on your skills',
         completed: false
@@ -170,7 +180,8 @@ export const premadeTasksSeedData: Omit<Task, 'created_at' | 'updated_at'>[] = [
         goal_id: '4',
         title: 'Create a business plan',
         selected_emoji: '📝',
-        reminder_time: '19:00',
+        reminder_relative_date: 'None',
+        reminder_ids: [],
         due_date: null,
         description: 'Draft a simple one-page business plan with goals and financial projections',
         completed: false
@@ -180,7 +191,8 @@ export const premadeTasksSeedData: Omit<Task, 'created_at' | 'updated_at'>[] = [
         goal_id: '4',
         title: 'Set up business social media',
         selected_emoji: '📱',
-        reminder_time: '16:00',
+        reminder_relative_date: 'None',
+        reminder_ids: [],
         due_date: null,
         description: 'Create professional accounts on relevant platforms for your business',
         completed: false
@@ -192,7 +204,8 @@ export const premadeTasksSeedData: Omit<Task, 'created_at' | 'updated_at'>[] = [
         goal_id: '5',
         title: 'Purchase a beginner guitar',
         selected_emoji: '🎸',
-        reminder_time: '11:00',
+        reminder_relative_date: 'None',
+        reminder_ids: [],
         due_date: null,
         description: 'Research and buy an affordable acoustic guitar for beginners',
         completed: false
@@ -202,7 +215,8 @@ export const premadeTasksSeedData: Omit<Task, 'created_at' | 'updated_at'>[] = [
         goal_id: '5',
         title: 'Learn basic chords',
         selected_emoji: '🎵',
-        reminder_time: '18:30',
+        reminder_relative_date: 'None',
+        reminder_ids: [],
         due_date: null,
         description: 'Master the G, C, D, and Em chords through daily practice',
         completed: false
@@ -212,7 +226,8 @@ export const premadeTasksSeedData: Omit<Task, 'created_at' | 'updated_at'>[] = [
         goal_id: '5',
         title: 'Sign up for online lessons',
         selected_emoji: '💻',
-        reminder_time: '13:00',
+        reminder_relative_date: 'None',
+        reminder_ids: [],
         due_date: null,
         description: 'Find and subscribe to a structured online guitar course',
         completed: false
@@ -224,7 +239,8 @@ export const premadeTasksSeedData: Omit<Task, 'created_at' | 'updated_at'>[] = [
         goal_id: '6',
         title: 'Choose a blogging platform',
         selected_emoji: '🌐',
-        reminder_time: '15:00',
+        reminder_relative_date: 'None',
+        reminder_ids: [],
         due_date: null,
         description: 'Research and select between WordPress, Medium, or other platforms',
         completed: false
@@ -234,7 +250,8 @@ export const premadeTasksSeedData: Omit<Task, 'created_at' | 'updated_at'>[] = [
         goal_id: '6',
         title: 'Create content calendar',
         selected_emoji: '📅',
-        reminder_time: '17:30',
+        reminder_relative_date: 'None',
+        reminder_ids: [],
         due_date: null,
         description: 'Plan your first 10 blog post topics and publishing schedule',
         completed: false
@@ -244,7 +261,8 @@ export const premadeTasksSeedData: Omit<Task, 'created_at' | 'updated_at'>[] = [
         goal_id: '6',
         title: 'Write first blog post',
         selected_emoji: '✍️',
-        reminder_time: '21:00',
+        reminder_relative_date: 'None',
+        reminder_ids: [],
         due_date: null,
         description: 'Draft, edit, and publish your first article on your chosen platform',
         completed: false

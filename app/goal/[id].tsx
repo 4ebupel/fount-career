@@ -397,11 +397,6 @@ export default function Goal() {
                                                 params: {
                                                     goalId: id,
                                                     taskId: task.id,
-                                                    title: task.title,
-                                                    description: task.description,
-                                                    emoji: task.selected_emoji,
-                                                    due_date: task.due_date,
-                                                    reminder_time: task.reminder_time
                                                 }
                                             })}
                                         />

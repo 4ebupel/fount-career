@@ -6,14 +6,15 @@ import { colors } from '@/lib/colors';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { AntDesign, FontAwesome } from '@expo/vector-icons';
 import { useModal } from '@/hooks/useModal';
-import { CATEGORY_SELECTOR_MODAL, DEFAULT_MODAL, EMOJI_SELECTOR_MODAL } from '@/lib/modals';
+import { DEFAULT_MODAL, EMOJI_SELECTOR_MODAL } from '@/lib/modals';
 import Button from '@/components/Button';
 import { ThemeContext } from '@/contexts/ThemeContext';
 import { useDatabase } from '@/hooks/useDatabase';
-import DateSelector from '@/components/DateSelector';
+import DateSelectorButton from '@/components/DateSelectorButton';
 import { Task as TaskType } from '@/types/database';
-
-type ReminderTimeType = 'None' | 'Two weeks before the deadline' | 'One week before the deadline' | 'Two days before the deadline' | 'One day before the deadline' | 'On the deadline';
+import TimePickerButton from '@/components/TimePickerButton';
+import { ReminderRelativeTimeType } from '@/types/database';
+import { isValidRelativeReminderTime } from '@/lib/database-utils';
 
 // Add or edit a task or even simply look at a task
 export default function Task() {
@@ -25,7 +26,7 @@ export default function Task() {
     const [taskTitle, setTaskTitle] = useState<string>('');
     const [taskDescription, setTaskDescription] = useState<string>('');
     const [dueDate, setDueDate] = useState<string>('');
-    const [reminderTime, setReminderTime] = useState<ReminderTimeType>('None');
+    const [reminderTime, setReminderTime] = useState<ReminderRelativeTimeType>('Never');
     const [reminderIds, setReminderIds] = useState<string[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const router = useRouter();
@@ -36,20 +37,7 @@ export default function Task() {
         return !isNaN(Number(goalId));
     }, [goalId]);
 
-    const reminderTimes: ReminderTimeType[] = useMemo(() => [
-        'None',
-        'Two weeks before the deadline',
-        'One week before the deadline',
-        'Two days before the deadline',
-        'One day before the deadline',
-        'On the deadline',
-    ], []);
-
-    const isValidReminderTime = (value: string): value is ReminderTimeType => {
-        return ['None', 'Two weeks before the deadline', 'One week before the deadline', 'Two days before the deadline', 'One day before the deadline', 'On the deadline'].includes(value);
-    };
-
-    const scheduleReminder = async (dueDate: string, relativeDate: ReminderTimeType) => {
+    const scheduleReminder = async (dueDate: string, relativeDate: ReminderRelativeTimeType) => {
         let date;
         let notificationId;
         switch (relativeDate) {
@@ -162,33 +150,6 @@ export default function Task() {
         }
     };
 
-    const handleReminderTimePress = () => {
-        openModal({
-            modalName: CATEGORY_SELECTOR_MODAL,
-            props: {
-                theme,
-                categories: reminderTimes,
-                onSelectCategory: (selectedCategory: string) => {
-                    if (isValidReminderTime(selectedCategory)) {
-                        setReminderTime(selectedCategory);
-                    } else {
-                        setReminderTime('None');
-                    }
-                },
-                title: 'Remind me...',
-                onConfirm: (category: string) => {
-                    if (isValidReminderTime(category)) {
-                        setReminderTime(category);
-                    } else {
-                        setReminderTime('None');
-                    }
-                },
-                onCancel: () => { },
-                onClose: () => closeModal(),
-            }
-        });
-    };
-
     const handleDelete = async () => {
         if (!taskId || isPremadeGoal) {
             return;
@@ -258,7 +219,7 @@ export default function Task() {
                 await Notifications.cancelScheduledNotificationAsync(task?.reminder_ids[0]);
             }
 
-            if (reminderTime !== 'None') {
+            if (reminderTime !== 'Never') {
                 notificationId = await scheduleReminder(dueDate, reminderTime);
             }
 
@@ -464,10 +425,11 @@ export default function Task() {
                             ]}>
                                 Due Date
                             </Text>
-                            <DateSelector
+                            <DateSelectorButton
                                 theme={theme}
                                 date={dueDate}
                                 isDisabled={isPremadeGoal}
+                                icon="calendar"
                                 onSelectDate={onSelectDate}
                             />
                         </View>
@@ -481,29 +443,19 @@ export default function Task() {
                             ]}>
                                 Reminder Time
                             </Text>
-                            {/* Fuze with DateSelector/TimePickerButton and make it a single component */}
-                            <TouchableOpacity
-                                style={[styles.categoryContainer, theme === 'light' ? styles.containerLight : styles.containerDark]}
-                                onPress={!isPremadeGoal ? handleReminderTimePress : undefined}
-                                disabled={isPremadeGoal}
-                            >
-                                <Text style={[
-                                    styles.text,
-                                    theme === 'light' ? styles.textLight : styles.textDark,
-                                    !reminderTime && (theme === 'light' ? styles.placeholderTextLight : styles.placeholderTextDark)
-                                ]}>
-                                    {reminderTime || 'None'}
-                                </Text>
-                                {reminderTime && (
-                                    <AntDesign
-                                        name="checkcircleo"
-                                        size={18}
-                                        color={theme === 'light'
-                                            ? colors.light_theme.text_accent
-                                            : colors.dark_theme.text_accent}
-                                    />
-                                )}
-                            </TouchableOpacity>
+                            <TimePickerButton
+                                isDisabled={isPremadeGoal}
+                                selectedTime={reminderTime}
+                                theme={theme}
+                                timeType="rel"
+                                setSelectedTime={(value) => {
+                                    if (isValidRelativeReminderTime(value)) {
+                                        setReminderTime(value);
+                                    } else {
+                                        setReminderTime('Never');
+                                    }
+                                }}
+                            />
                         </View>
                     </View>
 
@@ -516,7 +468,7 @@ export default function Task() {
                                 variant="primary"
                                 theme={theme}
                                 onPress={taskId ? handleUpdate : handleSave}
-                                disabled={!taskTitle.trim()}
+                                disabled={!taskTitle.trim() || (!dueDate && reminderTime !== 'Never')}
                             />
                         </View>
                     )}

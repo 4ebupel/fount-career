@@ -9,11 +9,12 @@ interface Props {
     theme: 'dark' | 'light',
     date: string,
     isDisabled: boolean,
+    icon: keyof typeof AntDesign.glyphMap,
     onSelectDate: (date: string) => void,
     onConfirm?: () => void,
 }
 
-export default function DateSelector({ theme, date, isDisabled, onSelectDate, onConfirm = () => { } }: Props) {
+export default function DateSelectorButton({ theme, date, isDisabled, icon = 'checkcircleo', onSelectDate, onConfirm = () => { } }: Props) {
     const { openModal, closeModal } = useModal();
     const handleDatePress = () => {
         openModal({
@@ -42,13 +43,13 @@ export default function DateSelector({ theme, date, isDisabled, onSelectDate, on
             <Text style={[
                 styles.text,
                 theme === 'light' ? styles.textLight : styles.textDark,
-                date === 'Select a date' && (theme === 'light' ? styles.placeholderTextLight : styles.placeholderTextDark)
+                !date && (theme === 'light' ? styles.placeholderTextLight : styles.placeholderTextDark)
             ]}>
-                {date}
+                {date || 'Select a date'}
             </Text>
             {date !== 'Select a date' && (
                 <AntDesign
-                    name="checkcircleo"
+                    name={icon}
                     size={18}
                     color={theme === 'light'
                         ? colors.light_theme.text_accent

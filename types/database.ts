@@ -30,7 +30,7 @@ export interface Task {
   updated_at: string;
   title: string;
   selected_emoji: string;
-  reminder_relative_date: 'None' | 'Two weeks before the deadline' | 'One week before the deadline' | 'Two days before the deadline' | 'One day before the deadline' | 'On the deadline';
+  reminder_relative_date: ReminderRelativeTimeType;
   reminder_ids: string[]; // Stored as JSON string of reminder IDs
   due_date: string | null;
   description: string | null;
@@ -45,3 +45,5 @@ export interface Task {
 export type ConvertArraysToJSON<T> = {
   [K in keyof T]: T[K] extends string[] ? string : T[K]
 }
+
+export type ReminderRelativeTimeType = 'Never' | 'Two weeks before the deadline' | 'One week before the deadline' | 'Two days before the deadline' | 'One day before the deadline' | 'On the deadline';

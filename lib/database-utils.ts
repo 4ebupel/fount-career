@@ -1,5 +1,6 @@
 import { Alert, Platform } from 'react-native';
 import { initDatabase, isDatabaseInitialized } from './database';
+import { ReminderRelativeTimeType } from '@/types/database';
 
 // Function to check if the database is initialized and initialize it if needed
 export const ensureDatabaseInitialized = async (): Promise<boolean> => {
@@ -78,10 +79,14 @@ export const isValidReminderTime = (time: string): boolean => {
   return timeRegex.test(time);
 };
 
+export const isValidRelativeReminderTime = (value: string): value is ReminderRelativeTimeType => {
+  return ['Never', 'Two weeks before the deadline', 'One week before the deadline', 'Two days before the deadline', 'One day before the deadline', 'On the deadline'].includes(value);
+};
+
 // Format reminder time to ensure consistent HH:MM format
 export const formatReminderTime = (time: string): ReminderTime | null => {
   if (isValidReminderTime(time)) return time;
   
   const [hours, minutes] = time.split(':');
   return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
-}; 
+};

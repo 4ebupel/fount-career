@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import { View, Text, StyleSheet, useWindowDimensions, PanResponder } from "react-native";
 import { useDatabase } from "@/hooks/useDatabase";
 import { useModal } from "@/hooks/useModal";
+import { useNavigationLock } from "@/hooks/useNavigationLock";
 import * as Haptics from 'expo-haptics';
 import { router } from "expo-router";
 import { Feather } from "@expo/vector-icons";
@@ -27,7 +28,7 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
     const { width } = useWindowDimensions();
     const { updateHabit, updateTask, deleteHabit, deleteTask } = useDatabase();
     const { openModal, closeModal } = useModal();
-
+    const { locked, lock } = useNavigationLock();
     let timer: NodeJS.Timeout;
 
     const mainButtonRef = useRef<View>(null);

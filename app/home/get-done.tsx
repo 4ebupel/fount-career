@@ -93,12 +93,12 @@ export default function GetDone() {
 
     // Get total tasks and habits
     const totalHabits = useMemo(() =>
-        localHabits.length,
+        localHabits.filter(habit => habit.reminder_days.includes(selectedDay)).length,
         [localHabits]
     );
 
     const totalTasks = useMemo(() =>
-        localTasks.length,
+        localTasks.filter(task => task.due_date && new Date(task.due_date) > new Date()).length,
         [localTasks]
     );
 
@@ -256,7 +256,7 @@ export default function GetDone() {
                     <View style={styles.todayProgressContainer}>
                         <View style={styles.progressHeader}>
                             <Text style={[styles.progressText, theme === 'dark' ? styles.textSecondaryDark : styles.textSecondaryLight]}>
-                                Today you have {totalHabits} habits, {totalTasks} tasks
+                                Today you have {totalHabits} {totalHabits === 1 ? "habit" : "habits"} and {totalTasks} {totalTasks === 1 ? "task" : "tasks"}
                             </Text>
                             <Text style={[styles.progressCounter, theme === 'dark' ? styles.textSecondaryDark : styles.textSecondaryLight]}>
                                 {completedItems} / {totalItems}

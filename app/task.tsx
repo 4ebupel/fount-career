@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect, useMemo } from 'react';
+import React, { useState, useContext, useEffect, useMemo, useCallback } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, Keyboard, TouchableWithoutFeedback, ActivityIndicator } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,6 +15,8 @@ import { Task as TaskType } from '@/types/database';
 import TimePickerButton from '@/components/TimePickerButton';
 import { ReminderRelativeTimeType } from '@/types/database';
 import { isValidRelativeReminderTime } from '@/lib/database-utils';
+import { useNavigation } from '@react-navigation/native';
+import { navigationLock } from '@/lib/NavigationLock';
 
 // Add or edit a task or even simply look at a task
 export default function Task() {
@@ -32,6 +34,17 @@ export default function Task() {
     const router = useRouter();
     const { openModal, closeModal } = useModal();
     const { createTask, updateTask, deleteTask, tasks, getPremadeTaskById } = useDatabase();
+    const navigation = useNavigation();
+
+    useEffect(() => {
+        // @ts-ignore - transitionEnd works in practice despite TypeScript errors
+        const unsubscribe = navigation.addListener('transitionEnd', (e) => {
+            // @ts-ignore - transitionEnd works in practice despite TypeScript errors
+            if (!e.data?.closing) {
+                navigationLock.unlock();
+            }
+        });
+    }, []);
 
     const isPremadeGoal = useMemo(() => {
         return !isNaN(Number(goalId));

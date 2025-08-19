@@ -12,7 +12,6 @@ import CustomModal from "@/components/CustomModal";
 import { ThemeProvider, ThemeContext } from '@/contexts/ThemeContext';
 import { ModalProvider } from '@/contexts/ModalContext';
 import { DatabaseProvider } from '@/contexts/DatabaseContext';
-import { NavigationLockProvider } from '@/contexts/NavigationLockContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -81,23 +80,21 @@ export default function RootLayout() {
         <SafeAreaProvider>
           <ThemeProvider>
             <NotificationProvider>
-              <NavigationLockProvider>
-                <DatabaseProvider>
-                  <ModalProvider>
-                    <Stack>
-                      <Stack.Screen name="index" options={{ headerShown: false }} />
-                      <Stack.Screen name="home" options={{ headerShown: false }} />
-                      <Stack.Screen name="goal/[id]" options={{ headerShown: false }} />
-                      <Stack.Screen name="task" options={{ headerShown: false }} />
-                      <Stack.Screen name="habit" options={{ headerShown: false }} />
-                      <Stack.Screen name="auth" options={{ headerShown: false }} />
-                      <Stack.Screen name="+not-found" />
-                    </Stack>
-                    <CustomModal />
-                    <AppStatusBar />
-                  </ModalProvider>
-                </DatabaseProvider>
-              </NavigationLockProvider>
+              <DatabaseProvider>
+                <ModalProvider>
+                  <Stack>
+                    <Stack.Screen name="index" options={{ headerShown: false }} />
+                    <Stack.Screen name="home" options={{ headerShown: false }} />
+                    <Stack.Screen name="goal/[id]" options={{ headerShown: false }} />
+                    <Stack.Screen name="task" options={{ headerShown: false }} />
+                    <Stack.Screen name="habit" options={{ headerShown: false }} />
+                    <Stack.Screen name="auth" options={{ headerShown: false }} />
+                    <Stack.Screen name="+not-found" />
+                  </Stack>
+                  <CustomModal />
+                  <AppStatusBar />
+                </ModalProvider>
+              </DatabaseProvider>
             </NotificationProvider>
           </ThemeProvider>
         </SafeAreaProvider>

@@ -2,13 +2,13 @@ import React, { useState, useRef } from "react";
 import { View, Text, StyleSheet, useWindowDimensions, PanResponder } from "react-native";
 import { useDatabase } from "@/hooks/useDatabase";
 import { useModal } from "@/hooks/useModal";
-import { useNavigationLock } from "@/hooks/useNavigationLock";
 import * as Haptics from 'expo-haptics';
 import { router } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { colors } from "@/lib/colors";
 import { Habit, Task } from "@/types/database";
 import { DEFAULT_MODAL } from "@/lib/modals";
+import { navigationLock } from "@/lib/NavigationLock";
 
 interface props {
     item: Task | Habit,
@@ -28,7 +28,6 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
     const { width } = useWindowDimensions();
     const { updateHabit, updateTask, deleteHabit, deleteTask } = useDatabase();
     const { openModal, closeModal } = useModal();
-    const { locked, lock } = useNavigationLock();
     let timer: NodeJS.Timeout;
 
     const mainButtonRef = useRef<View>(null);
@@ -111,6 +110,9 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
             onStartShouldSetPanResponder: () => true,
             onMoveShouldSetPanResponder: () => true,
             onPanResponderGrant: () => {
+                if (navigationLock.isNavigating) {
+                    return;
+                }
                 timer = setTimeout(() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     setIsLongPressed(true);
@@ -152,7 +154,8 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
                 prevTouchY = touchY;
             },
             onPanResponderRelease: (event, gestureState) => {
-                if ((Math.abs(gestureState.dx) < 0.5 || Math.abs(gestureState.dy) < 0.5) && !longPressRef.current) {
+                if ((Math.abs(gestureState.dx) < 0.5 || Math.abs(gestureState.dy) < 0.5) && !longPressRef.current && !navigationLock.isNavigating) {
+                    navigationLock.lock();
                     'reminder_days' in item ? (
                         router.push({
                             pathname: '/habit',

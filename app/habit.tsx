@@ -1,5 +1,6 @@
-import React, { useState, useContext, useMemo } from 'react';
+import React, { useState, useContext, useMemo, useEffect } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, ScrollView, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import * as Notifications from 'expo-notifications';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,6 +14,7 @@ import { ThemeContext } from '@/contexts/ThemeContext';
 import { useDatabase } from '@/hooks/useDatabase';
 import { scheduleWeeklyReminders, WeekdaysInNumbers } from '@/lib/scheduleWeeklyReminders';
 import { checkForExistingReminders } from '@/lib/checkForExistingReminders';
+import { navigationLock } from '@/lib/NavigationLock';
 
 // Days of the week for habit reminders
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -20,6 +22,7 @@ const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'S
 export default function Habit() {
     const { goalId, habitId, title, emoji, reminder_days, reminder_time } = useLocalSearchParams();
     const router = useRouter();
+    const navigation = useNavigation();
 
     const [habitTitle, setHabitTitle] = useState<string>(title as string || '');
     const [selectedEmoji, setSelectedEmoji] = useState<string>(emoji as string || '🔄');
@@ -31,6 +34,18 @@ export default function Habit() {
     const { openModal, closeModal } = useModal();
     const { createHabit, updateHabit, deleteHabit } = useDatabase();
     const { theme } = useContext(ThemeContext);
+
+    useEffect(() => {
+        // @ts-ignore - transitionEnd works in practice despite TypeScript errors
+        const unsubscribe = navigation.addListener('transitionEnd', (e) => {
+            console.log('transitionEnd', e);
+            // @ts-ignore - transitionEnd works in practice despite TypeScript errors
+            if (!e.data?.closing) {
+                navigationLock.unlock();
+            }
+        });
+        return unsubscribe;
+    }, []);
 
     const isPremadeGoal = useMemo(() => {
         return !isNaN(Number(goalId));

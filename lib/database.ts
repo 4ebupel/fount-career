@@ -559,6 +559,13 @@ export const createHabit = async (habit: Omit<Habit, 'id' | 'created_at' | 'upda
   });
 };
 
+export const getHabits = async (): Promise<Habit[]> => {
+  return withDatabaseRetry(async (db) => {
+    const habits = await db.getAllAsync<Habit>('SELECT * FROM habits ORDER BY created_at DESC;');
+    return habits;
+  });
+};
+
 /**
  * Get habits by goal ID
  */
@@ -835,9 +842,16 @@ export const createReminderOccurrence = async (reminderOccurrence: Omit<Reminder
   });
 };
 
-export const getReminderOccurrencesByReminderId = async (reminderId: string): Promise<ReminderOccurrence[]> => {
+export const getReminderOccurrencesByDate = async (date: string): Promise<ReminderOccurrence[]> => {
   return withDatabaseRetry(async (db) => {
-    const reminderOccurrences = await db.getAllAsync<ReminderOccurrence>('SELECT * FROM reminderOccurrences WHERE reminder_id = ?;', [reminderId]);
+    const reminderOccurrences = await db.getAllAsync<ReminderOccurrence>('SELECT * FROM reminderOccurrences WHERE scheduled_for = ?;', [date]);
+    return reminderOccurrences;
+  });
+};
+
+export const getReminderOccurrencesByHabitId = async (habitId: string): Promise<ReminderOccurrence[]> => {
+  return withDatabaseRetry(async (db) => {
+    const reminderOccurrences = await db.getAllAsync<ReminderOccurrence>('SELECT * FROM reminderOccurrences WHERE habit_id = ?;', [habitId]);
     return reminderOccurrences;
   });
 };

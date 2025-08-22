@@ -1,6 +1,8 @@
+import 'react-native-get-random-values';
+import { v4 as uuidv4 } from 'uuid';
 import * as SQLite from 'expo-sqlite';
 import { Platform } from 'react-native';
-import { ConvertArraysToJSON, Goal, Habit, Task } from '../types/database';
+import { ConvertArraysToJSON, Goal, Habit, ReminderOccurrence, Task } from '../types/database';
 import { premadeGoalsSeedData, premadeTasksSeedData, premadeHabitsSeedData } from './seedData';
 
 // Database name
@@ -165,6 +167,25 @@ export const initDatabase = async (): Promise<void> => {
         description TEXT,
         completed INTEGER NOT NULL DEFAULT 0,
         FOREIGN KEY (goal_id) REFERENCES goals (id) ON DELETE CASCADE
+      );
+
+      CREATE TABLE IF NOT EXISTS reminderOccurrences (
+        id TEXT PRIMARY KEY NOT NULL,
+        reminder_id TEXT NOT NULL,
+        habit_id TEXT,
+        task_id TEXT,
+        title TEXT NOT NULL,
+        description TEXT,
+        status TEXT NOT NULL,
+        scheduled_for TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (habit_id) REFERENCES habits (id) ON DELETE CASCADE,
+        FOREIGN KEY (task_id) REFERENCES tasks (id) ON DELETE CASCADE,
+        CHECK (
+          (habit_id IS NOT NULL AND task_id IS NULL) OR
+          (habit_id IS NULL AND task_id IS NOT NULL)
+        )
       );
     `);
 
@@ -384,10 +405,7 @@ export const isDatabaseInitialized = async (): Promise<boolean> => {
  * Generate a UUID for primary keys
  */
 export const generateUUID = (): string => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-    const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
+  return uuidv4();
 };
 
 // GOALS CRUD Operations
@@ -784,6 +802,80 @@ export const closeDatabase = async (): Promise<void> => {
   }
 };
 
+// REMINDER OCCURRENCES CRUD Operations
+
+export const createReminderOccurrence = async (reminderOccurrence: Omit<ReminderOccurrence, 'id' | 'created_at' | 'updated_at'>): Promise<ReminderOccurrence> => {
+  return withDatabaseRetry(async (db) => {
+    const now = new Date().toISOString();
+    const newReminderOccurrence: ReminderOccurrence = {
+      ...reminderOccurrence,
+      id: generateUUID(),
+      created_at: now,
+      updated_at: now,
+    };
+
+    await db.runAsync(
+      `INSERT INTO reminderOccurrences (id, reminder_id, habit_id, task_id, title, description, status, scheduled_for, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      [
+        newReminderOccurrence.id,
+        newReminderOccurrence.reminder_id,
+        newReminderOccurrence.habit_id,
+        newReminderOccurrence.task_id,
+        newReminderOccurrence.title,
+        newReminderOccurrence.description || null,
+        newReminderOccurrence.status,
+        newReminderOccurrence.scheduled_for,
+        newReminderOccurrence.created_at,
+        newReminderOccurrence.updated_at,
+      ]
+    );
+
+    return newReminderOccurrence;
+  });
+};
+
+export const getReminderOccurrencesByReminderId = async (reminderId: string): Promise<ReminderOccurrence[]> => {
+  return withDatabaseRetry(async (db) => {
+    const reminderOccurrences = await db.getAllAsync<ReminderOccurrence>('SELECT * FROM reminderOccurrences WHERE reminder_id = ?;', [reminderId]);
+    return reminderOccurrences;
+  });
+};
+
+export const updateReminderOccurrence = async (id: string, updates: Partial<Omit<ReminderOccurrence, 'id' | 'created_at' | 'updated_at'>>): Promise<ReminderOccurrence> => {
+  return withDatabaseRetry(async (db) => {
+    const now = new Date().toISOString();
+    const existingReminderOccurrence = await db.getFirstAsync<ReminderOccurrence>('SELECT * FROM reminderOccurrences WHERE id = ?;', [id]);
+
+  if (!existingReminderOccurrence) {
+    throw new Error('Reminder occurrence not found');
+  }
+
+  const updatedReminderOccurrence = {
+    ...existingReminderOccurrence,
+    ...updates,
+    habit_id: existingReminderOccurrence.habit_id,
+    task_id: existingReminderOccurrence.task_id,
+    updated_at: now,
+  };
+
+  await db.runAsync(
+    `UPDATE reminderOccurrences 
+     SET updated_at = ?, status = ?
+     WHERE id = ?;`,
+    [updatedReminderOccurrence.updated_at, updatedReminderOccurrence.status, id]
+  );
+
+  return updatedReminderOccurrence;
+  });
+};
+
+export const deleteReminderOccurrence = async (id: string): Promise<void> => {
+  return withDatabaseRetry(async (db) => {
+    await db.runAsync('DELETE FROM reminderOccurrences WHERE id = ?;', [id]);
+  });
+};
+
 /**
  * Reset the entire database by dropping all tables and reinitializing
  */
@@ -801,6 +893,7 @@ export const resetDatabase = async (): Promise<void> => {
         DROP TABLE IF EXISTS premadeGoals;
         DROP TABLE IF EXISTS premadeTasks;
         DROP TABLE IF EXISTS premadeHabits;
+        DROP TABLE IF EXISTS reminderOccurrences;
       `);
       // Close after dropping tables
       await closeDatabase();
@@ -826,6 +919,7 @@ export const resetDatabase = async (): Promise<void> => {
           DROP TABLE IF EXISTS premadeGoals;
           DROP TABLE IF EXISTS premadeTasks;
           DROP TABLE IF EXISTS premadeHabits;
+          DROP TABLE IF EXISTS reminderOccurrences;
         `);
         await closeDatabase();
       }

@@ -16,7 +16,7 @@ import TimePickerButton from '@/components/TimePickerButton';
 import { ReminderRelativeTimeType } from '@/types/database';
 import { isValidRelativeReminderTime } from '@/lib/database-utils';
 import { useNavigation } from '@react-navigation/native';
-import { navigationLock } from '@/lib/NavigationLock';
+import { navigationLock } from '@/lib/navigationLock';
 
 // Add or edit a task or even simply look at a task
 export default function Task() {

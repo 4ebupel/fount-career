@@ -8,7 +8,7 @@ import { Feather } from "@expo/vector-icons";
 import { colors } from "@/lib/colors";
 import { Habit, Task } from "@/types/database";
 import { DEFAULT_MODAL } from "@/lib/modals";
-import { navigationLock } from "@/lib/NavigationLock";
+import { navigationLock } from "@/lib/navigationLock";
 
 interface props {
     item: Task | Habit,

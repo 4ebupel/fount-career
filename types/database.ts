@@ -37,6 +37,19 @@ export interface Task {
   completed: boolean;
 }
 
+export interface ReminderOccurrence {
+  id: string;
+  reminder_id: string;
+  habit_id: string | null;
+  task_id: string | null;
+  title: string;
+  description?: string;
+  status: 'pending' | 'completed' | 'missed';
+  scheduled_for: string;
+  created_at: string;
+  updated_at: string;
+}
+
 /**
  * Convert arrays to JSON strings
  * @param T - The type arrays of which to convert

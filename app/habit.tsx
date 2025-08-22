@@ -14,7 +14,7 @@ import { ThemeContext } from '@/contexts/ThemeContext';
 import { useDatabase } from '@/hooks/useDatabase';
 import { scheduleWeeklyReminders, WeekdaysInNumbers } from '@/lib/scheduleWeeklyReminders';
 import { checkForExistingReminders } from '@/lib/checkForExistingReminders';
-import { navigationLock } from '@/lib/NavigationLock';
+import { navigationLock } from '@/lib/navigationLock';
 
 // Days of the week for habit reminders
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];

@@ -9,7 +9,8 @@ const bodies = [
 
 /**
  * @async
- * @description Schedule reminders on app start for the next 14 days for all habits that have reminders
+ * @param n - The number of days to schedule reminders for
+ * @description Schedule reminders for the next n days for all habits that have reminders
  * -
  *  - Get all reminder occurrences for each habit
  *  - Sort the reminder occurrences by date
@@ -19,14 +20,14 @@ const bodies = [
  *  - Create a notification for each reminder
  * @returns void
  */
-export const scheduleRemindersOnAppStart = async () => {
+export const scheduleRemindersForNDays = async (n: number = 14) => {
     try {
         const habits = await getHabits();
         for (const habit of habits) {
             const reminderOccurrences = await getReminderOccurrencesByHabitId(habit.id);
             const occurrenceSortedByDate = [...reminderOccurrences].sort((a, b) => new Date(a.scheduled_for).getTime() - new Date(b.scheduled_for).getTime());
             const remindersAvailable = occurrenceSortedByDate.length || 0;
-            let remindersNeeded = habit.reminder_days.length * 14 - remindersAvailable;
+            let remindersNeeded = habit.reminder_days.length * n - remindersAvailable;
             let nextReminderDate = occurrenceSortedByDate.length > 0 ? new Date(occurrenceSortedByDate[occurrenceSortedByDate.length - 1].scheduled_for) : new Date();
             nextReminderDate.setHours(+habit.reminder_time.split(':')[0], +habit.reminder_time.split(':')[1], 0, 0);
 
@@ -45,9 +46,9 @@ export const scheduleRemindersOnAppStart = async () => {
 
                     await createReminderOccurrence({
                         habit_id: habit.id,
+                        task_id: null,
                         scheduled_for: nextReminderDate.toISOString(),
                         reminder_id: notificationId,
-                        task_id: null,
                         title: habit.title,
                         description: bodies[Math.floor(Math.random() * bodies.length)],
                         status: 'pending',
@@ -59,7 +60,6 @@ export const scheduleRemindersOnAppStart = async () => {
 
                 remindersNeeded--;
                 nextReminderDate.setDate(nextReminderDate.getDate() + 1);
-                nextReminderDate.setHours(+habit.reminder_time.split(':')[0], +habit.reminder_time.split(':')[1], 0, 0);
             }
         }
     } catch (error) {

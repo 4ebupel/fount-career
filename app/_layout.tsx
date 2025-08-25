@@ -1,10 +1,6 @@
 import 'react-native-gesture-handler';
 import { enableScreens } from 'react-native-screens';
 import { EventProvider } from 'react-native-outside-press';
-
-// Enable screens for better navigation performance
-enableScreens();
-
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useContext, useEffect, useState } from "react";
@@ -16,9 +12,13 @@ import { NotificationProvider } from '@/contexts/NotificationContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from 'expo-splash-screen';
-// import { initializeFirebase } from '@/lib/firebaseConfig';
-
 import * as Notifications from "expo-notifications";
+import { useAppLifecycleEffect } from '@/hooks/useAppLifecycleEffect';
+import { scheduleRemindersForNDays } from '@/lib/scheduleRemindersForNDays';
+// import { initializeFirebase } from '@/lib/firebaseConfig';
+// Enable screens for better navigation performance
+enableScreens();
+
 
 // Status bar component to change the color of the status bar based on the theme since default 'auto' option doesn't work
 function AppStatusBar() {
@@ -44,6 +44,14 @@ SplashScreen.setOptions({
 
 export default function RootLayout() {
   const [appIsReady, setAppIsReady] = useState(false);
+
+  useAppLifecycleEffect(() => {
+    console.log('App started');
+    scheduleRemindersForNDays();
+  }, () => {
+    console.log('App resumed');
+    scheduleRemindersForNDays();
+  });
 
   useEffect(() => {
     async function prepare() {

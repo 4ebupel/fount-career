@@ -5,6 +5,7 @@ import * as DB from '../lib/database';
 import { formatReminderTime, isValidReminderTime } from '../lib/database-utils';
 import * as Notifications from 'expo-notifications';
 import { scheduleWeeklyReminders } from '@/lib/scheduleWeeklyReminders';
+import { scheduleRemindersForNDays } from '@/lib/scheduleRemindersForNDays';
 
 // Define the context type
 interface DatabaseContextType {
@@ -513,30 +514,32 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
       // Create habits
       if (habits.length > 0 && newGoal) {
         for (const habit of habits) {
-          let ids: string[] = [];
+          // let ids: string[] = [];
 
-          // Schedule reminders
-          if (habit.reminder_time) {
-            const reminderDays = habit.reminder_days;
+          // // Schedule reminders
+          // if (habit.reminder_time) {
+          //   const reminderDays = habit.reminder_days;
 
-            ids = await scheduleWeeklyReminders({
-              title: habit.title,
-              reminderTime: habit.reminder_time,
-              reminderDays,
-            });
-            console.log('Reminder scheduled:', ids);
-          }
+          //   ids = await scheduleWeeklyReminders({
+          //     title: habit.title,
+          //     reminderTime: habit.reminder_time,
+          //     reminderDays,
+          //   });
+          //   console.log('Reminder scheduled:', ids);
+          // }
 
           const newHabit = await DB.createHabit(
             {
               ...habit,
               goal_id: newGoal.id,
-              reminder_ids: ids || []
+              reminder_ids: []
             }
           );
 
           console.log('New habit created:', newHabit);
         }
+
+          await scheduleRemindersForNDays(7);
       }
 
       // Refresh data

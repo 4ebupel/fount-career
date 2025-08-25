@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Pressable, ActivityIndicator, Image, Dimensions } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Pressable, ActivityIndicator, Image, Dimensions, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "@/lib/colors";
 import { ThemeContext } from "@/contexts/ThemeContext";
@@ -25,7 +25,7 @@ export default function Explore() {
     const { openModal, closeModal } = useModal();
 
     const banner = theme === 'light' ? require('@/assets/exploreBannerLight.png') : require('@/assets/exploreBannerDark.png');
-    const width = Dimensions.get('window').width;
+    const { width } = useWindowDimensions();
 
 
     useEffect(() => {
@@ -121,7 +121,8 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         alignItems: "flex-start",
-        justifyContent: "flex-start",
+        // justifyContent: "flex-start",
+        paddingHorizontal: 24,
     },
     loadingContainer: {
         flex: 1,
@@ -138,7 +139,6 @@ const styles = StyleSheet.create({
         maxHeight: 62,
         height: 52,
         minHeight: 42,
-        marginHorizontal: 24,
         marginBottom: 24,
         marginTop: 8,
         borderRadius: 6,
@@ -195,10 +195,9 @@ const styles = StyleSheet.create({
         backgroundColor: colors.dark_theme.border_input,
     },
     goalsContainer: {
+        alignSelf: "stretch",
         flex: 1,
-        width: '100%',
         gap: 16,
-        marginHorizontal: 24,
     },
     banner: {
         width: "100%",
@@ -214,7 +213,6 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         width: "100%",
         maxHeight: 180,
-        paddingHorizontal: 24,
     },
     bannerOverlay: {
         position: 'relative',

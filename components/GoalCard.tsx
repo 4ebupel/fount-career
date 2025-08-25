@@ -115,12 +115,6 @@ export default function GoalCard({ goal, habits, tasks, theme, lastCard = false,
 }
 
 const styles = StyleSheet.create({
-    goalsContainer: {
-        alignSelf: "stretch",
-        flex: 1,
-        gap: 16,
-        marginHorizontal: 24,
-    },
     goalContainer: {
         flexDirection: "row",
         alignSelf: "stretch",

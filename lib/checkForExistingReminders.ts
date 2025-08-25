@@ -8,7 +8,7 @@ export const checkForExistingReminders = async (habitId: string) => {
         console.log('--------------------------------');
         console.log('Checking for existing reminders');
         const habit = await getHabitById(habitId);
-        const habitReminderIds = habit?.reminder_ids ? JSON.parse(habit.reminder_ids) : [];
+        const habitReminderIds = habit?.reminder_ids ? habit.reminder_ids : [];
         console.log('Habit reminder ids', habitReminderIds);
         const existingReminders = await Notifications.getAllScheduledNotificationsAsync();
         console.log('Existing reminders', existingReminders.length);

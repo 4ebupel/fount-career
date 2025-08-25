@@ -35,10 +35,11 @@ export default function DateSelectorModal({
     onClose,
     onConfirm,
     title,
+    content,
 }: Props) {
     if (!isVisible) return null;
     
-    const [selectedDate, setSelectedDate] = useState<string | null>(null);
+    const [selectedDate, setSelectedDate] = useState<string | null>(content || null);
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
     
     // Prepare marked dates for the calendar
@@ -236,7 +237,7 @@ export default function DateSelectorModal({
                                 theme={theme} 
                                 onPress={handleConfirm} 
                                 variant="primary" 
-                                disabled={!selectedDate}
+                                disabled={selectedDate === content || !selectedDate}
                             />
                         </View>
                         <View style={styles.buttonContainer}>

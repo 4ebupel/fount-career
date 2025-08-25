@@ -1,6 +1,8 @@
+import 'react-native-get-random-values';
+import { v4 as uuidv4 } from 'uuid';
 import * as SQLite from 'expo-sqlite';
 import { Platform } from 'react-native';
-import { Goal, Habit, Task } from '../types/database';
+import { ConvertArraysToJSON, Goal, Habit, ReminderOccurrence, Task } from '../types/database';
 import { premadeGoalsSeedData, premadeTasksSeedData, premadeHabitsSeedData } from './seedData';
 
 // Database name
@@ -130,7 +132,8 @@ export const initDatabase = async (): Promise<void> => {
         updated_at TEXT NOT NULL,
         title TEXT NOT NULL,
         selected_emoji TEXT NOT NULL,
-        reminder_time TEXT,
+        reminder_relative_date TEXT NOT NULL,
+        reminder_ids TEXT NOT NULL,
         due_date TEXT,
         description TEXT,
         completed INTEGER NOT NULL DEFAULT 0,
@@ -158,11 +161,31 @@ export const initDatabase = async (): Promise<void> => {
         updated_at TEXT NOT NULL,
         title TEXT NOT NULL,
         selected_emoji TEXT NOT NULL,
-        reminder_time TEXT,
+        reminder_relative_date TEXT NOT NULL,
+        reminder_ids TEXT NOT NULL,
         due_date TEXT,
         description TEXT,
         completed INTEGER NOT NULL DEFAULT 0,
         FOREIGN KEY (goal_id) REFERENCES goals (id) ON DELETE CASCADE
+      );
+
+      CREATE TABLE IF NOT EXISTS reminderOccurrences (
+        id TEXT PRIMARY KEY NOT NULL,
+        reminder_id TEXT NOT NULL,
+        habit_id TEXT,
+        task_id TEXT,
+        title TEXT NOT NULL,
+        description TEXT,
+        status TEXT NOT NULL,
+        scheduled_for TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (habit_id) REFERENCES habits (id) ON DELETE CASCADE,
+        FOREIGN KEY (task_id) REFERENCES tasks (id) ON DELETE CASCADE,
+        CHECK (
+          (habit_id IS NOT NULL AND task_id IS NULL) OR
+          (habit_id IS NULL AND task_id IS NOT NULL)
+        )
       );
     `);
 
@@ -269,14 +292,15 @@ export const populatePremadeTasks = async (): Promise<void> => {
         const params: any[] = [];
 
         for (const taskData of batch) {
-          valueGroups.push('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+          valueGroups.push('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
           params.push(
             taskData.id,
             now,
             now,
             taskData.title,
             taskData.selected_emoji,
-            taskData.reminder_time,
+            taskData.reminder_relative_date,
+            JSON.stringify(taskData.reminder_ids),
             taskData.due_date,
             taskData.description,
             taskData.completed ? 1 : 0,
@@ -286,7 +310,7 @@ export const populatePremadeTasks = async (): Promise<void> => {
 
         // Execute the batch insert
         const query = `
-          INSERT INTO premadeTasks (id, created_at, updated_at, title, selected_emoji, reminder_time, due_date, description, completed, goal_id)
+          INSERT INTO premadeTasks (id, created_at, updated_at, title, selected_emoji, reminder_relative_date, reminder_ids, due_date, description, completed, goal_id)
           VALUES ${valueGroups.join(', ')};
         `;
 
@@ -337,9 +361,9 @@ export const populatePremadeHabits = async (): Promise<void> => {
             now,
             habitData.title,
             habitData.selected_emoji,
-            habitData.reminder_days,
+            JSON.stringify(habitData.reminder_days),
             habitData.reminder_time,
-            habitData.reminder_ids,
+            JSON.stringify(habitData.reminder_ids),
             habitData.completed ? 1 : 0,
             habitData.goal_id
           );
@@ -381,10 +405,7 @@ export const isDatabaseInitialized = async (): Promise<boolean> => {
  * Generate a UUID for primary keys
  */
 export const generateUUID = (): string => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-    const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
+  return uuidv4();
 };
 
 // GOALS CRUD Operations
@@ -527,9 +548,9 @@ export const createHabit = async (habit: Omit<Habit, 'id' | 'created_at' | 'upda
         newHabit.updated_at,
         newHabit.title,
         newHabit.selected_emoji,
-        newHabit.reminder_days,
+        JSON.stringify(newHabit.reminder_days),
         newHabit.reminder_time,
-        newHabit.reminder_ids,
+        JSON.stringify(newHabit.reminder_ids),
         0,
       ]
     );
@@ -538,12 +559,26 @@ export const createHabit = async (habit: Omit<Habit, 'id' | 'created_at' | 'upda
   });
 };
 
+export const getHabits = async (): Promise<Habit[]> => {
+  return withDatabaseRetry(async (db) => {
+    const habits = await db.getAllAsync<ConvertArraysToJSON<Habit>>('SELECT * FROM habits ORDER BY created_at DESC;');
+    
+    // Convert SQLite integers to booleans and parse JSON strings
+    return habits.map(habit => ({
+      ...habit,
+      completed: Boolean(habit.completed),
+      reminder_days: JSON.parse(habit.reminder_days),
+      reminder_ids: JSON.parse(habit.reminder_ids),
+    }));
+  });
+};
+
 /**
  * Get habits by goal ID
  */
 export const getHabitsByGoalId = async (goalId: string): Promise<Habit[]> => {
   return withDatabaseRetry(async (db) => {
-    const habits = await db.getAllAsync<Habit>(
+    const habits = await db.getAllAsync<ConvertArraysToJSON<Habit>>(
       'SELECT * FROM habits WHERE goal_id = ? ORDER BY created_at DESC;',
       [goalId]
     );
@@ -552,6 +587,8 @@ export const getHabitsByGoalId = async (goalId: string): Promise<Habit[]> => {
     return habits.map(habit => ({
       ...habit,
       completed: Boolean(habit.completed),
+      reminder_days: JSON.parse(habit.reminder_days),
+      reminder_ids: JSON.parse(habit.reminder_ids),
     }));
   });
 };
@@ -575,7 +612,7 @@ export const getHabitsByGoalId = async (goalId: string): Promise<Habit[]> => {
    */
 export const getHabitById = async (id: string): Promise<Habit | null> => {
   return withDatabaseRetry(async (db) => {
-    const habit = await db.getFirstAsync<Habit>('SELECT * FROM habits WHERE id = ?;', [id]);
+    const habit = await db.getFirstAsync<ConvertArraysToJSON<Habit>>('SELECT * FROM habits WHERE id = ?;', [id]);
 
     if (!habit) {
       return null;
@@ -584,6 +621,8 @@ export const getHabitById = async (id: string): Promise<Habit | null> => {
     return {
       ...habit,
       completed: Boolean(habit.completed),
+      reminder_days: JSON.parse(habit.reminder_days),
+      reminder_ids: JSON.parse(habit.reminder_ids),
     };
   });
 };
@@ -595,7 +634,7 @@ export const updateHabit = async (id: string, updates: Partial<Omit<Habit, 'id' 
   return withDatabaseRetry(async (db) => {
     const now = new Date().toISOString();
 
-    const existingHabit = await db.getFirstAsync<Habit>('SELECT * FROM habits WHERE id = ?;', [id]);
+    const existingHabit = await db.getFirstAsync<ConvertArraysToJSON<Habit>>('SELECT * FROM habits WHERE id = ?;', [id]);
 
     if (!existingHabit) {
       throw new Error('Habit not found');
@@ -606,6 +645,8 @@ export const updateHabit = async (id: string, updates: Partial<Omit<Habit, 'id' 
       ...updates,
       goal_id: existingHabit.goal_id, // Always keep the original goal_id
       updated_at: now,
+      reminder_days: updates.reminder_days || JSON.parse(existingHabit.reminder_days),
+      reminder_ids: updates.reminder_ids || JSON.parse(existingHabit.reminder_ids),
     };
 
     await db.runAsync(
@@ -616,9 +657,9 @@ export const updateHabit = async (id: string, updates: Partial<Omit<Habit, 'id' 
         updatedHabit.updated_at,
         updatedHabit.title,
         updatedHabit.selected_emoji,
-        updatedHabit.reminder_days,
+        JSON.stringify(updatedHabit.reminder_days),
         updatedHabit.reminder_time,
-        updatedHabit.reminder_ids,
+        JSON.stringify(updatedHabit.reminder_ids),
         updatedHabit.completed ? 1 : 0,
         id,
       ]
@@ -654,8 +695,8 @@ export const createTask = async (task: Omit<Task, 'id' | 'created_at' | 'updated
     };
 
     await db.runAsync(
-      `INSERT INTO tasks (id, goal_id, created_at, updated_at, title, selected_emoji, reminder_time, due_date, description, completed)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      `INSERT INTO tasks (id, goal_id, created_at, updated_at, title, selected_emoji, reminder_relative_date, reminder_ids, due_date, description, completed)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
       [
         newTask.id,
         newTask.goal_id,
@@ -663,7 +704,8 @@ export const createTask = async (task: Omit<Task, 'id' | 'created_at' | 'updated
         newTask.updated_at,
         newTask.title,
         newTask.selected_emoji,
-        newTask.reminder_time,
+        newTask.reminder_relative_date,
+        JSON.stringify(newTask.reminder_ids),
         newTask.due_date,
         newTask.description,
         newTask.completed ? 1 : 0,
@@ -692,6 +734,22 @@ export const getTasksByGoalId = async (goalId: string): Promise<Task[]> => {
   });
 };
 
+export const getTaskById = async (id: string): Promise<Task | null> => {
+  return withDatabaseRetry(async (db) => {
+    const task = await db.getFirstAsync<ConvertArraysToJSON<Task>>('SELECT * FROM tasks WHERE id = ?;', [id]);
+
+    if (!task) {
+      return null;
+    }
+
+    return {
+      ...task,
+      completed: Boolean(task.completed),
+      reminder_ids: JSON.parse(task.reminder_ids),
+    };
+  });
+};
+
 /**
  * Update a task
  */
@@ -714,13 +772,14 @@ export const updateTask = async (id: string, updates: Partial<Omit<Task, 'id' | 
 
     await db.runAsync(
       `UPDATE tasks 
-       SET updated_at = ?, title = ?, selected_emoji = ?, reminder_time = ?, due_date = ?, description = ?, completed = ?
+       SET updated_at = ?, title = ?, selected_emoji = ?, reminder_relative_date = ?, reminder_ids = ?, due_date = ?, description = ?, completed = ?
        WHERE id = ?;`,
       [
         updatedTask.updated_at,
         updatedTask.title,
         updatedTask.selected_emoji,
-        updatedTask.reminder_time,
+        updatedTask.reminder_relative_date,
+        JSON.stringify(updatedTask.reminder_ids),
         updatedTask.due_date,
         updatedTask.description,
         updatedTask.completed ? 1 : 0,
@@ -757,6 +816,93 @@ export const closeDatabase = async (): Promise<void> => {
   }
 };
 
+// REMINDER OCCURRENCES CRUD Operations
+
+export const createReminderOccurrence = async (reminderOccurrence: Omit<ReminderOccurrence, 'id' | 'created_at' | 'updated_at'>): Promise<ReminderOccurrence> => {
+  return withDatabaseRetry(async (db) => {
+    const now = new Date().toISOString();
+    const newReminderOccurrence: ReminderOccurrence = {
+      ...reminderOccurrence,
+      id: generateUUID(),
+      created_at: now,
+      updated_at: now,
+    };
+
+    await db.runAsync(
+      `INSERT INTO reminderOccurrences (id, reminder_id, habit_id, task_id, title, description, status, scheduled_for, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      [
+        newReminderOccurrence.id,
+        newReminderOccurrence.reminder_id,
+        newReminderOccurrence.habit_id,
+        newReminderOccurrence.task_id,
+        newReminderOccurrence.title,
+        newReminderOccurrence.description || null,
+        newReminderOccurrence.status,
+        newReminderOccurrence.scheduled_for,
+        newReminderOccurrence.created_at,
+        newReminderOccurrence.updated_at,
+      ]
+    );
+
+    return newReminderOccurrence;
+  });
+};
+
+export const getReminderOccurrencesByDate = async (date: string): Promise<ReminderOccurrence[]> => {
+  return withDatabaseRetry(async (db) => {
+    const reminderOccurrences = await db.getAllAsync<ReminderOccurrence>('SELECT * FROM reminderOccurrences WHERE scheduled_for = ?;', [date]);
+    return reminderOccurrences;
+  });
+};
+
+export const getPendingReminderOccurrencesByHabitId = async (habitId: string): Promise<ReminderOccurrence[]> => {
+  return withDatabaseRetry(async (db) => {
+    const reminderOccurrences = await db.getAllAsync<ReminderOccurrence>('SELECT * FROM reminderOccurrences WHERE habit_id = ? AND status = ?;', [habitId, 'pending']);
+    return reminderOccurrences;
+  });
+};
+
+export const updateReminderOccurrence = async (id: string, updates: Partial<Omit<ReminderOccurrence, 'id' | 'created_at' | 'updated_at'>>): Promise<ReminderOccurrence> => {
+  return withDatabaseRetry(async (db) => {
+    const now = new Date().toISOString();
+    const existingReminderOccurrence = await db.getFirstAsync<ReminderOccurrence>('SELECT * FROM reminderOccurrences WHERE id = ?;', [id]);
+
+  if (!existingReminderOccurrence) {
+    throw new Error('Reminder occurrence not found');
+  }
+
+  const updatedReminderOccurrence = {
+    ...existingReminderOccurrence,
+    ...updates,
+    habit_id: existingReminderOccurrence.habit_id,
+    task_id: existingReminderOccurrence.task_id,
+    updated_at: now,
+  };
+
+  await db.runAsync(
+    `UPDATE reminderOccurrences 
+     SET updated_at = ?, status = ?
+     WHERE id = ?;`,
+    [updatedReminderOccurrence.updated_at, updatedReminderOccurrence.status, id]
+  );
+
+  return updatedReminderOccurrence;
+  });
+};
+
+export const deleteReminderOccurrence = async (id: string): Promise<void> => {
+  return withDatabaseRetry(async (db) => {
+    await db.runAsync('DELETE FROM reminderOccurrences WHERE id = ?;', [id]);
+  });
+};
+
+export const deleteAllReminderOccurrences = async (): Promise<void> => {
+  return withDatabaseRetry(async (db) => {
+    await db.runAsync('DELETE FROM reminderOccurrences;');
+  });
+};
+
 /**
  * Reset the entire database by dropping all tables and reinitializing
  */
@@ -774,6 +920,7 @@ export const resetDatabase = async (): Promise<void> => {
         DROP TABLE IF EXISTS premadeGoals;
         DROP TABLE IF EXISTS premadeTasks;
         DROP TABLE IF EXISTS premadeHabits;
+        DROP TABLE IF EXISTS reminderOccurrences;
       `);
       // Close after dropping tables
       await closeDatabase();
@@ -799,6 +946,7 @@ export const resetDatabase = async (): Promise<void> => {
           DROP TABLE IF EXISTS premadeGoals;
           DROP TABLE IF EXISTS premadeTasks;
           DROP TABLE IF EXISTS premadeHabits;
+          DROP TABLE IF EXISTS reminderOccurrences;
         `);
         await closeDatabase();
       }
@@ -922,7 +1070,7 @@ export const getPremadeTasks = async (page = 1, limit = 20): Promise<{ tasks: Ta
 };
 
 /**
- * Get all premade tasks for an array of goal IDs with improved error handling and performance
+ * Get all premade tasks for an array of goal IDs
  * @param goalIds Array of goal IDs to fetch tasks for
  * @param batchSize Optional batch size for processing large arrays (default 500)
  * @returns Promise<Task[]> Array of tasks
@@ -980,7 +1128,7 @@ export const getPremadeTaskById = async (id: string): Promise<Task | null> => {
 // PREMADE HABITS Functions
 
 /**
- * Get all premade habits for an array of goal IDs with improved error handling and performance
+ * Get all premade habits for an array of goal IDs
  * @param goalIds Array of goal IDs to fetch habits for
  * @param batchSize Optional batch size for processing large arrays (default 500)
  * @returns Promise<Habit[]> Array of habits
@@ -1007,9 +1155,9 @@ export const getPremadeHabitsForGoalIds = async (
         ORDER BY title ASC;
       `;
 
-      const batchHabits = await db.getAllAsync<Habit>(query, batchIds);
+      const batchHabits = await db.getAllAsync<ConvertArraysToJSON<Habit>>(query, batchIds);
       allHabits = allHabits.concat(
-        batchHabits.map(habit => ({ ...habit, completed: Boolean(habit.completed) }))
+        batchHabits.map(habit => ({ ...habit, completed: Boolean(habit.completed), reminder_days: JSON.parse(habit.reminder_days || '[]'), reminder_ids: JSON.parse(habit.reminder_ids || '[]') }))
       );
     }
 

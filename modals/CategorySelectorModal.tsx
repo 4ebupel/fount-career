@@ -42,9 +42,9 @@ export default function CategorySelectorModal({
     // Calculate dynamic height based on number of categories
     const getContainerHeight = () => {
         // Base height plus additional height for each category, up to a maximum
-        const baseHeight = height * 0.5;
+        const baseHeight = height * 0.35;
         const categoryHeight = 50; // Approximate height of each category item
-        const additionalHeight = Math.min(categories.length * categoryHeight, height * 0.3);
+        const additionalHeight = Math.min(categories.length * categoryHeight, height * 0.4);
         return Math.min(baseHeight + additionalHeight, height * 0.9);
     };
 

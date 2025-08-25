@@ -1,5 +1,6 @@
-import React, { useState, useContext, useEffect, useMemo } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import React, { useState, useContext, useEffect, useMemo, useCallback } from 'react';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, Keyboard, TouchableWithoutFeedback, ActivityIndicator } from 'react-native';
+import * as Notifications from 'expo-notifications';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/lib/colors';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -9,26 +10,136 @@ import { DEFAULT_MODAL, EMOJI_SELECTOR_MODAL } from '@/lib/modals';
 import Button from '@/components/Button';
 import { ThemeContext } from '@/contexts/ThemeContext';
 import { useDatabase } from '@/hooks/useDatabase';
+import DateSelectorButton from '@/components/DateSelectorButton';
+import { Task as TaskType } from '@/types/database';
+import TimePickerButton from '@/components/TimePickerButton';
+import { ReminderRelativeTimeType } from '@/types/database';
+import { isValidRelativeReminderTime } from '@/lib/database-utils';
+import { useNavigation } from '@react-navigation/native';
+import { navigationLock } from '@/lib/navigationLock';
 
 // Add or edit a task or even simply look at a task
 export default function Task() {
     // Will be undefined if nothing is passed (why is it typed as string | string[] then?)
-    const { goalId, taskId, title, description, emoji, due_date, reminder_time } = useLocalSearchParams();
+    const { goalId, taskId } = useLocalSearchParams();
     const { theme } = useContext(ThemeContext);
-    const [selectedEmoji, setSelectedEmoji] = useState<string>(emoji as string || '🔄');
-    const [taskTitle, setTaskTitle] = useState<string>(title as string || '');
-    const [taskDescription, setTaskDescription] = useState<string>(description as string || '');
+    const [task, setTask] = useState<TaskType | null>(null);
+    const [selectedEmoji, setSelectedEmoji] = useState<string>('🔄');
+    const [taskTitle, setTaskTitle] = useState<string>('');
+    const [taskDescription, setTaskDescription] = useState<string>('');
+    const [dueDate, setDueDate] = useState<string>('');
+    const [reminderTime, setReminderTime] = useState<ReminderRelativeTimeType>('Never');
+    const [reminderIds, setReminderIds] = useState<string[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
     const router = useRouter();
     const { openModal, closeModal } = useModal();
-    const { createTask, updateTask, deleteTask } = useDatabase();
+    const { createTask, updateTask, deleteTask, tasks, getPremadeTaskById } = useDatabase();
+    const navigation = useNavigation();
+
+    useEffect(() => {
+        // @ts-ignore - transitionEnd works in practice despite TypeScript errors
+        const unsubscribe = navigation.addListener('transitionEnd', (e) => {
+            // @ts-ignore - transitionEnd works in practice despite TypeScript errors
+            if (!e.data?.closing) {
+                navigationLock.unlock();
+            }
+        });
+    }, []);
 
     const isPremadeGoal = useMemo(() => {
         return !isNaN(Number(goalId));
     }, [goalId]);
 
+    const scheduleReminder = async (dueDate: string, relativeDate: ReminderRelativeTimeType) => {
+        let date;
+        let notificationId;
+        switch (relativeDate) {
+            case 'Two weeks before the deadline':
+                date = new Date(new Date(dueDate).setDate(new Date(dueDate).getDate() - 14));
+                break;
+            case 'One week before the deadline':
+                date = new Date(new Date(dueDate).setDate(new Date(dueDate).getDate() - 7));
+                break;
+            case 'Two days before the deadline':
+                date = new Date(new Date(dueDate).setDate(new Date(dueDate).getDate() - 2));
+                break;
+            case 'One day before the deadline':
+                date = new Date(new Date(dueDate).setDate(new Date(dueDate).getDate() - 1));
+                break;
+            case 'On the deadline':
+                date = new Date(dueDate);
+                break;
+            default:
+                date = new Date();
+                break;
+        };
+
+        if (new Date() > new Date(date)) {
+            return null;
+        }
+
+        notificationId = await Notifications.scheduleNotificationAsync({
+            content: {
+                title: taskTitle,
+                body: 'The deadline is calling. Will you pick up?',
+                data: {
+                    taskId: taskId,
+                    goalId: goalId,
+                },
+            },
+            trigger: {
+                type: Notifications.SchedulableTriggerInputTypes.DATE,
+                date: date,
+            },
+        });
+
+        return notificationId;
+    }
+
     useEffect(() => {
-        console.log('taskId', taskId);
-    }, [taskId]);
+        const goal_id = goalId as string;
+        const task_id = taskId as string;
+        if (!goal_id || !task_id) {
+            setLoading(false);
+            return;
+        }
+        setLoading(true);
+        const fetchTask = async () => {
+            try {
+                if (!isPremadeGoal && task_id) {
+                    const task = tasks[goal_id].find((task: TaskType) => task.id === task_id);
+                    if (task) {
+                        setSelectedEmoji(task.selected_emoji);
+                        setTaskTitle(task.title);
+                        setTaskDescription(task.description || '');
+                        setDueDate(task.due_date || '');
+                        setReminderTime(task.reminder_relative_date);
+                        setReminderIds(task.reminder_ids);
+                        setTask(task);
+                    }
+                }
+                if (isPremadeGoal && task_id) {
+                    const task = await getPremadeTaskById(task_id);
+                    if (task) {
+                        setSelectedEmoji(task.selected_emoji);
+                        setTaskTitle(task.title);
+                        setTaskDescription(task.description || '');
+                        setDueDate(task.due_date || '');
+                        setReminderTime(task.reminder_relative_date);
+                        setReminderIds(task.reminder_ids);
+                        setTask(task);
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching task:', error);
+                setLoading(false);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchTask();
+        setLoading(false);
+    }, [taskId, tasks]);
 
     const handleEmojiSelect = () => {
         if (!isPremadeGoal) {
@@ -89,13 +200,15 @@ export default function Task() {
 
         try {
             // Create the new task using the database context
+            const notificationId = await scheduleReminder(dueDate, reminderTime);
             await createTask({
                 goal_id: goalId as string,
                 title: taskTitle.trim(),
                 description: taskDescription.trim(),
                 selected_emoji: selectedEmoji,
-                reminder_time: null,
-                due_date: null,
+                reminder_relative_date: reminderTime,
+                reminder_ids: notificationId ? [notificationId] : [],
+                due_date: dueDate || null,
             });
 
             // Navigate back to the goal details page after successful creation
@@ -114,14 +227,22 @@ export default function Task() {
 
         try {
             // Update the task using the database context
+            let notificationId: string | null = null;
+            if (reminderTime !== task?.reminder_relative_date && task?.reminder_ids?.length) {
+                await Notifications.cancelScheduledNotificationAsync(task?.reminder_ids[0]);
+            }
+
+            if (reminderTime !== 'Never') {
+                notificationId = await scheduleReminder(dueDate, reminderTime);
+            }
 
             const updatedTask = {
                 title: taskTitle.trim(),
                 description: taskDescription.trim(),
                 selected_emoji: selectedEmoji || '',
-                // Since we are not using those fields yet, we don't need to update them
-                // reminder_time: typeof reminder_time === 'string' ? reminder_time : null,
-                // due_date: typeof due_date === 'string' ? due_date : null,
+                reminder_relative_date: reminderTime,
+                reminder_ids: notificationId ? [notificationId] : task?.reminder_ids,
+                due_date: dueDate || null,
             };
 
             await updateTask(taskId as string, updatedTask);
@@ -131,6 +252,18 @@ export default function Task() {
             console.error('Error updating task:', error);
         }
     };
+
+    const onSelectDate = (selectedDate: string) => {
+        setDueDate(selectedDate);
+    };
+
+    if (loading) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={theme === 'dark' ? colors.dark_theme.text_primary : colors.light_theme.text_primary} />
+            </View>
+        );
+    }
 
     return (
         <SafeAreaView style={[
@@ -295,6 +428,48 @@ export default function Task() {
                                 </Text>
                             )}
                         </View>
+
+                        <View style={styles.section}>
+                            <Text style={[
+                                styles.sectionTitle,
+                                theme === 'dark'
+                                    ? { color: colors.dark_theme.text_primary }
+                                    : { color: colors.light_theme.text_primary }
+                            ]}>
+                                Due Date
+                            </Text>
+                            <DateSelectorButton
+                                theme={theme}
+                                date={dueDate}
+                                isDisabled={isPremadeGoal}
+                                icon="calendar"
+                                onSelectDate={onSelectDate}
+                            />
+                        </View>
+
+                        <View style={styles.section}>
+                            <Text style={[
+                                styles.sectionTitle,
+                                theme === 'dark'
+                                    ? { color: colors.dark_theme.text_primary }
+                                    : { color: colors.light_theme.text_primary }
+                            ]}>
+                                Reminder Time
+                            </Text>
+                            <TimePickerButton
+                                isDisabled={isPremadeGoal}
+                                selectedTime={reminderTime}
+                                theme={theme}
+                                timeType="rel"
+                                setSelectedTime={(value) => {
+                                    if (isValidRelativeReminderTime(value)) {
+                                        setReminderTime(value);
+                                    } else {
+                                        setReminderTime('Never');
+                                    }
+                                }}
+                            />
+                        </View>
                     </View>
 
                     {!isPremadeGoal && (
@@ -306,7 +481,7 @@ export default function Task() {
                                 variant="primary"
                                 theme={theme}
                                 onPress={taskId ? handleUpdate : handleSave}
-                                disabled={!taskTitle.trim()}
+                                disabled={!taskTitle.trim() || (!dueDate && reminderTime !== 'Never')}
                             />
                         </View>
                     )}
@@ -390,5 +565,41 @@ const styles = StyleSheet.create({
     },
     buttonContainer: {
         paddingVertical: 20,
+    },
+    // Decouple later
+    containerLight: {
+        backgroundColor: colors.light_theme.secondary_background,
+    },
+    containerDark: {
+        backgroundColor: colors.dark_theme.secondary_background,
+    },
+    categoryContainer: {
+        minHeight: 70,
+        width: '100%',
+        paddingHorizontal: 20,
+        paddingVertical: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderRadius: 10,
+    },
+    text: {
+        fontSize: 18,
+        fontWeight: '600',
+        textAlign: 'center',
+    },
+    textLight: {
+        color: colors.light_theme.text_primary,
+    },
+    textDark: {
+        color: colors.dark_theme.text_primary,
+    },
+    placeholderTextLight: {
+        color: colors.light_theme.text_secondary,
+        fontWeight: '400',
+    },
+    placeholderTextDark: {
+        color: colors.dark_theme.text_secondary,
+        fontWeight: '400',
     },
 }); 

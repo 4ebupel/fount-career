@@ -535,11 +535,11 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
               reminder_ids: []
             }
           );
+          await scheduleRemindersForNDays(7, newHabit);
 
           console.log('New habit created:', newHabit);
         }
 
-          await scheduleRemindersForNDays(7);
       }
 
       // Refresh data

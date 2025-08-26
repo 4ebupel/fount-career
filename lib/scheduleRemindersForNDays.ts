@@ -1,5 +1,6 @@
 import * as Notifications from "expo-notifications";
-import { createReminderOccurrence, getHabits, getPendingReminderOccurrencesByHabitId } from "./database";
+import { createReminderOccurrence, getHabits, getPendingReminderOccurrencesByHabitId} from "./database";
+import { Habit } from "@/types/database";
 import { WeekdaysInNumbers } from "./scheduleWeeklyReminders";
 
 const bodies = [
@@ -34,6 +35,7 @@ const getNOfDaysToTheNextWeekday = (startWeekday: string = 'Tuesday', weekday: s
 /**
  * @async
  * @param n - The number of days to schedule reminders for (default: 14)
+ * @param habit - Optional, only use this if you want to schedule reminders for a single habit
  * @description Schedule reminders for the next n days for all habits that have reminders
  * -
  *  - Get all reminder occurrences for each habit
@@ -44,9 +46,9 @@ const getNOfDaysToTheNextWeekday = (startWeekday: string = 'Tuesday', weekday: s
  *  - Create a notification for each reminder
  * @returns void
  */
-export const scheduleRemindersForNDays = async (n: number = 14) => {
+export const scheduleRemindersForNDays = async (n: number = 14, habit?: Habit) => {
     try {
-        const habits = await getHabits();
+        let habits = habit ? [habit] : await getHabits();
 
         if (habits.length === 0) {
             console.log('No habits found');

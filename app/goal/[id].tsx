@@ -11,6 +11,7 @@ import { Goal as GoalType, Task, Habit } from "@/types/database";
 import React from "react";
 import ItemCard from "@/components/ItemCard";
 import Button from "@/components/Button";
+import { getHabitsByGoalIdWithJoin } from "@/lib/database";
 
 export default function Goal() {
     const { id } = useLocalSearchParams();
@@ -27,6 +28,21 @@ export default function Goal() {
     const [goalTasks, setGoalTasks] = useState<Task[]>([]);
     const [goalHabits, setGoalHabits] = useState<Habit[]>([]);
     const [localError, setLocalError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchGoalData = async () => {
+            if (!id || typeof id !== 'string') {
+                setLocalError('Invalid goal ID');
+                setLoading(false);
+                return;
+            }
+
+            const goalHabitsWithJoin = await getHabitsByGoalIdWithJoin(id);
+            console.log('goalHabitsWithJoin: ', goalHabitsWithJoin);
+            console.log('goalHabitsWithJoin length: ', goalHabitsWithJoin.length);
+        }
+        fetchGoalData();
+    }, [id]);
 
     useEffect(() => {
         const fetchGoalData = async () => {
@@ -64,25 +80,6 @@ export default function Goal() {
                 }
 
                 setGoal(goalData);
-
-                // Fetch tasks and habits
-                // try {
-                //     const goalTasks = await getTasksByGoalId(id);
-                //     setTasks(goalTasks);
-                // } catch (error) {
-                //     console.error('Failed to fetch tasks:', error);
-                //     // Continue with empty tasks
-                //     setTasks([]);
-                // }
-
-                // try {
-                //     const goalHabits = await getHabitsByGoalId(id);
-                //     setHabits(goalHabits);
-                // } catch (error) {
-                //     console.error('Failed to fetch habits:', error);
-                //     // Continue with empty habits
-                //     setHabits([]);
-                // }
             } catch (error) {
                 console.error('Failed to fetch goal data:', error);
                 setLocalError('Error loading goal data. Please try again.');
@@ -103,71 +100,6 @@ export default function Goal() {
 
         fetchGoalData();
     }, [id, tasks, habits]);
-
-    // useEffect(() => {
-    //     const fetchGoalData = async () => {
-    //         if (!id || typeof id !== 'string') {
-    //             setLocalError('Invalid goal ID');
-    //             setLoading(false);
-    //             return;
-    //         }
-
-    //         try {
-    //             setLoading(true);
-    //             setLocalError(null);
-    //             clearError(); // Clear any previous database errors
-    //             console.log(`Fetching goal data for ID: ${id}`);
-
-    //             // Fetch goal
-    //             const goalData = await getGoalById(id);
-
-    //             if (!goalData) {
-    //                 console.error('Goal not found');
-    //                 setLocalError(`Goal with ID ${id} not found`);
-    //                 setLoading(false);
-    //                 return;
-    //             }
-
-    //             setGoal(goalData);
-
-    //             // Fetch tasks and habits
-    //             try {
-    //                 const goalTasks = await getTasksByGoalId(id);
-    //                 setTasks(goalTasks);
-    //             } catch (error) {
-    //                 console.error('Failed to fetch tasks:', error);
-    //                 // Continue with empty tasks
-    //                 setTasks([]);
-    //             }
-
-    //             try {
-    //                 const goalHabits = await getHabitsByGoalId(id);
-    //                 setHabits(goalHabits);
-    //             } catch (error) {
-    //                 console.error('Failed to fetch habits:', error);
-    //                 // Continue with empty habits
-    //                 setHabits([]);
-    //             }
-    //         } catch (error) {
-    //             console.error('Failed to fetch goal data:', error);
-    //             setLocalError('Error loading goal data. Please try again.');
-
-    //             // Show alert for database errors
-    //             Alert.alert(
-    //                 'Error Loading Goal',
-    //                 'There was a problem loading the goal data. Do you want to go back?',
-    //                 [
-    //                     { text: 'Try Again', onPress: () => fetchGoalData() },
-    //                     { text: 'Go Back', onPress: () => router.back() }
-    //                 ]
-    //             );
-    //         } finally {
-    //             setLoading(false);
-    //         }
-    //     };
-
-    //     fetchGoalData();
-    // }, [id]);
 
     const pickImageAsync = async () => {
         if (!isPremadeGoal) {

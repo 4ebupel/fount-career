@@ -45,6 +45,7 @@ export interface ReminderOccurrence {
   title: string;
   description?: string;
   status: 'pending' | 'completed' | 'missed';
+  scheduled_for_day: string;
   scheduled_for: string;
   created_at: string;
   updated_at: string;

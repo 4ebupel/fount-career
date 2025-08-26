@@ -593,6 +593,43 @@ export const getHabitsByGoalId = async (goalId: string): Promise<Habit[]> => {
   });
 };
 
+type HabitWithReminderOccurrence = Habit & {
+  reminder_occurrence_id: string | null;
+  reminder_occurrence_status: string | null;
+  reminder_occurrence_scheduled_for: string | null;
+};
+
+export const getHabitsByGoalIdWithJoin = async (goalId: string): Promise<HabitWithReminderOccurrence[]> => {
+  return withDatabaseRetry(async (db) => {
+    const now = new Date().toISOString();
+    const habits = await db.getAllAsync<ConvertArraysToJSON<HabitWithReminderOccurrence>>(
+      `SELECT habits.*, 
+              closest_occurrence.id as reminder_occurrence_id, 
+              closest_occurrence.status as reminder_occurrence_status, 
+              closest_occurrence.scheduled_for as reminder_occurrence_scheduled_for
+       FROM habits
+       LEFT JOIN (
+         SELECT habit_id, id, status, scheduled_for,
+                ROW_NUMBER() OVER (
+                  PARTITION BY habit_id 
+                  ORDER BY ABS(julianday(scheduled_for) - julianday(?))
+                ) as rn
+         FROM reminderOccurrences
+       ) closest_occurrence ON habits.id = closest_occurrence.habit_id AND closest_occurrence.rn = 1
+       WHERE habits.goal_id = ?
+       ORDER BY habits.created_at DESC;`, 
+      [now, goalId]
+    );
+
+    return habits.map(habit => ({
+      ...habit,
+      completed: Boolean(habit.completed),
+      reminder_days: JSON.parse(habit.reminder_days),
+      reminder_ids: JSON.parse(habit.reminder_ids),
+    }));
+  });
+};
+
 /**
    * Get a habit by its ID
    * @param id - The ID of the habit to get
@@ -894,6 +931,31 @@ export const updateReminderOccurrence = async (id: string, updates: Partial<Omit
 export const deleteReminderOccurrence = async (id: string): Promise<void> => {
   return withDatabaseRetry(async (db) => {
     await db.runAsync('DELETE FROM reminderOccurrences WHERE id = ?;', [id]);
+  });
+};
+
+export const deleteReminderOccurrencesByHabitId = async (habitId: string): Promise<void> => {
+  return withDatabaseRetry(async (db) => {
+    await db.runAsync('DELETE FROM reminderOccurrences WHERE habit_id = ?;', [habitId]);
+  });
+};
+
+export const deleteReminderOccurrencesByTaskId = async (taskId: string): Promise<void> => {
+  return withDatabaseRetry(async (db) => {
+    await db.runAsync('DELETE FROM reminderOccurrences WHERE task_id = ?;', [taskId]);
+  });
+};
+
+/**
+ * Delete reminder occurrences for a habit by day
+ * - Only deletes pending reminder occurrences
+ * @param habitId - The ID of the habit
+ * @param day - The day to delete reminder occurrences for
+ * @returns void
+ */
+export const deleteReminderOccurencesForHabitByDay = async (habitId: string, day: string): Promise<void> => {
+  return withDatabaseRetry(async (db) => {
+    await db.runAsync('DELETE FROM reminderOccurrences WHERE habit_id = ? AND scheduled_for_day = ? AND status = ?;', [habitId, day, 'pending']);
   });
 };
 

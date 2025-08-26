@@ -130,6 +130,7 @@ export const scheduleRemindersForNDays = async (n: number = 14) => {
                     await createReminderOccurrence({
                         habit_id: habit.id,
                         task_id: null,
+                        scheduled_for_day: day,
                         scheduled_for: nextReminderDate.toISOString(),
                         reminder_id: notificationId,
                         title: habit.title,

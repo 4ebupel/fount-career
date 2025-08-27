@@ -1,5 +1,5 @@
 import * as Notifications from "expo-notifications";
-import { createReminderOccurrence, getHabits, getPendingReminderOccurrencesByHabitId} from "./database";
+import { createReminderOccurrence, getHabits, getPendingReminderOccurrencesByHabitId } from "./database";
 import { Habit } from "@/types/database";
 import { WeekdaysInNumbers } from "./scheduleWeeklyReminders";
 
@@ -34,19 +34,19 @@ const getNOfDaysToTheNextWeekday = (startWeekday: string = 'Tuesday', weekday: s
 
 /**
  * @async
- * @param n - The number of days to schedule reminders for (default: 14)
+ * @param n - The number of weeks to schedule reminders for (default: 4)
  * @param habit - Optional, only use this if you want to schedule reminders for a single habit
  * @description Schedule reminders for the next n days for all habits that have reminders
  * -
  *  - Get all reminder occurrences for each habit
  *  - Sort the reminder occurrences by date
  *  - Calculate the number of reminders needed for each habit
- *  - Schedule the reminders for the next n days
+ *  - Schedule the reminders for the next n weeks
  *  - Create a reminder occurrence for each reminder
  *  - Create a notification for each reminder
  * @returns void
  */
-export const scheduleRemindersForNDays = async (n: number = 14, habit?: Habit) => {
+export const scheduleRemindersForNWeeks = async (n: number = 4, habit?: Habit) => {
     try {
         let habits = habit ? [habit] : await getHabits();
 
@@ -59,20 +59,23 @@ export const scheduleRemindersForNDays = async (n: number = 14, habit?: Habit) =
 
         for (const habit of habits) {
             const weekdays = habit.reminder_days;
+            console.log(weekdays, 'weekdays');
             if (weekdays.length === 0) {
                 console.log('No weekdays found');
                 continue;
             }
 
             const reminderOccurrences = await getPendingReminderOccurrencesByHabitId(habit.id);
+            // console.log(reminderOccurrences, 'reminderOccurrences');
             const occurrenceSortedByDate = [...reminderOccurrences].sort((a, b) => new Date(a.scheduled_for).getTime() - new Date(b.scheduled_for).getTime());
             const remindersAvailable = occurrenceSortedByDate.length || 0;
 
             let currDay = WeekdaysInNumbers[new Date().getDay() + 1];
-            let remindersNeeded = habit.reminder_days.length * n - remindersAvailable;
+            let remindersNeeded = Math.max(0, (habit.reminder_days.length * n) - remindersAvailable);
             let nextReminderDate = occurrenceSortedByDate.length > 0 ? new Date(occurrenceSortedByDate[occurrenceSortedByDate.length - 1].scheduled_for) : new Date();
             let day = WeekdaysInNumbers[nextReminderDate.getDay() + 1];
             let id = weekdays.indexOf(day);
+
             if (occurrenceSortedByDate.length > 0) {
                 currDay = weekdays[id];
                 if (id === weekdays.length - 1) {
@@ -112,7 +115,6 @@ export const scheduleRemindersForNDays = async (n: number = 14, habit?: Habit) =
                 }
             }
 
-
             console.log(remindersNeeded, 'reminders needed');
             console.log(remindersAvailable, 'reminders available');
 
@@ -141,6 +143,8 @@ export const scheduleRemindersForNDays = async (n: number = 14, habit?: Habit) =
                     });
                 } catch (error) {
                     console.error(`Error scheduling reminder for habit ${habit.title} on ${nextReminderDate.toISOString()}:`, error);
+                    remindersNeeded--;
+                    nextReminderDate.setDate(nextReminderDate.getDate() + getNOfDaysToTheNextWeekday(currDay, habit.reminder_days[1]));
                     continue;
                 }
 

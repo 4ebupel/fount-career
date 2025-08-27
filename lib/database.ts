@@ -178,6 +178,7 @@ export const initDatabase = async (): Promise<void> => {
         description TEXT,
         status TEXT NOT NULL,
         scheduled_for TEXT NOT NULL,
+        scheduled_for_day TEXT NOT NULL,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         FOREIGN KEY (habit_id) REFERENCES habits (id) ON DELETE CASCADE,
@@ -562,7 +563,7 @@ export const createHabit = async (habit: Omit<Habit, 'id' | 'created_at' | 'upda
 export const getHabits = async (): Promise<Habit[]> => {
   return withDatabaseRetry(async (db) => {
     const habits = await db.getAllAsync<ConvertArraysToJSON<Habit>>('SELECT * FROM habits ORDER BY created_at DESC;');
-    
+
     // Convert SQLite integers to booleans and parse JSON strings
     return habits.map(habit => ({
       ...habit,
@@ -617,7 +618,7 @@ export const getHabitsByGoalIdWithJoin = async (goalId: string): Promise<HabitWi
          FROM reminderOccurrences
        ) closest_occurrence ON habits.id = closest_occurrence.habit_id AND closest_occurrence.rn = 1
        WHERE habits.goal_id = ?
-       ORDER BY habits.created_at DESC;`, 
+       ORDER BY habits.created_at DESC;`,
       [now, goalId]
     );
 
@@ -758,7 +759,7 @@ export const createTask = async (task: Omit<Task, 'id' | 'created_at' | 'updated
  */
 export const getTasksByGoalId = async (goalId: string): Promise<Task[]> => {
   return withDatabaseRetry(async (db) => {
-    const tasks = await db.getAllAsync<Task>(
+    const tasks = await db.getAllAsync<ConvertArraysToJSON<Task>>(
       'SELECT * FROM tasks WHERE goal_id = ? ORDER BY created_at DESC;',
       [goalId]
     );
@@ -767,6 +768,7 @@ export const getTasksByGoalId = async (goalId: string): Promise<Task[]> => {
     return tasks.map(task => ({
       ...task,
       completed: Boolean(task.completed),
+      reminder_ids: JSON.parse(task.reminder_ids),
     }));
   });
 };
@@ -866,8 +868,8 @@ export const createReminderOccurrence = async (reminderOccurrence: Omit<Reminder
     };
 
     await db.runAsync(
-      `INSERT INTO reminderOccurrences (id, reminder_id, habit_id, task_id, title, description, status, scheduled_for, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      `INSERT INTO reminderOccurrences (id, reminder_id, habit_id, task_id, title, description, status, scheduled_for, scheduled_for_day, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
       [
         newReminderOccurrence.id,
         newReminderOccurrence.reminder_id,
@@ -877,6 +879,7 @@ export const createReminderOccurrence = async (reminderOccurrence: Omit<Reminder
         newReminderOccurrence.description || null,
         newReminderOccurrence.status,
         newReminderOccurrence.scheduled_for,
+        newReminderOccurrence.scheduled_for_day,
         newReminderOccurrence.created_at,
         newReminderOccurrence.updated_at,
       ]
@@ -900,31 +903,38 @@ export const getPendingReminderOccurrencesByHabitId = async (habitId: string): P
   });
 };
 
+export const getPendingReminderOccurrencesForHabitByDay = async (habitId: string, day: string): Promise<ReminderOccurrence[]> => {
+  return withDatabaseRetry(async (db) => {
+    const reminderOccurrences = await db.getAllAsync<ReminderOccurrence>('SELECT * FROM reminderOccurrences WHERE habit_id = ? AND scheduled_for_day = ? AND status = ?;', [habitId, day, 'pending']);
+    return reminderOccurrences;
+  });
+};
+
 export const updateReminderOccurrence = async (id: string, updates: Partial<Omit<ReminderOccurrence, 'id' | 'created_at' | 'updated_at'>>): Promise<ReminderOccurrence> => {
   return withDatabaseRetry(async (db) => {
     const now = new Date().toISOString();
     const existingReminderOccurrence = await db.getFirstAsync<ReminderOccurrence>('SELECT * FROM reminderOccurrences WHERE id = ?;', [id]);
 
-  if (!existingReminderOccurrence) {
-    throw new Error('Reminder occurrence not found');
-  }
+    if (!existingReminderOccurrence) {
+      throw new Error('Reminder occurrence not found');
+    }
 
-  const updatedReminderOccurrence = {
-    ...existingReminderOccurrence,
-    ...updates,
-    habit_id: existingReminderOccurrence.habit_id,
-    task_id: existingReminderOccurrence.task_id,
-    updated_at: now,
-  };
+    const updatedReminderOccurrence = {
+      ...existingReminderOccurrence,
+      ...updates,
+      habit_id: existingReminderOccurrence.habit_id,
+      task_id: existingReminderOccurrence.task_id,
+      updated_at: now,
+    };
 
-  await db.runAsync(
-    `UPDATE reminderOccurrences 
+    await db.runAsync(
+      `UPDATE reminderOccurrences 
      SET updated_at = ?, status = ?
      WHERE id = ?;`,
-    [updatedReminderOccurrence.updated_at, updatedReminderOccurrence.status, id]
-  );
+      [updatedReminderOccurrence.updated_at, updatedReminderOccurrence.status, id]
+    );
 
-  return updatedReminderOccurrence;
+    return updatedReminderOccurrence;
   });
 };
 
@@ -953,7 +963,7 @@ export const deleteReminderOccurrencesByTaskId = async (taskId: string): Promise
  * @param day - The day to delete reminder occurrences for
  * @returns void
  */
-export const deleteReminderOccurencesForHabitByDay = async (habitId: string, day: string): Promise<void> => {
+export const deleteReminderOccurrencesForHabitByDay = async (habitId: string, day: string): Promise<void> => {
   return withDatabaseRetry(async (db) => {
     await db.runAsync('DELETE FROM reminderOccurrences WHERE habit_id = ? AND scheduled_for_day = ? AND status = ?;', [habitId, day, 'pending']);
   });
@@ -1224,6 +1234,26 @@ export const getPremadeHabitsForGoalIds = async (
     }
 
     return allHabits;
+  });
+};
+
+/**
+ * Get a premade habit by its ID
+ */
+export const getPremadeHabitById = async (id: string): Promise<Habit | null> => {
+  return withDatabaseRetry(async (db) => {
+    const habit = await db.getFirstAsync<ConvertArraysToJSON<Habit>>('SELECT * FROM premadeHabits WHERE id = ?;', [id]);
+
+    if (!habit) {
+      return null;
+    }
+
+    return {
+      ...habit,
+      completed: Boolean(habit.completed),
+      reminder_days: JSON.parse(habit.reminder_days || '[]'),
+      reminder_ids: JSON.parse(habit.reminder_ids || '[]')
+    };
   });
 };
 

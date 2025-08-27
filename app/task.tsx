@@ -178,8 +178,10 @@ export default function Task() {
                 description: 'Are you sure you want to delete this task? \n This action cannot be undone.',
                 primaryCTA: 'Delete',
                 secondaryCTA: 'Cancel',
-                onConfirm: () => {
-                    // TODO: should be "awaited" in the modal code (maybe add an additional "onSuccess" callback?)
+                onConfirm: async () => {
+                    for (const reminderId of reminderIds) {
+                        await Notifications.cancelScheduledNotificationAsync(reminderId);
+                    }
                     deleteTask(taskId as string, goalId as string);
                     closeModal();
                     router.back();

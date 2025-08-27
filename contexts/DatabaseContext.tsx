@@ -5,7 +5,7 @@ import * as DB from '../lib/database';
 import { formatReminderTime, isValidReminderTime } from '../lib/database-utils';
 import * as Notifications from 'expo-notifications';
 import { scheduleWeeklyReminders } from '@/lib/scheduleWeeklyReminders';
-import { scheduleRemindersForNDays } from '@/lib/scheduleRemindersForNDays';
+import { scheduleRemindersForNWeeks } from '@/lib/scheduleRemindersForNWeeks';
 
 // Define the context type
 interface DatabaseContextType {
@@ -370,7 +370,6 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
       }
 
       const updatedHabit = await DB.updateHabit(id, safeUpdates);
-      console.log('updateHabitWithRefresh end', updatedHabit);
       // Update local state with direct access to goal_id
       setHabits(prevHabits => ({
         ...prevHabits,
@@ -378,6 +377,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
           h.id === id ? updatedHabit : h
         )
       }));
+      console.log('updateHabitWithRefresh end', updatedHabit);
 
       return updatedHabit;
     } catch (error) {
@@ -399,11 +399,11 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
         throw new Error('Habit not found');
       }
 
-      const reminders = habit.reminder_ids;
-      for (const reminder of reminders) {
-        await Notifications.cancelScheduledNotificationAsync(reminder);
-        console.log('Reminder cancelled:', reminder);
-      }
+      // const reminders = habit.reminder_ids;
+      // for (const reminder of reminders) {
+      //   await Notifications.cancelScheduledNotificationAsync(reminder);
+      //   console.log('Reminder cancelled:', reminder);
+      // }
 
       await DB.deleteHabit(id);
 
@@ -535,8 +535,8 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
               reminder_ids: []
             }
           );
-          
-          scheduleRemindersForNDays(7, newHabit);
+
+          scheduleRemindersForNWeeks(2, newHabit);
 
           console.log('New habit created:', newHabit);
         }

@@ -11,7 +11,9 @@ import { Goal as GoalType, Task, Habit } from "@/types/database";
 import React from "react";
 import ItemCard from "@/components/ItemCard";
 import Button from "@/components/Button";
-import { getHabitsByGoalIdWithJoin } from "@/lib/database";
+import { getPendingReminderOccurrencesByHabitId } from "@/lib/database";
+import * as Notifications from 'expo-notifications';
+// import { getHabitsByGoalIdWithJoin } from "@/lib/database";
 
 export default function Goal() {
     const { id } = useLocalSearchParams();
@@ -28,21 +30,6 @@ export default function Goal() {
     const [goalTasks, setGoalTasks] = useState<Task[]>([]);
     const [goalHabits, setGoalHabits] = useState<Habit[]>([]);
     const [localError, setLocalError] = useState<string | null>(null);
-
-    useEffect(() => {
-        const fetchGoalData = async () => {
-            if (!id || typeof id !== 'string') {
-                setLocalError('Invalid goal ID');
-                setLoading(false);
-                return;
-            }
-
-            const goalHabitsWithJoin = await getHabitsByGoalIdWithJoin(id);
-            console.log('goalHabitsWithJoin: ', goalHabitsWithJoin);
-            console.log('goalHabitsWithJoin length: ', goalHabitsWithJoin.length);
-        }
-        fetchGoalData();
-    }, [id]);
 
     useEffect(() => {
         const fetchGoalData = async () => {
@@ -148,7 +135,7 @@ export default function Goal() {
         }
     };
 
-    const handleDeleteGoal = () => {
+    const handleDeleteGoal = async () => {
         if (goal && !isPremadeGoal) {
             openModal({
                 modalName: "DefaultModal",
@@ -159,8 +146,15 @@ export default function Goal() {
                     secondaryCTA: "Cancel",
                     theme: theme,
                     onClose: () => closeModal(),
-                    onConfirm: () => {
+                    onConfirm: async () => {
                         closeModal();
+                        for (const habit of goalHabits) {
+                            const reminders = await getPendingReminderOccurrencesByHabitId(habit.id);
+                            console.log('Reminders to remove', reminders.length);
+                            for (const reminder of reminders) {
+                                await Notifications.cancelScheduledNotificationAsync(reminder.id);
+                            }
+                        }
                         deleteGoal(goal.id);
                         router.back();
                     },

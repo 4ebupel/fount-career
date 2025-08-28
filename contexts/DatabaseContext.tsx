@@ -6,6 +6,7 @@ import { formatReminderTime, isValidReminderTime } from '../lib/database-utils';
 import * as Notifications from 'expo-notifications';
 import { scheduleWeeklyReminders } from '@/lib/scheduleWeeklyReminders';
 import { scheduleRemindersForNWeeks } from '@/lib/scheduleRemindersForNWeeks';
+import { getPendingReminderOccurrencesByHabitId } from '../lib/database';
 
 // Define the context type
 interface DatabaseContextType {
@@ -399,11 +400,11 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
         throw new Error('Habit not found');
       }
 
-      // const reminders = habit.reminder_ids;
-      // for (const reminder of reminders) {
-      //   await Notifications.cancelScheduledNotificationAsync(reminder);
-      //   console.log('Reminder cancelled:', reminder);
-      // }
+      const reminders = await getPendingReminderOccurrencesByHabitId(id);
+      console.log('Reminders to remove', reminders.length);
+      for (const reminder of reminders) {
+        await Notifications.cancelScheduledNotificationAsync(reminder.id);
+      }
 
       await DB.deleteHabit(id);
 

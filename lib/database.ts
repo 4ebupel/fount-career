@@ -890,8 +890,15 @@ export const createReminderOccurrence = async (reminderOccurrence: Omit<Reminder
 };
 
 export const getReminderOccurrencesByDate = async (date: string): Promise<ReminderOccurrence[]> => {
+  const isoDate = new Date(date).toISOString();
   return withDatabaseRetry(async (db) => {
-    const reminderOccurrences = await db.getAllAsync<ReminderOccurrence>('SELECT * FROM reminderOccurrences WHERE scheduled_for = ?;', [date]);
+    const reminderOccurrences = await db.getAllAsync<ReminderOccurrence>(
+      `SELECT *
+       FROM reminderOccurrences 
+       WHERE scheduled_for >= date(?, 'start of day')
+       AND scheduled_for < date(?, 'start of day', '+1 day')
+       ORDER BY scheduled_for ASC;
+      `, [isoDate, isoDate]);
     return reminderOccurrences;
   });
 };

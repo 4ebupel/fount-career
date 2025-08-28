@@ -179,9 +179,6 @@ export default function Task() {
                 primaryCTA: 'Delete',
                 secondaryCTA: 'Cancel',
                 onConfirm: async () => {
-                    for (const reminderId of reminderIds) {
-                        await Notifications.cancelScheduledNotificationAsync(reminderId);
-                    }
                     deleteTask(taskId as string, goalId as string);
                     closeModal();
                     router.back();

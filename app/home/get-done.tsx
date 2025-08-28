@@ -5,12 +5,14 @@ import WeeklyCalendarHeader from "@/components/WeeklyCalendarHeader";
 import { colors } from "@/lib/colors";
 import { ThemeContext } from "@/contexts/ThemeContext";
 import { Feather, Ionicons } from '@expo/vector-icons';
+import { getReminderOccurrencesByDate } from "@/lib/database";
 import { useDatabase } from "@/hooks/useDatabase";
-import { Goal, Habit, Task } from "@/types/database";
+import { Goal, Habit, ReminderOccurrence, Task } from "@/types/database";
 import { useModal } from "@/hooks/useModal";
 import React from "react";
 import ItemCard from "@/components/ItemCard";
 import { format } from "date-fns";
+import { WeekdaysInNumbers } from "@/lib/scheduleWeeklyReminders";
 
 export default function GetDone() {
     const [progressData, setProgressData] = useState([45, 20, 33, 40, 12, 90, 70]);
@@ -21,11 +23,24 @@ export default function GetDone() {
     const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'pending'>('all');
     const [localHabits, setLocalHabits] = useState<Habit[]>([]);
     const [localTasks, setLocalTasks] = useState<Task[]>([]);
+    const [reminderOccurrences, setReminderOccurrences] = useState<ReminderOccurrence[]>([]);
     const [selectedDay, setSelectedDay] = useState<string>(format(new Date(), 'EEEE'));
     // Scroll enabled is used to disable the scroll when the user is long pressing an item card.
     // TODO: This is a hacky solution and should be improved.
     const [scrollEnabled, setScrollEnabled] = useState(true);
     const { openModal } = useModal();
+
+    const getThisWeeksWeekDay = (dayName: string) => {
+        const day = WeekdaysInNumbers[dayName as keyof typeof WeekdaysInNumbers];
+        if (!day) {
+            return null;
+        }
+        const date = new Date();
+        const diff = (day + 7 - date.getDay()) % 7 || 7;
+        date.setDate(date.getDate() + diff);
+
+        return date.toISOString();
+    };
 
     useEffect(() => {
         console.log("Component mounted");
@@ -73,6 +88,27 @@ export default function GetDone() {
             console.log("Component unmounting");
         };
     }, [tasks]);
+
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                const thisWeeksWeekDay = getThisWeeksWeekDay(selectedDay);
+                if (!thisWeeksWeekDay) {
+                    return;
+                }
+                console.log("This weeks week day:", thisWeeksWeekDay);
+                setDataLoaded(false);
+                const reminderOccurrences = await getReminderOccurrencesByDate(thisWeeksWeekDay);
+                console.log("Reminder occurrences:", reminderOccurrences.length);
+                setReminderOccurrences(reminderOccurrences);
+            } catch (error) {
+                console.error("Error loading reminder occurrences:", error);
+            } finally {
+                setDataLoaded(true);
+            }
+        };
+        loadData();
+    }, [selectedDay]);
 
     const handleFloatingButtonPress = () => {
         openModal({
@@ -141,8 +177,14 @@ export default function GetDone() {
 
     const sectionListInnards = useMemo(() => {
         const displayGoals = goals.filter(goal => {
-            const goalTasks = tasks[goal.id];
-            const goalHabits = habits[goal.id];
+            const goalTasks = tasks[goal.id].map(task => ({
+                ...task,
+                completed: reminderOccurrences.some(reminder => reminder.task_id === task.id && reminder.status === 'completed')
+            }));
+            const goalHabits = habits[goal.id].map(habit => ({
+                ...habit,
+                completed: reminderOccurrences.some(reminder => reminder.habit_id === habit.id && reminder.status === 'completed')
+            }));
 
             // Check if this goal has any items matching our filters
             const hasMatchingItems = (() => {
@@ -177,8 +219,14 @@ export default function GetDone() {
         });
 
         return displayGoals.map(goal => {
-            const goalTasks = tasks[goal.id];
-            const goalHabits = habits[goal.id];
+            const goalTasks = tasks[goal.id].map(task => ({
+                ...task,
+                completed: reminderOccurrences.some(reminder => reminder.task_id === task.id && reminder.status === 'completed')
+            }));
+            const goalHabits = habits[goal.id].map(habit => ({
+                ...habit,
+                completed: reminderOccurrences.some(reminder => reminder.habit_id === habit.id && reminder.status === 'completed')
+            }));
 
             const filteredTasks = goalTasks.filter(task => {
                 if (filterType === 'habits') return false;
@@ -204,7 +252,7 @@ export default function GetDone() {
             }
         })
 
-    }, [goals, tasks, habits, filterType, filterStatus, selectedDay]);
+    }, [goals, tasks, habits, filterType, filterStatus, selectedDay, reminderOccurrences]);
 
     return (
         <View style={[

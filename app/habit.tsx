@@ -241,11 +241,6 @@ export default function Habit() {
                 primaryCTA: 'Delete',
                 secondaryCTA: 'Cancel',
                 onConfirm: async () => {
-                    const reminders = await getPendingReminderOccurrencesByHabitId(habitId as string);
-                    console.log('Reminders to remove', reminders.length);
-                    for (const reminder of reminders) {
-                        await Notifications.cancelScheduledNotificationAsync(reminder.id);
-                    }
                     await deleteHabit(habitId as string, goalId as string);
                     closeModal();
                     router.back();

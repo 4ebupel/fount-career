@@ -31,13 +31,16 @@ export default function GetDone() {
     const { openModal } = useModal();
 
     const getThisWeeksWeekDay = (dayName: string) => {
-        const day = WeekdaysInNumbers[dayName as keyof typeof WeekdaysInNumbers];
+        let day = WeekdaysInNumbers[dayName as keyof typeof WeekdaysInNumbers];
+        const actualDay = day === 1 ? 8 : day;
+        console.log(day, 'day');
         if (!day) {
             return null;
         }
         const date = new Date();
-        const diff = (day + 7 - date.getDay()) % 7 || 7;
-        date.setDate(date.getDate() + diff);
+        const today = date.getDay() + 1;
+        const diff = actualDay <= today ? today - actualDay : actualDay - today;
+        date.setDate(actualDay <= today ? date.getDate() - diff : date.getDate() + diff);
 
         return date.toISOString();
     };
@@ -100,6 +103,7 @@ export default function GetDone() {
                 setDataLoaded(false);
                 const reminderOccurrences = await getReminderOccurrencesByDate(thisWeeksWeekDay);
                 console.log("Reminder occurrences:", reminderOccurrences.length);
+                console.log("Reminder occurrences:", reminderOccurrences);
                 setReminderOccurrences(reminderOccurrences);
             } catch (error) {
                 console.error("Error loading reminder occurrences:", error);

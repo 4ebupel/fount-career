@@ -10,26 +10,43 @@ const bodies = [
 ];
 
 const getNOfDaysToTheNextWeekday = (startWeekday: string = 'Tuesday', weekday: string = 'Tuesday') => {
+    let days = Object.keys(WeekdaysInNumbers).slice(7);
+    // console.log(days, 'days');
+    if (days.indexOf(startWeekday) === -1 || days.indexOf(weekday) === -1) {
+        throw new Error('Invalid start weekday or weekday');
+    }
+
     let n = 0;
 
     if (startWeekday === weekday) {
+        console.log('startWeekday is equal to weekday');
         return 7;
     }
 
-    for (let i = WeekdaysInNumbers[startWeekday as keyof typeof WeekdaysInNumbers]; i <= 7; i++) {
-        if (i === 7) {
-            n++;
-            i = 1;
-        }
-
-        if (i === WeekdaysInNumbers[weekday as keyof typeof WeekdaysInNumbers]) {
+    let i = days.indexOf(startWeekday);
+    let iterations = 0;
+    const maxIterations = 7; // Prevent infinite loop
+    
+    while (iterations < maxIterations) {
+        // console.log(i, 'i');
+        if (i === days.indexOf(weekday)) {
             return n;
         }
 
-        n++;
-    }
+        if (i === 6) {
+            n++;
+            i = 0; // Reset to 0 for next week
+        } else {
+            i++;
+        }
 
-    return n;
+        n++;
+        iterations++;
+        // console.log(n, 'n');
+    }
+    
+    // If we've gone through all 7 days and haven't found the weekday, something is wrong
+    throw new Error(`Could not find weekday ${weekday} starting from ${startWeekday}`);
 }
 
 /**
@@ -70,12 +87,17 @@ export const scheduleRemindersForNWeeks = async (n: number = 4, habit?: Habit) =
             const occurrenceSortedByDate = [...reminderOccurrences].sort((a, b) => new Date(a.scheduled_for).getTime() - new Date(b.scheduled_for).getTime());
             const remindersAvailable = occurrenceSortedByDate.length || 0;
 
-            let currDay = WeekdaysInNumbers[new Date().getDay() + 1];
+            let currDay = Object.keys(WeekdaysInNumbers).slice(7)[new Date().getDay()];
             let remindersNeeded = Math.max(0, (habit.reminder_days.length * n) - remindersAvailable);
-            let nextReminderDate = occurrenceSortedByDate.length > 0 ? new Date(occurrenceSortedByDate[occurrenceSortedByDate.length - 1].scheduled_for) : new Date();
-            let day = WeekdaysInNumbers[nextReminderDate.getDay() + 1];
-            let id = weekdays.indexOf(day);
+            if (remindersNeeded <= 0) {
+                console.log('No reminders needed');
+                continue;
+            }
 
+            console.log(remindersNeeded, 'reminders needed');
+            let nextReminderDate = occurrenceSortedByDate.length > 0 ? new Date(occurrenceSortedByDate[occurrenceSortedByDate.length - 1].scheduled_for) : new Date();
+            let day = Object.keys(WeekdaysInNumbers).slice(7)[nextReminderDate.getDay()];
+            let id = weekdays.indexOf(day);
             if (occurrenceSortedByDate.length > 0) {
                 currDay = weekdays[id];
                 if (id === weekdays.length - 1) {
@@ -86,37 +108,32 @@ export const scheduleRemindersForNWeeks = async (n: number = 4, habit?: Habit) =
                 nextReminderDate.setDate(nextReminderDate.getDate() + getNOfDaysToTheNextWeekday(currDay, weekdays[id]));
                 nextReminderDate.setHours(+habit.reminder_time.split(':')[0], +habit.reminder_time.split(':')[1], 0, 0);
             } else {
-                if (weekdays.includes(day)) {
-                    // if we're in the past, we need to schedule the reminder for the next day
-                    let comparisonDateTime = new Date().setHours(+habit.reminder_time.split(':')[0], +habit.reminder_time.split(':')[1], 0, 0);
-                    if (nextReminderDate.getTime() > comparisonDateTime) {
-                        currDay = weekdays[id];
-                        if (id === weekdays.length - 1) {
-                            id = 0;
-                        } else {
-                            id++;
-                        }
+                if (weekdays.includes(currDay)) {
+                    console.log('currDay is in weekdays');
+                    let reminderTime = new Date().setHours(+habit.reminder_time.split(':')[0], +habit.reminder_time.split(':')[1], 0, 0);
+                    if (nextReminderDate.getTime() > reminderTime) {
+                        id === weekdays.length - 1 ? id = 0 : id++;
                         nextReminderDate.setDate(nextReminderDate.getDate() + getNOfDaysToTheNextWeekday(currDay, weekdays[id]));
-                        nextReminderDate.setHours(+habit.reminder_time.split(':')[0], +habit.reminder_time.split(':')[1], 0, 0);
                     } else {
-                        // nextReminderDate.setDate(nextReminderDate.getDate() + getNOfDaysToTheNextWeekday(currDay, weekdays[0]));
                         nextReminderDate.setHours(+habit.reminder_time.split(':')[0], +habit.reminder_time.split(':')[1], 0, 0);
                     }
+                    nextReminderDate.setHours(+habit.reminder_time.split(':')[0], +habit.reminder_time.split(':')[1], 0, 0);
                 } else {
-                    let numberedWeekdays = weekdays.map((day) => WeekdaysInNumbers[day as keyof typeof WeekdaysInNumbers]);
-                    let nextWeekday = numberedWeekdays.find((day) => day > (nextReminderDate.getDay() + 1));
-                    if (nextWeekday) {
-                        nextReminderDate.setDate(nextReminderDate.getDate() + getNOfDaysToTheNextWeekday(currDay, weekdays[nextWeekday]));
-                        nextReminderDate.setHours(+habit.reminder_time.split(':')[0], +habit.reminder_time.split(':')[1], 0, 0);
-                    } else {
-                        nextReminderDate.setDate(nextReminderDate.getDate() + getNOfDaysToTheNextWeekday(currDay, weekdays[0]));
-                        nextReminderDate.setHours(+habit.reminder_time.split(':')[0], +habit.reminder_time.split(':')[1], 0, 0);
-                    }
+                    let nextDay = weekdays.find((day) => Object.keys(WeekdaysInNumbers).slice(7).indexOf(day) >= nextReminderDate.getDay());
+                    // console.log('nextDay is', nextDay);
+                    nextDay ? currDay = nextDay : currDay = weekdays[0];
+                    nextDay ? id = weekdays.indexOf(nextDay) : id = 0;
+                    // console.log('day is', day);
+                    // console.log('weekdays[id] is', weekdays[id]);
+                    nextReminderDate.setDate(nextReminderDate.getDate() + getNOfDaysToTheNextWeekday(day, weekdays[id]));
+                    nextReminderDate.setHours(+habit.reminder_time.split(':')[0], +habit.reminder_time.split(':')[1], 0, 0);
+                    // console.log('nextReminderDate is', nextReminderDate.toISOString());
                 }
             }
 
             console.log(remindersNeeded, 'reminders needed');
             console.log(remindersAvailable, 'reminders available');
+            console.log(nextReminderDate.toISOString(), 'next reminder date starting point');
 
             while (remindersNeeded > 0) {
                 try {
@@ -134,24 +151,30 @@ export const scheduleRemindersForNWeeks = async (n: number = 4, habit?: Habit) =
                     await createReminderOccurrence({
                         habit_id: habit.id,
                         task_id: null,
-                        scheduled_for_day: day,
+                        scheduled_for_day: weekdays[id],
                         scheduled_for: nextReminderDate.toISOString(),
                         reminder_id: notificationId,
                         title: habit.title,
                         description: bodies[Math.floor(Math.random() * bodies.length)],
                         status: 'pending',
                     });
+
+                    remindersNeeded--;
+                    currDay = weekdays[id];
+                    id >= weekdays.length - 1 ? id = 0 : id++;
+                    nextReminderDate.setDate(nextReminderDate.getDate() + getNOfDaysToTheNextWeekday(currDay, weekdays[id]));
+                    nextReminderDate.setHours(+habit.reminder_time.split(':')[0], +habit.reminder_time.split(':')[1], 0, 0);
+
+                    console.log(nextReminderDate.toISOString(), 'next reminder date');
                 } catch (error) {
                     console.error(`Error scheduling reminder for habit ${habit.title} on ${nextReminderDate.toISOString()}:`, error);
                     remindersNeeded--;
-                    nextReminderDate.setDate(nextReminderDate.getDate() + getNOfDaysToTheNextWeekday(currDay, habit.reminder_days[1]));
+                    currDay = weekdays[id];
+                    id >= weekdays.length - 1 ? id = 0 : id++;
+                    nextReminderDate.setDate(nextReminderDate.getDate() + getNOfDaysToTheNextWeekday(currDay, weekdays[id]));
+                    nextReminderDate.setHours(+habit.reminder_time.split(':')[0], +habit.reminder_time.split(':')[1], 0, 0);
                     continue;
                 }
-
-                remindersNeeded--;
-                nextReminderDate.setDate(nextReminderDate.getDate() + getNOfDaysToTheNextWeekday(currDay, habit.reminder_days[1]));
-
-                console.log(nextReminderDate.toISOString(), 'next reminder date');
             }
         }
     } catch (error) {

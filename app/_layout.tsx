@@ -59,7 +59,7 @@ export default function RootLayout() {
         // Initialize Firebase before any other Firebase services
         // await initializeFirebase();
       } catch (error) {
-        console.warn('Firebase initialization error:', error);
+        // console.warn('Firebase initialization error:', error);
       } finally {
         setAppIsReady(true);
       }

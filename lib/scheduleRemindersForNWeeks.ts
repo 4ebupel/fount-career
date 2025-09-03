@@ -26,7 +26,7 @@ const getNOfDaysToTheNextWeekday = (startWeekday: string = 'Tuesday', weekday: s
     let i = days.indexOf(startWeekday);
     let iterations = 0;
     const maxIterations = 7; // Prevent infinite loop
-    
+
     while (iterations < maxIterations) {
         // console.log(i, 'i');
         if (i === days.indexOf(weekday)) {
@@ -34,7 +34,6 @@ const getNOfDaysToTheNextWeekday = (startWeekday: string = 'Tuesday', weekday: s
         }
 
         if (i === 6) {
-            n++;
             i = 0; // Reset to 0 for next week
         } else {
             i++;
@@ -44,7 +43,7 @@ const getNOfDaysToTheNextWeekday = (startWeekday: string = 'Tuesday', weekday: s
         iterations++;
         // console.log(n, 'n');
     }
-    
+
     // If we've gone through all 7 days and haven't found the weekday, something is wrong
     throw new Error(`Could not find weekday ${weekday} starting from ${startWeekday}`);
 }
@@ -94,7 +93,6 @@ export const scheduleRemindersForNWeeks = async (n: number = 4, habit?: Habit) =
                 continue;
             }
 
-            console.log(remindersNeeded, 'reminders needed');
             let nextReminderDate = occurrenceSortedByDate.length > 0 ? new Date(occurrenceSortedByDate[occurrenceSortedByDate.length - 1].scheduled_for) : new Date();
             let day = Object.keys(WeekdaysInNumbers).slice(7)[nextReminderDate.getDay()];
             let id = weekdays.indexOf(day);
@@ -112,9 +110,10 @@ export const scheduleRemindersForNWeeks = async (n: number = 4, habit?: Habit) =
                     console.log('currDay is in weekdays');
                     let reminderTime = new Date().setHours(+habit.reminder_time.split(':')[0], +habit.reminder_time.split(':')[1], 0, 0);
                     if (nextReminderDate.getTime() > reminderTime) {
-                        id === weekdays.length - 1 ? id = 0 : id++;
+                        id >= weekdays.length - 1 ? id = 0 : id++;
                         nextReminderDate.setDate(nextReminderDate.getDate() + getNOfDaysToTheNextWeekday(currDay, weekdays[id]));
                     } else {
+                        id = weekdays.indexOf(currDay);
                         nextReminderDate.setHours(+habit.reminder_time.split(':')[0], +habit.reminder_time.split(':')[1], 0, 0);
                     }
                     nextReminderDate.setHours(+habit.reminder_time.split(':')[0], +habit.reminder_time.split(':')[1], 0, 0);
@@ -134,6 +133,9 @@ export const scheduleRemindersForNWeeks = async (n: number = 4, habit?: Habit) =
             console.log(remindersNeeded, 'reminders needed');
             console.log(remindersAvailable, 'reminders available');
             console.log(nextReminderDate.toISOString(), 'next reminder date starting point');
+            console.log('--------------------------------');
+            console.log('Current Habit', habit.title);
+            console.log('--------------------------------');
 
             while (remindersNeeded > 0) {
                 try {
@@ -159,11 +161,25 @@ export const scheduleRemindersForNWeeks = async (n: number = 4, habit?: Habit) =
                         status: 'pending',
                     });
 
-                    remindersNeeded--;
+                    console.log('Vars before next reminder', {
+                        remindersNeeded,
+                        currDay,
+                        id,
+                        nextReminderDate: nextReminderDate.toISOString(),
+                    });
+
                     currDay = weekdays[id];
                     id >= weekdays.length - 1 ? id = 0 : id++;
                     nextReminderDate.setDate(nextReminderDate.getDate() + getNOfDaysToTheNextWeekday(currDay, weekdays[id]));
                     nextReminderDate.setHours(+habit.reminder_time.split(':')[0], +habit.reminder_time.split(':')[1], 0, 0);
+
+                    remindersNeeded--;
+                    console.log('Vars after next reminder', {
+                        remindersNeeded,
+                        currDay,
+                        id,
+                        nextReminderDate: nextReminderDate.toISOString(),
+                    });
 
                     console.log(nextReminderDate.toISOString(), 'next reminder date');
                 } catch (error) {

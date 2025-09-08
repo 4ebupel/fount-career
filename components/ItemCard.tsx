@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import { View, Text, StyleSheet, useWindowDimensions, PanResponder } from "react-native";
 import { useDatabase } from "@/hooks/useDatabase";
 import { useModal } from "@/hooks/useModal";
@@ -33,8 +33,8 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
     const mainButtonRef = useRef<View>(null);
 
     const longPressRef = useRef(false);
-    const isCompletedRef = useRef('reminder_occurrence_status' in item ? item.reminder_occurrence_status === 'completed' : item.completed);
-    const mainButtonLayoutRef = useRef<{
+        let isCompletedMemo = useMemo(() => 'reminder_occurrence_status' in item ? item.reminder_occurrence_status === 'completed' : item.completed, [item]);
+        const mainButtonLayoutRef = useRef<{
         localX: number,
         localY: number,
         localWidth: number,
@@ -90,14 +90,14 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
 
     const handleToggleCompletion = async (itemType: 'habit' | 'task') => {
         console.log('isCompleted start', isCompleted);
-        setIsCompleted(!isCompletedRef.current);
-        isCompletedRef.current = !isCompletedRef.current;
+        setIsCompleted(!isCompletedMemo);
+        isCompletedMemo = !isCompletedMemo;
         try {
             if (itemType === 'habit' && 'reminder_occurrence_id' in item && item.reminder_occurrence_id) {
-                const occurrence = await updateReminderOccurrence(item.reminder_occurrence_id, item.id, item.goal_id, isCompletedRef.current ? 'completed' : 'pending');
+                const occurrence = await updateReminderOccurrence(item.reminder_occurrence_id, item.id, item.goal_id, isCompletedMemo ? 'completed' : 'pending');
                 console.log('occurrence after update', occurrence);
             } else {
-                await updateTask(item.id, { completed: isCompletedRef.current });
+                await updateTask(item.id, { completed: isCompletedMemo });
             }
             console.log('isCompleted end', isCompleted);
         } catch (error) {
@@ -197,12 +197,12 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
                         if (isInsideGreen) {
                             console.log('✅ Over green button!');
                             console.log('current title:', item.title);
-                            console.log('current isCompleted:', isCompletedRef.current);
+                            console.log('current isCompleted:', isCompletedMemo);
                             console.log('current item:', item);
 
                             handleToggleCompletion(itemType);
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                            console.log('current isCompleted after toggle:', isCompletedRef.current);
+                            console.log('current isCompleted after toggle:', isCompletedMemo);
                         }
                         if (isInsideRed) {
                             console.log('❌ Over red button!');

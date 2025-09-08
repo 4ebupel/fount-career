@@ -183,6 +183,7 @@ export default function GetDone() {
         const displayGoals = goals.filter(goal => {
             const goalTasks = tasks[goal.id];
             const goalHabits = habits[goal.id];
+            console.log("display goals filter ran");
 
             // Check if this goal has any items matching our filters
             const hasMatchingItems = (() => {
@@ -235,6 +236,16 @@ export default function GetDone() {
                 return true;
             });
 
+            filteredHabits.forEach(habit => {
+                const reminderOccurrence = reminderOccurrences.find(occurrence => occurrence.habit_id === habit.id);
+                console.log("reminder occurrence within filtered habits", reminderOccurrence);
+                if (reminderOccurrence) {
+                    habit.reminder_occurrence_status = reminderOccurrence.status;
+                    habit.reminder_occurrence_id = reminderOccurrence.id;
+                    habit.reminder_occurrence_scheduled_for = reminderOccurrence.scheduled_for;
+                }
+            });
+
             return {
                 title: goal.title,
                 data: [
@@ -244,7 +255,7 @@ export default function GetDone() {
             }
         })
 
-    }, [goals, tasks, habits, filterType, filterStatus, selectedDay, reminderOccurrences]);
+    }, [goals, tasks, habits, filterType, filterStatus, reminderOccurrences]);
 
     return (
         <View style={[

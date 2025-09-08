@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Alert } from 'react-native';
-import { Goal, Habit, Task } from '../types/database';
+import { Goal, Habit, HabitWithReminderOccurrence, ReminderOccurrence, Task } from '../types/database';
 import * as DB from '../lib/database';
 import { formatReminderTime, isValidReminderTime } from '../lib/database-utils';
 import * as Notifications from 'expo-notifications';
@@ -16,7 +16,7 @@ interface DatabaseContextType {
   errorMessage: string | null;
   initializeDatabase: () => Promise<void>;
   goals: Goal[];
-  habits: Record<string, Habit[]>;
+  habits: Record<string, HabitWithReminderOccurrence[]>;
   tasks: Record<string, Task[]>;
   // Goal operations
   /**
@@ -124,6 +124,10 @@ interface DatabaseContextType {
    * Delete a task
    */
   deleteTask: (id: string, goal_id: string) => Promise<void>;
+  /**
+   * Update a reminder occurrence
+   */
+  updateReminderOccurrence: (reminderOccurrenceId: string, habitId: string, goalId: string, status: 'pending' | 'completed' | 'missed') => Promise<ReminderOccurrence>;
   // Refresh data
   refreshData: () => Promise<void>;
   clearError: () => void;
@@ -144,7 +148,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [goals, setGoals] = useState<Goal[]>([]);
-  const [habits, setHabits] = useState<Record<string, Habit[]>>({});
+  const [habits, setHabits] = useState<Record<string, HabitWithReminderOccurrence[]>>({});
   const [tasks, setTasks] = useState<Record<string, Task[]>>({});
 
   // Clear any database errors
@@ -209,7 +213,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
       setGoals(fetchedGoals);
 
       // Get habits and tasks for each goal
-      const habitsMap: Record<string, Habit[]> = {};
+      const habitsMap: Record<string, HabitWithReminderOccurrence[]> = {};
       const tasksMap: Record<string, Task[]> = {};
 
       if (fetchedGoals.length > 0) {
@@ -219,7 +223,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
         for (const goal of fetchedGoals) {
           try {
             const [goalHabits, goalTasks] = await Promise.all([
-              DB.getHabitsByGoalId(goal.id),
+              DB.getHabitsByGoalIdWithJoin(goal.id),
               DB.getTasksByGoalId(goal.id)
             ]);
 
@@ -495,6 +499,26 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     }
   };
 
+  const updateReminderOccurrenceWithRefresh = async (reminderOccurrenceId: string, habitId: string, goalId: string, status: 'pending' | 'completed' | 'missed') => {
+    try {
+      clearError();
+      const updatedReminderOccurrence = await DB.updateReminderOccurrence(reminderOccurrenceId, { status });
+
+      const updatedHabit = habits[goalId].map(h =>
+        h.id === habitId ? { ...h, reminder_occurrence_status: status } : h
+      );
+
+      setHabits(prevHabits => ({
+        ...prevHabits,
+        [goalId]: updatedHabit
+      }));
+      return updatedReminderOccurrence;
+    } catch (error) {
+      handleError(error, 'updating reminder occurrence');
+      throw error;
+    }
+  };
+
   const addPremadeGoalToUserGoals = async (premadeGoalId: string) => {
     try {
       const premadeGoal = await DB.getPremadeGoalById(premadeGoalId);
@@ -616,6 +640,8 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     getTasksByGoalId: DB.getTasksByGoalId,
     updateTask: updateTaskWithRefresh,
     deleteTask: deleteTaskWithRefresh,
+    // Reminder occurrence operations
+    updateReminderOccurrence: updateReminderOccurrenceWithRefresh,
     // Refresh data
     refreshData,
     clearError,

@@ -181,14 +181,8 @@ export default function GetDone() {
 
     const sectionListInnards = useMemo(() => {
         const displayGoals = goals.filter(goal => {
-            const goalTasks = tasks[goal.id].map(task => ({
-                ...task,
-                completed: reminderOccurrences.some(reminder => reminder.task_id === task.id && reminder.status === 'completed')
-            }));
-            const goalHabits = habits[goal.id].map(habit => ({
-                ...habit,
-                completed: reminderOccurrences.some(reminder => reminder.habit_id === habit.id && reminder.status === 'completed')
-            }));
+            const goalTasks = tasks[goal.id];
+            const goalHabits = habits[goal.id];
 
             // Check if this goal has any items matching our filters
             const hasMatchingItems = (() => {
@@ -201,7 +195,7 @@ export default function GetDone() {
                         if (goalTasks.some(task => task.completed)) return true;
                     }
                     if (filterType === 'habits' || filterType === 'all') {
-                        if (goalHabits.some(habit => habit.completed)) return true;
+                        if (goalHabits.some(habit => habit.reminder_occurrence_status === 'completed')) return true;
                     }
                     return false;
                 }
@@ -211,7 +205,7 @@ export default function GetDone() {
                         if (goalTasks.some(task => !task.completed)) return true;
                     }
                     if (filterType === 'habits' || filterType === 'all') {
-                        if (goalHabits.some(habit => !habit.completed)) return true;
+                        if (goalHabits.some(habit => habit.reminder_occurrence_status !== 'completed')) return true;
                     }
                     return false;
                 }
@@ -223,14 +217,8 @@ export default function GetDone() {
         });
 
         return displayGoals.map(goal => {
-            const goalTasks = tasks[goal.id].map(task => ({
-                ...task,
-                completed: reminderOccurrences.some(reminder => reminder.task_id === task.id && reminder.status === 'completed')
-            }));
-            const goalHabits = habits[goal.id].map(habit => ({
-                ...habit,
-                completed: reminderOccurrences.some(reminder => reminder.habit_id === habit.id && reminder.status === 'completed')
-            }));
+            const goalTasks = tasks[goal.id];
+            const goalHabits = habits[goal.id];
 
             const filteredTasks = goalTasks.filter(task => {
                 if (filterType === 'habits') return false;
@@ -241,8 +229,8 @@ export default function GetDone() {
 
             const filteredHabits = goalHabits.filter(habit => {
                 if (filterType === 'tasks') return false;
-                if (filterStatus === 'completed' && !habit.completed) return false;
-                if (filterStatus === 'pending' && habit.completed) return false;
+                if (filterStatus === 'completed' && habit.reminder_occurrence_status !== 'completed') return false;
+                if (filterStatus === 'pending' && habit.reminder_occurrence_status === 'completed') return false;
                 if (!habit.reminder_days.includes(selectedDay)) return false;
                 return true;
             });

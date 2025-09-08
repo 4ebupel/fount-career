@@ -51,6 +51,12 @@ export interface ReminderOccurrence {
   updated_at: string;
 }
 
+export type HabitWithReminderOccurrence = Habit & {
+  reminder_occurrence_id?: string | null;
+  reminder_occurrence_status?: 'pending' | 'completed' | 'missed' | null;
+  reminder_occurrence_scheduled_for?: string | null;
+};
+
 /**
  * Convert arrays to JSON strings
  * @param T - The type arrays of which to convert

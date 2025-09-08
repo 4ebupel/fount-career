@@ -6,12 +6,12 @@ import * as Haptics from 'expo-haptics';
 import { router } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { colors } from "@/lib/colors";
-import { Habit, Task } from "@/types/database";
+import { Habit, HabitWithReminderOccurrence, Task } from "@/types/database";
 import { DEFAULT_MODAL } from "@/lib/modals";
 import { navigationLock } from "@/lib/navigationLock";
 
 interface props {
-    item: Task | Habit,
+    item: Task | HabitWithReminderOccurrence,
     theme: 'dark' | 'light',
     displayCheckbox: boolean,
     displayBorders: boolean,
@@ -23,17 +23,17 @@ const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'S
 
 export default function ItemCard({ item, theme, displayCheckbox, displayBorders, scrollEnabler, onPress }: props) {
     const [isLongPressed, setIsLongPressed] = useState(false);
-    const [isCompleted, setIsCompleted] = useState(item.completed);
+    const [isCompleted, setIsCompleted] = useState('reminder_occurrence_status' in item ? item.reminder_occurrence_status === 'completed' : item.completed);
 
     const { width } = useWindowDimensions();
-    const { updateHabit, updateTask, deleteHabit, deleteTask } = useDatabase();
+    const { updateHabit, updateTask, deleteHabit, deleteTask, updateReminderOccurrence } = useDatabase();
     const { openModal, closeModal } = useModal();
     let timer: NodeJS.Timeout;
 
     const mainButtonRef = useRef<View>(null);
 
     const longPressRef = useRef(false);
-    const isCompletedRef = useRef(item.completed);
+    const isCompletedRef = useRef('reminder_occurrence_status' in item ? item.reminder_occurrence_status === 'completed' : item.completed);
     const mainButtonLayoutRef = useRef<{
         localX: number,
         localY: number,
@@ -93,8 +93,9 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
         setIsCompleted(!isCompletedRef.current);
         isCompletedRef.current = !isCompletedRef.current;
         try {
-            if (itemType === 'habit') {
-                await updateHabit(item.id, { completed: isCompletedRef.current });
+            if (itemType === 'habit' && 'reminder_occurrence_id' in item && item.reminder_occurrence_id) {
+                const occurrence = await updateReminderOccurrence(item.reminder_occurrence_id, item.id, item.goal_id, isCompletedRef.current ? 'completed' : 'pending');
+                console.log('occurrence after update', occurrence);
             } else {
                 await updateTask(item.id, { completed: isCompletedRef.current });
             }
@@ -197,6 +198,7 @@ export default function ItemCard({ item, theme, displayCheckbox, displayBorders,
                             console.log('✅ Over green button!');
                             console.log('current title:', item.title);
                             console.log('current isCompleted:', isCompletedRef.current);
+                            console.log('current item:', item);
 
                             handleToggleCompletion(itemType);
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

@@ -2,7 +2,7 @@ import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 import * as SQLite from 'expo-sqlite';
 import { Platform } from 'react-native';
-import { ConvertArraysToJSON, Goal, Habit, ReminderOccurrence, Task } from '../types/database';
+import { ConvertArraysToJSON, Goal, Habit, HabitWithReminderOccurrence, ReminderOccurrence, Task } from '../types/database';
 import { premadeGoalsSeedData, premadeTasksSeedData, premadeHabitsSeedData } from './seedData';
 
 // Database name
@@ -594,12 +594,6 @@ export const getHabitsByGoalId = async (goalId: string): Promise<Habit[]> => {
   });
 };
 
-type HabitWithReminderOccurrence = Habit & {
-  reminder_occurrence_id: string | null;
-  reminder_occurrence_status: string | null;
-  reminder_occurrence_scheduled_for: string | null;
-};
-
 export const getHabitsByGoalIdWithJoin = async (goalId: string): Promise<HabitWithReminderOccurrence[]> => {
   return withDatabaseRetry(async (db) => {
     const now = new Date().toISOString();
@@ -934,11 +928,17 @@ export const updateReminderOccurrence = async (id: string, updates: Partial<Omit
       updated_at: now,
     };
 
+    console.log('status from updates', updates.status);
+
     await db.runAsync(
       `UPDATE reminderOccurrences 
-     SET updated_at = ?, status = ?
-     WHERE id = ?;`,
-      [updatedReminderOccurrence.updated_at, updatedReminderOccurrence.status, id]
+      SET updated_at = ?, status = ?
+      WHERE id = ?;`,
+      [
+        updatedReminderOccurrence.updated_at,
+        updatedReminderOccurrence.status,
+        id
+      ]
     );
 
     return updatedReminderOccurrence;

@@ -16,7 +16,7 @@ interface props {
     displayCheckbox: boolean,
     displayBorders: boolean,
     scrollEnabler?: (scrollEnabled: boolean) => void,
-    onPress: ((itemId: string, goalId: string) => void) | (() => void),
+    onPress?: ((itemId: string, goalId: string) => void) | (() => void),
 }
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];

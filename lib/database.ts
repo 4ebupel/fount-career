@@ -625,6 +625,32 @@ export const getHabitsByGoalIdWithJoin = async (goalId: string): Promise<HabitWi
   });
 };
 
+export const getAllHabitsWithRemindersByDate = async (date: Date) => {
+  return withDatabaseRetry(async(db) => {
+    const isoDate = date.toISOString();
+    const habits = await db.getAllAsync<ConvertArraysToJSON<HabitWithReminderOccurrence>>(
+      `SELECT habits.*,
+              reminderOccurrences.id as reminder_occurrence_id,
+              reminderOccurrences.status as reminder_occurrence_status,
+              reminderOccurrences.scheduled_for as reminder_occurrence_scheduled_for
+       FROM habits
+       LEFT JOIN reminderOccurrences ON habits.id = reminderOccurrences.habit_id
+       WHERE reminderOccurrences.scheduled_for >= date(?, 'start of day')
+       AND reminderOccurrences.scheduled_for < date(?, 'start of day', '+1 day')
+       ORDER BY habits.created_at DESC;
+      `,
+      [isoDate, isoDate]
+    );
+
+    return habits.map(habit => ({
+      ...habit,
+      completed: Boolean(habit.completed),
+      reminder_days: JSON.parse(habit.reminder_days),
+      reminder_ids: JSON.parse(habit.reminder_ids),
+    }));
+  });
+}
+
 /**
    * Get a habit by its ID
    * @param id - The ID of the habit to get

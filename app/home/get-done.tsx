@@ -5,7 +5,7 @@ import WeeklyCalendarHeader from "@/components/WeeklyCalendarHeader";
 import { colors } from "@/lib/colors";
 import { ThemeContext } from "@/contexts/ThemeContext";
 import { Feather, Ionicons } from '@expo/vector-icons';
-import { getReminderOccurrencesByDate } from "@/lib/database";
+import { getAllHabitsWithRemindersByDate, getReminderOccurrencesByDate } from "@/lib/database";
 import { useDatabase } from "@/hooks/useDatabase";
 import { Goal, Habit, HabitWithReminderOccurrence, ReminderOccurrence, Task } from "@/types/database";
 import { useModal } from "@/hooks/useModal";
@@ -18,11 +18,11 @@ import SectionListTestComponent from "@/components/SectionListTestComponent";
 export default function GetDone() {
     const [progressData, setProgressData] = useState([45, 20, 33, 40, 12, 90, 70]);
     const { theme } = useContext(ThemeContext);
-    const { goals = [], tasks = {}, habits = {}, isLoading, getGoals, updateHabit, updateTask, createGoal } = useDatabase();
+    const { goals = [], tasks = {}, isLoading, getGoals, updateHabit, updateTask, createGoal } = useDatabase();
     const [dataLoaded, setDataLoaded] = useState(false);
     const [filterType, setFilterType] = useState<'all' | 'habits' | 'tasks'>('all');
     const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'pending'>('all');
-    const [localHabits, setLocalHabits] = useState<Habit[]>([]);
+    const [localHabits, setLocalHabits] = useState<HabitWithReminderOccurrence[]>([]);
     const [localTasks, setLocalTasks] = useState<Task[]>([]);
     const [reminderOccurrences, setReminderOccurrences] = useState<ReminderOccurrence[]>([]);
     const [selectedDay, setSelectedDay] = useState<string>(format(new Date(), 'EEEE'));
@@ -46,82 +46,13 @@ export default function GetDone() {
         return date.toISOString();
     };
 
-    // useEffect(() => {
-    //     console.log("Component mounted");
-
-    //     const loadData = async () => {
-    //         try {
-    //             await setLocalHabits(Object.values(habits).flat());
-
-    //             console.log("Local habits:", localHabits.length);
-    //             console.log("Habits:", habits[goals[0].id]);
-
-    //             setDataLoaded(true);
-    //         } catch (error) {
-    //             console.error("Error loading data:", error);
-    //             setDataLoaded(true); // Still mark as loaded to show content
-    //         }
-    //     };
-
-    //     loadData();
-
-    //     return () => {
-    //         console.log("Component unmounting");
-    //     };
-    // }, [habits]);
-
-    // useEffect(() => {
-    //     console.log("Component mounted");
-
-    //     const loadData = async () => {
-    //         try {
-    //             await setLocalTasks(Object.values(tasks).flat());
-
-    //             console.log("Local tasks:", localTasks.length);
-
-    //             setDataLoaded(true);
-    //         } catch (error) {
-    //             console.error("Error loading data:", error);
-    //             setDataLoaded(true); // Still mark as loaded to show content
-    //         }
-    //     };
-
-    //     loadData();
-
-    //     return () => {
-    //         console.log("Component unmounting");
-    //     };
-    // }, [tasks]);
-
-    // useEffect(() => {
-    //     const loadData = async () => {
-    //         try {
-    //             setDataLoaded(false);
-    //             const thisWeeksWeekDay = getThisWeeksWeekDay(selectedDay);
-    //             if (!thisWeeksWeekDay) {
-    //                 return;
-    //             }
-    //             console.log("This weeks week day:", thisWeeksWeekDay);
-    //             const reminderOccurrences = await getReminderOccurrencesByDate(thisWeeksWeekDay);
-    //             console.log("Reminder occurrences:", reminderOccurrences.length);
-    //             console.log("Reminder occurrences:", reminderOccurrences);
-    //             setReminderOccurrences(reminderOccurrences);
-    //         } catch (error) {
-    //             console.error("Error loading reminder occurrences:", error);
-    //         } finally {
-    //             setDataLoaded(true);
-    //         }
-    //     };
-    //     loadData();
-    // }, [selectedDay]);
-
+    // Load data when the component mounts
     useEffect(() => {
         console.log("Component mounted");
+        setDataLoaded(false);
 
         const loadData = async () => {
             try {
-                setDataLoaded(false);
-
                 const thisWeeksWeekDay = getThisWeeksWeekDay(selectedDay);
                 if (!thisWeeksWeekDay) {
                     setDataLoaded(true);
@@ -129,21 +60,19 @@ export default function GetDone() {
                 }
                 console.log("This weeks week day:", thisWeeksWeekDay);
 
-                const [habitsData, tasksData, reminderOccurrences] = await Promise.all([
-                    Promise.resolve(Object.values(habits).flat()),
+                const [habitsData, tasksData] = await Promise.all([
+                    getAllHabitsWithRemindersByDate(new Date(thisWeeksWeekDay)),
                     Promise.resolve(Object.values(tasks).flat()),
-                    getReminderOccurrencesByDate(thisWeeksWeekDay)
+                    // getReminderOccurrencesByDate(thisWeeksWeekDay)
                 ]);
 
                 setLocalHabits(habitsData);
                 setLocalTasks(tasksData);
-                setReminderOccurrences(reminderOccurrences);
+                // setReminderOccurrences(reminderOccurrences);
 
                 console.log("Local habits:", habitsData.length);
                 console.log("Local tasks:", tasksData.length);
-                console.log("Reminder occurrences:", reminderOccurrences.length);
-                console.log("Reminder occurrences:", reminderOccurrences);
-                console.log("Habits:", habits[goals[0]?.id] || []);
+                console.log("Habits:", habitsData || 'No habits');
 
                 setDataLoaded(true);
             } catch (error) {
@@ -158,6 +87,26 @@ export default function GetDone() {
             console.log("Component unmounting");
         };
     }, []);
+
+    // Reload Habits when the selected day changes
+    useEffect(() => {
+        setDataLoaded(false);
+        const loadData = async () => {
+            try {
+                const thisWeeksWeekDay = getThisWeeksWeekDay(selectedDay);
+                if (!thisWeeksWeekDay) {
+                    setDataLoaded(true);
+                    return;
+                }
+                const habitsData = await getAllHabitsWithRemindersByDate(new Date(thisWeeksWeekDay));
+                setLocalHabits(habitsData);
+            } catch (error) {
+                console.error("Error loading data:", error);
+                setDataLoaded(true);
+            }
+        };
+        loadData();
+    }, [selectedDay]);
 
     const handleFloatingButtonPress = () => {
         openModal({
@@ -189,7 +138,7 @@ export default function GetDone() {
 
     // Get completed tasks and habits
     const completedHabits = useMemo(() =>
-        localHabits.filter(habit => habit.completed).length,
+        localHabits.filter(habit => habit.reminder_occurrence_status === 'completed').length,
         [localHabits]
     );
 
@@ -226,10 +175,10 @@ export default function GetDone() {
 
     useEffect(() => {
         setDataLoaded(false);
-        const processInnards = () => { 
+        const processInnards = async () => {
             const displayGoals = [...goals].filter(goal => {
                 const goalTasks = tasks[goal.id];
-                const goalHabits = habits[goal.id];
+                const goalHabits = localHabits.filter(habit => habit.goal_id === goal.id);
                 console.log("display goals filter ran");
 
                 // Check if this goal has any items matching our filters
@@ -266,7 +215,7 @@ export default function GetDone() {
 
             const processedGoals = [...displayGoals].map(goal => {
                 const goalTasks = tasks[goal.id];
-                const goalHabits = habits[goal.id];
+                const goalHabits = localHabits.filter(habit => habit.goal_id === goal.id);
 
                 const filteredTasks = [...goalTasks].filter(task => {
                     if (filterType === 'habits') return false;
@@ -283,21 +232,10 @@ export default function GetDone() {
                     return true;
                 });
 
-                const filteredHabitsWithReminderOccurrences = [...filteredHabits].map(habit => {
-                    const reminderOccurrence = reminderOccurrences.find(occurrence => occurrence.habit_id === habit.id);
-                    console.log("reminder occurrence within filtered habits", reminderOccurrence);
-                    if (reminderOccurrence) {
-                        habit.reminder_occurrence_status = reminderOccurrence.status;
-                        habit.reminder_occurrence_id = reminderOccurrence.id;
-                        habit.reminder_occurrence_scheduled_for = reminderOccurrence.scheduled_for;
-                    }
-                    return habit;
-                });
-
                 const res = {
                     title: goal.title,
                     data: [
-                        ...filteredHabitsWithReminderOccurrences,
+                        ...filteredHabits,
                         ...filteredTasks
                     ]
                 }
@@ -305,11 +243,11 @@ export default function GetDone() {
                 return { ...res }
             });
 
-            return [...processedGoals];
+            setSectionListInnards([...processedGoals]);
+            setDataLoaded(true);
         }
-        setSectionListInnards([...processInnards()]);
-        setDataLoaded(true);
-    }, [goals, tasks, habits, filterType, filterStatus, reminderOccurrences, selectedDay]);
+        processInnards();
+    }, [goals, tasks, localHabits, filterType, filterStatus]);
 
     return (
         <View style={[

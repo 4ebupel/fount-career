@@ -151,25 +151,6 @@ export default function GetDone() {
     let totalItems = totalHabits + totalTasks;
     const completedItems = completedHabits + completedTasks;
 
-    // Toggle habit completion
-    const toggleHabitCompletion = async (habitId: string, goalId: string) => {
-        const habitList = localHabits.filter(h => h.goal_id === goalId);
-        const habit = habitList.find(h => h.id === habitId);
-        if (habit) {
-            setLocalHabits(localHabits.map(h => h.id === habitId ? { ...h, completed: !habit.completed } : h));
-            await updateHabit(habitId, { completed: !habit.completed });
-        }
-    };
-
-    const toggleTaskCompletion = async (taskId: string, goalId: string) => {
-        const taskList = localTasks.filter(t => t.goal_id === goalId);
-        const task = taskList.find(t => t.id === taskId);
-        if (task) {
-            setLocalTasks(localTasks.map(t => t.id === taskId ? { ...t, completed: !task.completed } : t));
-            await updateTask(taskId, { completed: !task.completed });
-        }
-    };
-
     // Simplified progress indicator style
     const progressBarWidth = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
 

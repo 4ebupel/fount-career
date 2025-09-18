@@ -3,9 +3,11 @@ import React, { useEffect } from "react";
 import { colors } from "@/lib/colors";
 import ItemCard from "./ItemCard";
 import { HabitWithReminderOccurrence, Task } from "@/types/database";
+import SkeletonLoader from "./SkeletonLoader";
 
 interface props {
     theme: 'dark' | 'light';
+    loading?: boolean,
     scrollEnabled: boolean;
     sectionListInnards: { title: string, data: (HabitWithReminderOccurrence | Task)[] }[];
     filterType: 'all' | 'habits' | 'tasks';
@@ -13,17 +15,32 @@ interface props {
     setFilterType: (filterType: 'all' | 'habits' | 'tasks') => void;
     setFilterStatus: (filterStatus: 'all' | 'completed' | 'pending') => void;
     setScrollEnabled: (scrollEnabled: boolean) => void;
-}
+};
 
-export default function SectionListTestComponent({ theme, scrollEnabled, sectionListInnards, filterType, filterStatus, setFilterType, setFilterStatus, setScrollEnabled }: props) {
+const loadingInnards = [
+    {
+        title: "",
+        data: ["", ""] as unknown as Task[]
+    },
+    {
+        title: "",
+        data: ["", ""] as unknown as Task[]
+    },
+    {
+        title: "",
+        data: ["", ""] as unknown as Task[]
+    },
+];
+
+export default function SectionListTestComponent({ theme, loading = true, scrollEnabled, sectionListInnards, filterType, filterStatus, setFilterType, setFilterStatus, setScrollEnabled }: props) {
     useEffect(() => {
         console.log("SectionListTestComponent mounted");
     }, []);
-    
+
     return (
         <SectionList
             scrollEnabled={scrollEnabled}
-            sections={sectionListInnards}
+            sections={loading ? loadingInnards : sectionListInnards}
             ListHeaderComponent={
                 <View style={styles.filterContainer}>
                     <View style={styles.filterRow}>
@@ -121,14 +138,20 @@ export default function SectionListTestComponent({ theme, scrollEnabled, section
                 </View>
             )}
             renderItem={({ item }) => (
-                <ItemCard
-                    key={`item-${item.id}`}
-                    item={item}
-                    theme={theme}
-                    displayCheckbox={true}
-                    displayBorders={false}
-                    scrollEnabler={setScrollEnabled}
-                />
+                (loading ? (
+                    <View style={{ paddingBottom: 12 }}>
+                        <SkeletonLoader height={80} width={"100%"} theme={theme} />
+                    </View>
+                ) : (
+                    <ItemCard
+                        key={`item-${item.id}`}
+                        item={item}
+                        theme={theme}
+                        displayCheckbox={true}
+                        displayBorders={false}
+                        scrollEnabler={setScrollEnabled}
+                    />
+                ))
             )}
         />
     );

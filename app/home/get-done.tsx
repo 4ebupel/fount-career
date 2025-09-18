@@ -291,26 +291,17 @@ export default function GetDone() {
                             <View style={[styles.progressBar, { width: `${progressBarWidth}%` }]} />
                         </View>
                     </View>
-                    {dataLoaded ? (
-                        <SectionListTestComponent
-                            theme={theme}
-                            scrollEnabled={scrollEnabled}
-                            sectionListInnards={sectionListInnards}
-                            filterType={filterType}
-                            filterStatus={filterStatus}
-                            setFilterType={setFilterType}
-                            setFilterStatus={setFilterStatus}
-                            setScrollEnabled={setScrollEnabled}
-                        />
-                    ) : (
-                        <View style={styles.backgroundImageContainer}>
-                            <Text>Loading data...</Text>
-                            <ActivityIndicator
-                                size="large"
-                                color={theme === 'light' ? colors.light_theme.button_primary_bg : colors.dark_theme.button_primary_bg}
-                            />
-                        </View>
-                    )}
+                    <SectionListTestComponent
+                        theme={theme}
+                        loading={!dataLoaded}
+                        scrollEnabled={scrollEnabled}
+                        sectionListInnards={sectionListInnards}
+                        filterType={filterType}
+                        filterStatus={filterStatus}
+                        setFilterType={setFilterType}
+                        setFilterStatus={setFilterStatus}
+                        setScrollEnabled={setScrollEnabled}
+                    />
                     {/* <SectionList
                         scrollEnabled={scrollEnabled}
                         sections={sectionListInnards}

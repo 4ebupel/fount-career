@@ -14,7 +14,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Notifications from "expo-notifications";
 import { useAppLifecycleEffect } from '@/hooks/useAppLifecycleEffect';
-import { scheduleRemindersForNDays } from '@/lib/scheduleRemindersForNDays';
+import { scheduleRemindersForNWeeks } from '@/lib/scheduleRemindersForNWeeks';
 // import { initializeFirebase } from '@/lib/firebaseConfig';
 // Enable screens for better navigation performance
 enableScreens();
@@ -47,10 +47,10 @@ export default function RootLayout() {
 
   useAppLifecycleEffect(() => {
     console.log('App started');
-    scheduleRemindersForNDays();
+    scheduleRemindersForNWeeks();
   }, () => {
     console.log('App resumed');
-    scheduleRemindersForNDays();
+    scheduleRemindersForNWeeks();
   });
 
   useEffect(() => {
@@ -59,7 +59,7 @@ export default function RootLayout() {
         // Initialize Firebase before any other Firebase services
         // await initializeFirebase();
       } catch (error) {
-        console.warn('Firebase initialization error:', error);
+        // console.warn('Firebase initialization error:', error);
       } finally {
         setAppIsReady(true);
       }

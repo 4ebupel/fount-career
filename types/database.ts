@@ -45,10 +45,17 @@ export interface ReminderOccurrence {
   title: string;
   description?: string;
   status: 'pending' | 'completed' | 'missed';
+  scheduled_for_day: string;
   scheduled_for: string;
   created_at: string;
   updated_at: string;
 }
+
+export type HabitWithReminderOccurrence = Habit & {
+  reminder_occurrence_id?: string | null;
+  reminder_occurrence_status?: 'pending' | 'completed' | 'missed' | null;
+  reminder_occurrence_scheduled_for?: string | null;
+};
 
 /**
  * Convert arrays to JSON strings

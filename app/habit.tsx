@@ -15,25 +15,33 @@ import { useDatabase } from '@/hooks/useDatabase';
 import { scheduleWeeklyReminders, WeekdaysInNumbers } from '@/lib/scheduleWeeklyReminders';
 import { checkForExistingReminders } from '@/lib/checkForExistingReminders';
 import { navigationLock } from '@/lib/navigationLock';
+import { Habit as HabitType } from '@/types/database';
+import { deleteReminderOccurrencesByHabitId, deleteReminderOccurrencesForHabitByDay, getPendingReminderOccurrencesByHabitId, getPendingReminderOccurrencesForHabitByDay, getPremadeHabitById } from '@/lib/database';
+import { scheduleRemindersForNWeeks } from '@/lib/scheduleRemindersForNWeeks';
 
 // Days of the week for habit reminders
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 export default function Habit() {
-    const { goalId, habitId, title, emoji, reminder_days, reminder_time } = useLocalSearchParams();
+    const { goalId, habitId } = useLocalSearchParams();
     const router = useRouter();
     const navigation = useNavigation();
 
-    const [habitTitle, setHabitTitle] = useState<string>(title as string || '');
-    const [selectedEmoji, setSelectedEmoji] = useState<string>(emoji as string || '🔄');
+    const [habitTitle, setHabitTitle] = useState<string>('');
+    const [selectedEmoji, setSelectedEmoji] = useState<string>('🔄');
     const [showTimePicker, setShowTimePicker] = useState(false);
-    const [selectedTime, setSelectedTime] = useState<string>(reminder_time as string || '');
-    // Parse the reminder_days string to an array if it exists
-    const [habitReminderDays, setHabitReminderDays] = useState<string[]>(typeof reminder_days === 'string' ? reminder_days.split(',') : []);
+    const [selectedTime, setSelectedTime] = useState<string>('');
+    const [reminderDays, setReminderDays] = useState<string[]>([]);
+
+    const [habit, setHabit] = useState<HabitType | null>(null);
 
     const { openModal, closeModal } = useModal();
-    const { createHabit, updateHabit, deleteHabit } = useDatabase();
+    const { createHabit, updateHabit, deleteHabit, getHabitById } = useDatabase();
     const { theme } = useContext(ThemeContext);
+
+    const isPremadeHabit = useMemo(() => {
+        return !isNaN(Number(habitId));
+    }, [habitId]);
 
     useEffect(() => {
         // @ts-ignore - transitionEnd works in practice despite TypeScript errors
@@ -47,107 +55,123 @@ export default function Habit() {
         return unsubscribe;
     }, []);
 
-    const isPremadeGoal = useMemo(() => {
-        return !isNaN(Number(goalId));
-    }, [goalId]);
+    useEffect(() => {
+        const fetchHabit = async () => {
+            if (!habitId || typeof habitId !== 'string' || isPremadeHabit) {
+                return;
+            }
+            const habit = isPremadeHabit ? await getPremadeHabitById(habitId) : await getHabitById(habitId);
+            console.log('habit', habit);
+            if (habit) {
+                setHabitTitle(habit.title);
+                setSelectedEmoji(habit.selected_emoji);
+                setReminderDays(habit.reminder_days);
+                setSelectedTime(habit.reminder_time);
+                setHabit(habit);
+            }
+        };
+        try {
+            fetchHabit();
+        } catch (error) {
+            console.error('Error fetching habit', error);
+        }
+    }, [habitId]);
 
     // Schedule the reminders
-    const scheduleReminders = async () => {
-        const existingReminderDays: string[] = typeof reminder_days === 'string' ? reminder_days.split(',') : [];
-        let newReminders: string[] = habitReminderDays.filter((day) => !existingReminderDays.includes(day));
-        let newIds: string[] = [];
-        let existingReminders: {
-            id: string;
-            title: string;
-            body: string;
-            weekday: keyof typeof WeekdaysInNumbers;
-        }[] = [];
+    const scheduleReminders = async (oldHabit: HabitType | null, newHabit: HabitType): Promise<boolean | void> => {
+        if (isPremadeHabit) {
+            return;
+        };
 
-        // Check for existing reminders
-        try {
-            existingReminders = await checkForExistingReminders(habitId as string);
-            newIds.push(...existingReminders.map((reminder) => reminder.id));
-            console.log('Existing reminders', existingReminders.length, existingReminders.map((reminder) => reminder.weekday));
-        } catch (error) {
-            console.error('Error checking for existing reminders', error);
-        }
+        const existingReminderDays: string[] = oldHabit?.reminder_days || [];
+        let newReminderDays: string[] = newHabit.reminder_days.filter((day) => !existingReminderDays.includes(day));
+        // let existingReminders: {
+        //     id: string;
+        //     title: string;
+        //     body: string;
+        //     weekday: keyof typeof WeekdaysInNumbers;
+        // }[] = [];
+
+        // // Check for existing reminders
+        // try {
+        //     existingReminders = await checkForExistingReminders(habit.id);
+        //     console.log('Existing reminders', existingReminders.length, existingReminders.map((reminder) => reminder.weekday));
+        // } catch (error) {
+        //     console.error('Error checking for existing reminders', error);
+        // }
 
         // If the number of reminders has changed, remove the unscheduled reminders
-        if (existingReminders.length > habitReminderDays.length) {
+        if (existingReminderDays.length > reminderDays.length && oldHabit) {
             try {
                 console.log('--------------------------------');
                 console.log('Removing unscheduled reminders');
                 console.log('--------------------------------');
 
-                const unscheduledReminders = existingReminders.filter((reminder) => !habitReminderDays.includes(reminder.weekday));
-                console.log('Unscheduled reminders', unscheduledReminders);
+                const reminderDaysToRemove = existingReminderDays.filter((reminderDay) => !reminderDays.includes(reminderDay));
+                console.log('Unscheduled reminders', reminderDaysToRemove);
 
-                unscheduledReminders.forEach(async (reminder) => {
-                    await Notifications.cancelScheduledNotificationAsync(reminder.id);
-                });
-
-                newIds = newIds.filter((id) => !unscheduledReminders.map((reminder) => reminder.id).includes(id));
+                for (const reminderDay of reminderDaysToRemove) {
+                    const reminders = await getPendingReminderOccurrencesForHabitByDay(oldHabit.id, reminderDay);
+                    console.log('Reminders to remove', reminders);
+                    for (const reminder of reminders) {
+                        await Notifications.cancelScheduledNotificationAsync(reminder.id);
+                    }
+                    await deleteReminderOccurrencesForHabitByDay(oldHabit.id, reminderDay);
+                }
 
                 console.log('--------------------------------');
                 console.log('Unscheduled reminders removed');
                 console.log('--------------------------------');
             } catch (error) {
                 console.error('Error removing unscheduled reminders', error);
+                return false;
             }
         }
 
 
         // If the reminder time has changed, delete the existing reminders and schedule new ones
-        if (selectedTime !== reminder_time && reminder_time) {
+        if ((selectedTime !== oldHabit?.reminder_time && selectedTime) && oldHabit) {
+            console.log('--------------------------------');
+            console.log('Deleting existing reminders');
+            console.log('--------------------------------');
+
             try {
+                await deleteReminderOccurrencesByHabitId(oldHabit.id);
+                console.log('Existing reminders deleted successfully');
                 console.log('--------------------------------');
-                console.log('Deleting existing reminders');
-                console.log('--------------------------------');
+            } catch (error) {
+                console.error('Error deleting existing reminders', error);
+                return false;
+            }
 
-                await Promise.all(newIds.map(async (id) => {
-                    await Notifications.cancelScheduledNotificationAsync(id);
-                    console.log('Removed reminder:', id);
-                }));
+            console.log('--------------------------------');
+            console.log('Scheduling new reminders');
+            console.log('--------------------------------');
 
-                newIds = [];
-
-                console.log('--------------------------------');
-                console.log('Scheduling new reminders');
-                console.log('--------------------------------');
-
-                const ids = await scheduleWeeklyReminders({
-                    title: habitTitle,
-                    reminderTime: selectedTime,
-                    reminderDays: habitReminderDays,
-                });
-                newIds.push(...ids);
-                // Reset the new reminders to an empty array so the next if statement doesn't schedule the same reminders again
-                // Absolute Spazierstock :raised_hands:
-                newReminders = [];
-                console.log('--------------------------------');
-                console.log('New reminders scheduled', ids);
+            try {
+                await scheduleRemindersForNWeeks(1, newHabit);
+                console.log('Reminders scheduled successfully');
                 console.log('--------------------------------');
             } catch (error) {
                 console.error('Error scheduling reminders', error);
+                return false;
             }
         }
 
-        if (newReminders.length > 0) {
+        if (newReminderDays.length > 0) {
             try {
-                const ids = await scheduleWeeklyReminders({
-                    title: habitTitle,
-                    reminderTime: selectedTime,
-                    reminderDays: newReminders,
-                });
-                newIds.push(...ids);
-                console.log('Scheduled reminders', ids);
+                await scheduleRemindersForNWeeks(1, newHabit);
+                console.log('Reminders scheduled successfully');
             } catch (error) {
                 console.error('Error scheduling reminders', error);
+                return false;
             }
         }
 
-        console.log('New list of ids', newIds);
-        return newIds;
+        // Since we came this far, might as well schedule the reminders for the next 7 days in the background
+        scheduleRemindersForNWeeks(2, newHabit);
+
+        return true;
     }
 
     // Handle time picker for reminder time
@@ -165,7 +189,7 @@ export default function Habit() {
     // Handle emoji selection
     const handleEmojiSelect = () => {
         Keyboard.dismiss();
-        if (isPremadeGoal) {
+        if (isPremadeHabit) {
             return;
         }
         openModal({
@@ -188,21 +212,21 @@ export default function Habit() {
 
     // Toggle reminder day selection
     const toggleReminderDay = (day: string) => {
-        if (isPremadeGoal) {
+        if (isPremadeHabit) {
             return;
         }
-        if (habitReminderDays.includes(day)) {
-            const newHabitReminderDays = habitReminderDays.filter(d => d !== day);
-            setHabitReminderDays(newHabitReminderDays);
+        if (reminderDays.includes(day)) {
+            const newHabitReminderDays = reminderDays.filter(d => d !== day);
+            setReminderDays(newHabitReminderDays);
         } else {
-            const newHabitReminderDays = [...habitReminderDays, day];
-            setHabitReminderDays(newHabitReminderDays);
+            const newHabitReminderDays = [...reminderDays, day];
+            setReminderDays(newHabitReminderDays);
         }
     };
 
     // Delete the habit
     const handleDelete = async () => {
-        if (!habitId || isPremadeGoal) {
+        if (!habitId || isPremadeHabit) {
             return;
         }
 
@@ -232,66 +256,73 @@ export default function Habit() {
 
     // Create the habit
     const handleSave = async () => {
-        if (!habitTitle.trim() || isPremadeGoal) {
+        if (!habitTitle.trim() || isPremadeHabit) {
             // Don't create habits without a title
             return;
         }
 
+        let newHabit: HabitType;
+        // Create the new habit using the database context
         try {
-            let ids: string[] = [];
-            if (habitReminderDays.length > 0) {
-                ids = await scheduleReminders();
-            }
-            // Create the new habit using the database context
-            await createHabit({
+            newHabit = await createHabit({
                 goal_id: goalId as string,
                 title: habitTitle.trim(),
                 selected_emoji: selectedEmoji,
-                reminder_days: habitReminderDays, // Store as JSON string
+                reminder_days: reminderDays, // Store as JSON string
                 reminder_time: selectedTime,
-                reminder_ids: ids,
+                reminder_ids: [],
                 completed: false,
             });
+        } catch (error) {
+            console.error('Error creating habit:', error);
+            return;
+        }
 
+        try {
+            if (reminderDays.length > 0) {
+                await scheduleReminders(null, newHabit);
+            }
             // Navigate back to the goal details page after successful creation
             router.back();
         } catch (error) {
-            console.error('Error creating habit:', error);
-            // In a production app, you would show an error message to the user
+            console.error('Error scheduling reminders:', error);
+            return;
         }
     };
 
     // Update the habit
     const handleUpdate = async () => {
-        if (!habitTitle.trim() || isPremadeGoal) {
+        if (!habitTitle.trim() || isPremadeHabit || !habit) {
             // Don't update habits without a title
             return;
         }
 
+        let newHabit: HabitType;
+        // Prepare the updated habit data
+        const updatedHabit = {
+            title: habitTitle.trim(),
+            selected_emoji: selectedEmoji,
+            reminder_days: reminderDays,
+            reminder_time: selectedTime,
+            reminder_ids: [],
+        };
+
         try {
-            let ids: string[] = [];
-            if (habitReminderDays.length > 0) {
-                ids = await scheduleReminders();
-            }
-
-            // Prepare the updated habit data
-            const updatedHabit = {
-                title: habitTitle.trim(),
-                selected_emoji: selectedEmoji,
-                reminder_days: habitReminderDays,
-                reminder_time: selectedTime,
-                reminder_ids: ids,
-            };
-
-            if (habitId) {
-                await updateHabit(habitId as string, updatedHabit);
-            }
-
-            // Navigate back to the goal details page after successful creation
-            router.back();
+            newHabit = await updateHabit(habit.id, updatedHabit);
         } catch (error) {
             console.error('Error updating habit:', error);
-            // In a production app, you would show an error message to the user
+            return;
+        }
+
+        try {
+            if (reminderDays.length > 0) {
+                await scheduleReminders(habit, newHabit);
+            }
+            // Navigate back to the goal details page after successful update
+            router.back();
+        } catch (error) {
+            console.error('Error scheduling reminders:', error);
+            return;
         }
     };
 
@@ -314,11 +345,11 @@ export default function Habit() {
                             styles.headerText,
                             theme === 'dark' ? styles.headerTextDark : styles.headerTextLight
                         ]}>
-                            {habitId ? (isPremadeGoal ? 'Habit' : 'Edit Habit') : 'Add Habit'}
+                            {habitId ? (isPremadeHabit ? 'Habit' : 'Edit Habit') : 'Add Habit'}
                         </Text>
                         {/* Delete button */}
-                        <TouchableOpacity onPress={isPremadeGoal ? () => { } : handleDelete} style={styles.deleteButton} disabled={!habitId || isPremadeGoal}>
-                            <FontAwesome name="trash" size={24} color={habitId && !isPremadeGoal ? colors.dark_theme.status_error : colors.dark_theme.button_disabled_text} />
+                        <TouchableOpacity onPress={isPremadeHabit ? () => { } : handleDelete} style={styles.deleteButton} disabled={!habitId || isPremadeHabit}>
+                            <FontAwesome name="trash" size={24} color={habitId && !isPremadeHabit ? colors.dark_theme.status_error : colors.dark_theme.button_disabled_text} />
                         </TouchableOpacity>
                     </View>
                     <ScrollView style={styles.scrollView}>
@@ -332,7 +363,7 @@ export default function Habit() {
                                 Habit Title
                             </Text>
                             <View style={styles.titleContainer}>
-                                {!isPremadeGoal ? (
+                                {!isPremadeHabit ? (
                                     <TouchableOpacity
                                         style={[
                                             styles.emojiContainer,
@@ -356,7 +387,7 @@ export default function Habit() {
                                         <Text style={styles.emojiText}>{selectedEmoji}</Text>
                                     </View>
                                 )}
-                                {!isPremadeGoal ? (
+                                {!isPremadeHabit ? (
                                     <TextInput
                                         style={[
                                             styles.titleInput,
@@ -413,12 +444,12 @@ export default function Habit() {
                             </Text>
                             <View style={styles.daysContainer}>
                                 {DAYS_OF_WEEK.map((day, index) => (
-                                    !isPremadeGoal ? (
+                                    !isPremadeHabit ? (
                                         <TouchableOpacity
                                             key={index}
                                             style={[
                                                 styles.dayButton,
-                                                habitReminderDays.includes(day) && (
+                                                reminderDays.includes(day) && (
                                                     theme === 'dark'
                                                         ? {
                                                             backgroundColor: colors.dark_theme.button_primary_bg,
@@ -429,7 +460,7 @@ export default function Habit() {
                                                             borderColor: colors.light_theme.button_primary_bg
                                                         }
                                                 ),
-                                                !habitReminderDays.includes(day) && (
+                                                !reminderDays.includes(day) && (
                                                     theme === 'dark'
                                                         ? { borderColor: colors.dark_theme.border_input }
                                                         : { borderColor: colors.light_theme.border_input }
@@ -439,7 +470,7 @@ export default function Habit() {
                                         >
                                             <Text style={[
                                                 styles.dayText,
-                                                habitReminderDays.includes(day)
+                                                reminderDays.includes(day)
                                                     ? theme === 'dark'
                                                         ? { color: colors.dark_theme.button_primary_text }
                                                         : { color: colors.light_theme.button_primary_text }
@@ -455,7 +486,7 @@ export default function Habit() {
                                             key={index}
                                             style={[
                                                 styles.dayButton,
-                                                habitReminderDays.includes(day) && (
+                                                reminderDays.includes(day) && (
                                                     theme === 'dark'
                                                         ? {
                                                             backgroundColor: colors.dark_theme.button_primary_bg,
@@ -466,7 +497,7 @@ export default function Habit() {
                                                             borderColor: colors.light_theme.button_primary_bg
                                                         }
                                                 ),
-                                                !habitReminderDays.includes(day) && (
+                                                !reminderDays.includes(day) && (
                                                     theme === 'dark'
                                                         ? { borderColor: colors.dark_theme.border_input }
                                                         : { borderColor: colors.light_theme.border_input }
@@ -475,7 +506,7 @@ export default function Habit() {
                                         >
                                             <Text style={[
                                                 styles.dayText,
-                                                habitReminderDays.includes(day)
+                                                reminderDays.includes(day)
                                                     ? theme === 'dark'
                                                         ? { color: colors.dark_theme.button_primary_text }
                                                         : { color: colors.light_theme.button_primary_text }
@@ -500,7 +531,7 @@ export default function Habit() {
                             ]}>
                                 Habit Reminder
                             </Text>
-                            {!isPremadeGoal ? (
+                            {!isPremadeHabit ? (
                                 <TouchableOpacity
                                     style={[
                                         styles.timePickerButton,
@@ -574,7 +605,7 @@ export default function Habit() {
                         />
                     ) : null}
 
-                    {!isPremadeGoal && (
+                    {!isPremadeHabit && (
                         <View style={styles.buttonContainer}>
                             <Button
                                 label={habitId ? 'Update Habit' : 'Save Habit'}

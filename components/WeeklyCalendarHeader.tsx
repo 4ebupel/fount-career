@@ -4,12 +4,13 @@ import Svg, { Circle, Text as SvgText } from 'react-native-svg';
 import { format, startOfWeek, addDays } from 'date-fns';
 import { colors } from '@/lib/colors';
 import { ThemeContext } from '@/contexts/ThemeContext';
+import { Weekday } from '@/types/utilTypes';
 
 const radius = 20;
 const strokeWidth = 5;
 const circumference = 2 * Math.PI * radius;
 
-const WeeklyCalendarHeader = ({ progressData = [0, 0, 0, 0, 0, 0, 0], selectedDay, setSelectedDay }: { progressData: number[], selectedDay: string, setSelectedDay: (day: string) => void }) => {
+const WeeklyCalendarHeader = ({ progressData = [0, 0, 0, 0, 0, 0, 0], selectedDay, setSelectedDay }: { progressData: number[], selectedDay: string, setSelectedDay: (day: Weekday) => void }) => {
   const { theme } = useContext(ThemeContext);
   const { width } = useWindowDimensions();
   // Calculate the start of the week (Monday)
@@ -25,8 +26,8 @@ const WeeklyCalendarHeader = ({ progressData = [0, 0, 0, 0, 0, 0, 0], selectedDa
       {Array.from({ length: 7 }).map((_, index) => {
         const currentDate = addDays(start, index);
         const dayNumber = format(currentDate, 'd');
-        const dayName = format(currentDate, 'EEEE'); // e.g., Monday, Tuesday
-        const percentage = progressData[index]; // Expects a number 0-100
+        const dayName = format(currentDate, 'EEEE') as Weekday; // e.g., Monday, Tuesday
+        const percentage = progressData[index];
         const strokeDashoffset = circumference * (1 - percentage / 100);
 
         return (

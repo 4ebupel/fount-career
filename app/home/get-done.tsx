@@ -1,13 +1,12 @@
 import { useState, useContext, useEffect, useMemo } from "react";
-import { View, Text, StyleSheet, Image, Pressable, ActivityIndicator, ScrollView, TouchableOpacity, SectionList, Dimensions } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { View, Text, StyleSheet, Image, Pressable, ActivityIndicator, TouchableOpacity, Dimensions } from "react-native";
 import WeeklyCalendarHeader from "@/components/WeeklyCalendarHeader";
 import { colors } from "@/lib/colors";
 import { ThemeContext } from "@/contexts/ThemeContext";
-import { Feather, Ionicons } from '@expo/vector-icons';
-import { getAllHabitsWithRemindersByDate, getReminderOccurrencesByDate } from "@/lib/database";
+import { Feather } from '@expo/vector-icons';
+import { getAllHabitsWithRemindersByDate } from "@/lib/database";
 import { useDatabase } from "@/hooks/useDatabase";
-import { Goal, Habit, HabitWithReminderOccurrence, ReminderOccurrence, Task } from "@/types/database";
+import { HabitWithReminderOccurrence, ReminderOccurrence, Task } from "@/types/database";
 import { useModal } from "@/hooks/useModal";
 import React from "react";
 import Animated, {
@@ -15,34 +14,31 @@ import Animated, {
     useAnimatedStyle,
     withTiming,
     runOnJS,
-    FadeOut,
-    FadeIn,
-    SlideInDown,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { format } from "date-fns";
 import { WeekdaysInNumbers } from "@/lib/scheduleWeeklyReminders";
-import SectionListTestComponent from "@/components/SectionListTestComponent";
-import { daysInWeek } from "date-fns/constants";
+import SectionedFlatList from "@/components/SectionedFlatList";
+import { Weekday } from "@/types/utilTypes";
 
-const WeekdayNumbers = {
-    Sunday: 0,
-    Monday: 1,
-    Tuesday: 2,
-    Wednesday: 3,
-    Thursday: 4,
-    Friday: 5,
-    Saturday: 6,
+const WeekdayStepNumbers = {
+    Monday: 0,
+    Tuesday: 1,
+    Wednesday: 2,
+    Thursday: 3,
+    Friday: 4,
+    Saturday: 5,
+    Sunday: 6,
 };
 
 const dayLists = [
-    SectionListTestComponent,
-    SectionListTestComponent,
-    SectionListTestComponent,
-    SectionListTestComponent,
-    SectionListTestComponent,
-    SectionListTestComponent,
-    SectionListTestComponent,
+    SectionedFlatList,
+    SectionedFlatList,
+    SectionedFlatList,
+    SectionedFlatList,
+    SectionedFlatList,
+    SectionedFlatList,
+    SectionedFlatList,
 ];
 
 const { height, width } = Dimensions.get('window');
@@ -169,23 +165,31 @@ export default function GetDone() {
     }));
 
     const goNext = () => {
-        if (selectedDay !== Object.keys(WeekdayNumbers)[6]) {
-            const newDay = format(new Date(new Date().getDate() + 1), 'EEEE');
-            const n = Object.keys(WeekdayNumbers).findIndex((e) => e === newDay);
-            translateX.value = withTiming(-n * width, { duration: 300 }, () => {
+        const days = Object.keys(WeekdayStepNumbers);
+        if (selectedDay !== days[6]) {
+            const i = days.findIndex((e) => e === selectedDay);
+            const newDay = days[i + 1];
+            translateX.value = withTiming(-(i + 1) * width, { duration: 300 }, () => {
                 runOnJS(setSelectedDay)(newDay);
             });
         }
     };
 
     const goBack = () => {
-        if (selectedDay !== Object.keys(WeekdayNumbers)[0]) {
-            const newDay = format(new Date(new Date().getDate() - 1), 'EEEE');
-            const n = Object.keys(WeekdayNumbers).findIndex((e) => e === newDay);
-            translateX.value = withTiming(-n * width, { duration: 300 }, () => {
+        const days = Object.keys(WeekdayStepNumbers);
+        if (selectedDay !== days[0]) {
+            const i = days.findIndex((e) => e === selectedDay);
+            const newDay = days[i - 1];
+            translateX.value = withTiming(-(i - 1) * width, { duration: 300 }, () => {
                 runOnJS(setSelectedDay)(newDay);
             });
         }
+    };
+
+    const handleDaySelect = (day: Weekday) => {
+        translateX.value = withTiming(-WeekdayStepNumbers[day] * width, { duration: 300 }, () => {
+            runOnJS(setSelectedDay)(day);
+        });
     };
 
     const daysPanGesture = Gesture.Pan()
@@ -198,9 +202,9 @@ export default function GetDone() {
         })
         .onEnd((event) => {
             horizontalSwipeOffset.value = withTiming(0, { duration: 300 });
-            if (event.translationX > HORIZONTAL_SWIPE_THRESHOLD && Object.keys(WeekdayNumbers).findIndex((e) => e === selectedDay) > 0) {
+            if (event.translationX > HORIZONTAL_SWIPE_THRESHOLD && Object.keys(WeekdayStepNumbers).findIndex((e) => e === selectedDay) > 0) {
                 runOnJS(goBack)();
-            } else if (event.translationX < -HORIZONTAL_SWIPE_THRESHOLD && Object.keys(WeekdayNumbers).findIndex((e) => e === selectedDay) < 6) {
+            } else if (event.translationX < -HORIZONTAL_SWIPE_THRESHOLD && Object.keys(WeekdayStepNumbers).findIndex((e) => e === selectedDay) < 6) {
                 runOnJS(goNext)();
             }
         })
@@ -318,30 +322,10 @@ export default function GetDone() {
             theme === 'dark' ? styles.containerDark : styles.containerLight
         ]}>
             <View style={{ maxHeight: 150 }}>
-                <WeeklyCalendarHeader progressData={progressData} selectedDay={selectedDay} setSelectedDay={setSelectedDay} />
+                <WeeklyCalendarHeader progressData={progressData} selectedDay={selectedDay} setSelectedDay={handleDaySelect} />
             </View>
 
-            {isLoading && !dataLoaded ? (
-                <View style={styles.backgroundImageContainer}>
-                    <Image
-                        source={theme === 'dark'
-                            ? require("@/assets/get-done-background-image-dark.png")
-                            : require("@/assets/get-done-background-image-light.png")
-                        }
-                        style={styles.backgroundImage}
-                        resizeMode="contain"
-                    />
-                    <View style={styles.backgroundTitleContainer}>
-                        <Text style={[styles.backgroundTitle, theme === 'dark' ? styles.backgroundTitleDark : styles.backgroundTitleLight]}>Loading data...</Text>
-                        <Text style={[styles.backgroundDescription, theme === 'dark' ? styles.backgroundDescriptionDark : styles.backgroundDescriptionLight]}>Please wait while we fetch your goals.</Text>
-                        <ActivityIndicator
-                            size="large"
-                            color={theme === 'light' ? colors.light_theme.button_primary_bg : colors.dark_theme.button_primary_bg}
-                            style={{ marginTop: 20 }}
-                        />
-                    </View>
-                </View>
-            ) : totalItems <= 0 ? (
+            {totalItems <= 0 ? (
                 <View style={styles.backgroundImageContainer}>
                     <Image
                         source={theme === 'dark'
@@ -358,111 +342,114 @@ export default function GetDone() {
                 </View>
             ) : (
                 <View style={[styles.scrollView, { overflow: 'hidden' }]}>
-                    {/* Today's progress */}
-                    <View style={styles.todayProgressContainer}>
-                        <View style={styles.progressHeader}>
-                            <Text style={[styles.progressText, theme === 'dark' ? styles.textSecondaryDark : styles.textSecondaryLight]}>
-                                Today you have {totalHabits} {totalHabits === 1 ? "habit" : "habits"} and {totalTasks} {totalTasks === 1 ? "task" : "tasks"}
-                            </Text>
-                            <Text style={[styles.progressCounter, theme === 'dark' ? styles.textSecondaryDark : styles.textSecondaryLight]}>
-                                {completedItems} / {totalItems}
-                            </Text>
+                    <View style={{ paddingHorizontal: 16 }}>
+                        {/* Today's progress */}
+                        <View style={styles.todayProgressContainer}>
+                            <View style={styles.progressHeader}>
+                                <Text style={[styles.progressText, theme === 'dark' ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+                                    Today you have {totalHabits} {totalHabits === 1 ? "habit" : "habits"} and {totalTasks} {totalTasks === 1 ? "task" : "tasks"}
+                                </Text>
+                                <Text style={[styles.progressCounter, theme === 'dark' ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+                                    {completedItems} / {totalItems}
+                                </Text>
+                            </View>
+
+                            <View style={styles.progressBarContainer}>
+                                <View style={[styles.progressBar, { width: `${progressBarWidth}%` }]} />
+                            </View>
                         </View>
+                        {/* Filters container */}
+                        <View>
+                            <View style={styles.filterRow}>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.filterButton,
+                                        filterType === 'all' && styles.filterButtonActive
+                                    ]}
+                                    onPress={() => setFilterType('all')}
+                                >
+                                    <Text style={[
+                                        styles.filterButtonText,
+                                        filterType === 'all' ? styles.filterButtonTextActive : styles.filterButtonTextInactive
+                                    ]}>All</Text>
+                                </TouchableOpacity>
 
-                        <View style={styles.progressBarContainer}>
-                            <View style={[styles.progressBar, { width: `${progressBarWidth}%` }]} />
-                        </View>
-                    </View>
-                    <View style={styles.filterContainer}>
-                        <View style={styles.filterRow}>
-                            <TouchableOpacity
-                                style={[
-                                    styles.filterButton,
-                                    filterType === 'all' && styles.filterButtonActive
-                                ]}
-                                onPress={() => setFilterType('all')}
-                            >
-                                <Text style={[
-                                    styles.filterButtonText,
-                                    filterType === 'all' ? styles.filterButtonTextActive : styles.filterButtonTextInactive
-                                ]}>All</Text>
-                            </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.filterButton,
+                                        filterType === 'habits' && styles.filterButtonActive
+                                    ]}
+                                    onPress={() => setFilterType('habits')}
+                                >
+                                    <Text style={[
+                                        styles.filterButtonText,
+                                        filterType === 'habits' ? styles.filterButtonTextActive : styles.filterButtonTextInactive
+                                    ]}>Habits</Text>
+                                </TouchableOpacity>
 
-                            <TouchableOpacity
-                                style={[
-                                    styles.filterButton,
-                                    filterType === 'habits' && styles.filterButtonActive
-                                ]}
-                                onPress={() => setFilterType('habits')}
-                            >
-                                <Text style={[
-                                    styles.filterButtonText,
-                                    filterType === 'habits' ? styles.filterButtonTextActive : styles.filterButtonTextInactive
-                                ]}>Habits</Text>
-                            </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.filterButton,
+                                        filterType === 'tasks' && styles.filterButtonActive
+                                    ]}
+                                    onPress={() => setFilterType('tasks')}
+                                >
+                                    <Text style={[
+                                        styles.filterButtonText,
+                                        filterType === 'tasks' ? styles.filterButtonTextActive : styles.filterButtonTextInactive
+                                    ]}>Tasks</Text>
+                                </TouchableOpacity>
+                            </View>
 
-                            <TouchableOpacity
-                                style={[
-                                    styles.filterButton,
-                                    filterType === 'tasks' && styles.filterButtonActive
-                                ]}
-                                onPress={() => setFilterType('tasks')}
-                            >
-                                <Text style={[
-                                    styles.filterButtonText,
-                                    filterType === 'tasks' ? styles.filterButtonTextActive : styles.filterButtonTextInactive
-                                ]}>Tasks</Text>
-                            </TouchableOpacity>
-                        </View>
+                            <View style={styles.filterRow}>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.filterButton,
+                                        filterStatus === 'all' && styles.filterButtonActive
+                                    ]}
+                                    onPress={() => setFilterStatus('all')}
+                                >
+                                    <Text style={[
+                                        styles.filterButtonText,
+                                        filterStatus === 'all' ? styles.filterButtonTextActive : styles.filterButtonTextInactive
+                                    ]}>All</Text>
+                                </TouchableOpacity>
 
-                        <View style={styles.filterRow}>
-                            <TouchableOpacity
-                                style={[
-                                    styles.filterButton,
-                                    filterStatus === 'all' && styles.filterButtonActive
-                                ]}
-                                onPress={() => setFilterStatus('all')}
-                            >
-                                <Text style={[
-                                    styles.filterButtonText,
-                                    filterStatus === 'all' ? styles.filterButtonTextActive : styles.filterButtonTextInactive
-                                ]}>All</Text>
-                            </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.filterButton,
+                                        filterStatus === 'completed' && styles.filterButtonActive
+                                    ]}
+                                    onPress={() => setFilterStatus('completed')}
+                                >
+                                    <Text style={[
+                                        styles.filterButtonText,
+                                        filterStatus === 'completed' ? styles.filterButtonTextActive : styles.filterButtonTextInactive
+                                    ]}>Completed</Text>
+                                </TouchableOpacity>
 
-                            <TouchableOpacity
-                                style={[
-                                    styles.filterButton,
-                                    filterStatus === 'completed' && styles.filterButtonActive
-                                ]}
-                                onPress={() => setFilterStatus('completed')}
-                            >
-                                <Text style={[
-                                    styles.filterButtonText,
-                                    filterStatus === 'completed' ? styles.filterButtonTextActive : styles.filterButtonTextInactive
-                                ]}>Completed</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={[
-                                    styles.filterButton,
-                                    filterStatus === 'pending' && styles.filterButtonActive
-                                ]}
-                                onPress={() => setFilterStatus('pending')}
-                            >
-                                <Text style={[
-                                    styles.filterButtonText,
-                                    filterStatus === 'pending' ? styles.filterButtonTextActive : styles.filterButtonTextInactive
-                                ]}>Pending</Text>
-                            </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.filterButton,
+                                        filterStatus === 'pending' && styles.filterButtonActive
+                                    ]}
+                                    onPress={() => setFilterStatus('pending')}
+                                >
+                                    <Text style={[
+                                        styles.filterButtonText,
+                                        filterStatus === 'pending' ? styles.filterButtonTextActive : styles.filterButtonTextInactive
+                                    ]}>Pending</Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
                     </View>
                     <GestureDetector gesture={daysPanGesture}>
                         <Animated.View style={[styles.stepsWrapper, animatedStyle]}>
                             {dayLists.map((DayList, index) => (
-                                <View style={[ {width: width}, {alignItems: 'center'}, {justifyContent: 'flex-start'} ]} key={index}>
+                                <View style={[{ width: width }, { alignItems: 'center' }, { justifyContent: 'flex-start' }]} key={index}>
                                     <DayList
                                         theme={theme}
-                                        loading={Object.keys(WeekdayNumbers)[index] === selectedDay ? !dataLoaded : true}
+                                        loading={Object.keys(WeekdayStepNumbers)[index] === selectedDay ? !dataLoaded : true}
                                         scrollEnabled={scrollEnabled}
                                         sectionListInnards={sectionListInnards}
                                         setScrollEnabled={setScrollEnabled}
@@ -573,9 +560,6 @@ const styles = StyleSheet.create({
         height: '100%',
         backgroundColor: '#2C0166',
         borderRadius: 100,
-    },
-    filterContainer: {
-        marginBottom: 20,
     },
     filterRow: {
         flexDirection: 'row',

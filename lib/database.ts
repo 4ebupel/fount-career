@@ -409,6 +409,76 @@ export const generateUUID = (): string => {
   return uuidv4();
 };
 
+export const getWeeksDayData = (weeksLastDate: string) => {
+  const givenDate = new Date(weeksLastDate);
+  const startDate = new Date().setDate(givenDate.getDate() - 7);
+  const isoGiven = new Date(weeksLastDate).toISOString();
+  const isoStart = new Date(startDate).toISOString()
+
+  return withDatabaseRetry(async (db) => {
+    const titles = await db.getAllAsync<Pick<Goal, "title" | "id">>(
+      `SELECT title, id FROM goals`
+    );
+    const tasks = await db.getAllAsync<Task>(
+      `SELECT * FROM tasks`
+    );
+    const rawHabits = await db.getAllAsync<ConvertArraysToJSON<HabitWithReminderOccurrence>>(
+      `SELECT habits.*,
+              occurrence.id as reminder_occurence_id,
+              occurrence.status as reminder_occurrence_status,
+              occurrence.scheduled_for as reminder_occurrence_scheduled_for
+       FROM habits
+       JOIN (
+        SELECT *
+        FROM reminderOccurrences
+        WHERE scheduled_for >= date(?, 'start of day')
+        AND scheduled_for < date(?, 'start of day', '+1 day')
+       ) occurrence ON habits.id = occurrence.habit_id
+      `, [isoStart, isoGiven]
+    );
+    const habits = rawHabits.map(habit => ({
+      ...habit,
+      completed: Boolean(habit.completed),
+      reminder_days: JSON.parse(habit.reminder_days),
+      reminder_ids: JSON.parse(habit.reminder_ids),
+    }));
+
+    type Innard = {
+      title: string,
+      data: (Task | HabitWithReminderOccurrence)[]
+    }
+
+    let weeksInnards: Innard[][] = [];
+
+    for (let i = 0; i < 7; i++) {
+      let daysInnards: Innard[] = [];
+      const innard: Innard = {
+        title: '',
+        data: []
+      };
+
+      titles.forEach((obj) => {
+        innard.data = [
+          ...tasks.filter((t) => t.goal_id === obj.id),
+          ...habits.filter((h) => h.goal_id === obj.id
+            && h.reminder_occurrence_scheduled_for
+            && new Date(h.reminder_occurrence_scheduled_for).getDay() === i
+          )
+        ];
+        if (innard.data.length <= 0) {
+          return
+        } else {
+          innard.title = obj.title;
+          daysInnards.push(innard);
+        };
+      });
+      weeksInnards.push(daysInnards);
+    };
+
+    return weeksInnards
+  });
+};
+
 // GOALS CRUD Operations
 
 /**
@@ -626,7 +696,7 @@ export const getHabitsByGoalIdWithJoin = async (goalId: string): Promise<HabitWi
 };
 
 export const getAllHabitsWithRemindersByDate = async (date: Date) => {
-  return withDatabaseRetry(async(db) => {
+  return withDatabaseRetry(async (db) => {
     const isoDate = date.toISOString();
     const habits = await db.getAllAsync<ConvertArraysToJSON<HabitWithReminderOccurrence>>(
       `SELECT habits.*,

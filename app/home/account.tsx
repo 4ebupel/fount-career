@@ -16,8 +16,8 @@ export default function Account() {
             try {
                 setLoading(true);
                 let cinematicInnards = await getWeeksDayData(new Date().toISOString());
-                console.log(JSON.stringify(cinematicInnards, null, 4))
-                setData(cinematicInnards);
+                console.log(JSON.stringify(cinematicInnards.weeksDayData, null, 4))
+                setData(cinematicInnards.weeksDayData);
             } catch (error) {
                 console.error("Error with the new func:", "\n", error);
                 setLoading(false)

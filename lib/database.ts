@@ -452,7 +452,7 @@ export const getWeeksDayData = (weeksLastDate: string) => {
 
     for (let i = 0; i < 7; i++) {
       let daysInnards: Innard[] = [];
-      const innard: Innard = {
+      let innard: Innard = {
         title: '',
         data: []
       };
@@ -465,17 +465,23 @@ export const getWeeksDayData = (weeksLastDate: string) => {
             && new Date(h.reminder_occurrence_scheduled_for).getDay() === i
           )
         ];
-        if (innard.data.length <= 0) {
-          return
-        } else {
-          innard.title = obj.title;
-          daysInnards.push(innard);
-        };
+        innard.title = obj.title;
+        if (innard.data.length > 0) {
+          daysInnards.push(innard)
+        }
+        innard = { title: '', data: []}
       });
       weeksInnards.push(daysInnards);
+      daysInnards = [];
     };
 
-    return weeksInnards
+    const res = {
+      weeksDayData: weeksInnards,
+      habits,
+      tasks
+    };
+
+    return res
   });
 };
 

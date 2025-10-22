@@ -5,12 +5,13 @@ import { format, startOfWeek, addDays } from 'date-fns';
 import { colors } from '@/lib/colors';
 import { ThemeContext } from '@/contexts/ThemeContext';
 import { Weekday } from '@/types/utilTypes';
+import { WeekdayStepNumbers } from '@/app/home/get-done';
 
 const radius = 20;
 const strokeWidth = 5;
 const circumference = 2 * Math.PI * radius;
 
-const WeeklyCalendarHeader = ({ progressData = [0, 0, 0, 0, 0, 0, 0], selectedDay, setSelectedDay }: { progressData: number[], selectedDay: string, setSelectedDay: (day: Weekday) => void }) => {
+const WeeklyCalendarHeader = ({ progressData = [0, 0, 0, 0, 0, 0, 0], selectedDay, setSelectedDay, goToSlide }: { progressData: number[], selectedDay: string, setSelectedDay: (day: Weekday) => void, goToSlide: (i: number) => void }) => {
   const { theme } = useContext(ThemeContext);
   const { width } = useWindowDimensions();
   // Calculate the start of the week (Monday)
@@ -31,7 +32,7 @@ const WeeklyCalendarHeader = ({ progressData = [0, 0, 0, 0, 0, 0, 0], selectedDa
         const strokeDashoffset = circumference * (1 - percentage / 100);
 
         return (
-          <Pressable key={index} style={styles.dayContainer} onPress={() => setSelectedDay(dayName)}>
+          <Pressable key={index} style={styles.dayContainer} onPress={() => { setSelectedDay(dayName); goToSlide(WeekdayStepNumbers[dayName])}}>
             {/* Day title above the circle */}
             <View style={[styles.dayContainer, dayName === selectedDay ? theme === 'dark' ? styles.dayContainerTodayDark : styles.dayContainerTodayLight : null]}>
               <RNText style={[styles.weekDayText, theme === 'dark' ? styles.weekDayTextDark : styles.weekDayTextLight]}>{dayName.slice(0, 3)}</RNText>

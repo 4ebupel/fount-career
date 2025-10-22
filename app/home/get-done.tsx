@@ -15,6 +15,8 @@ import Animated, {
     useAnimatedStyle,
     withTiming,
     runOnJS,
+    useAnimatedGestureHandler,
+    withSpring,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { format } from "date-fns";
@@ -22,7 +24,7 @@ import { WeekdaysInNumbers } from "@/lib/scheduleWeeklyReminders";
 import SectionedFlatList from "@/components/SectionedFlatList";
 import { Weekday } from "@/types/utilTypes";
 
-const WeekdayStepNumbers = {
+export const WeekdayStepNumbers = {
     Monday: 0,
     Tuesday: 1,
     Wednesday: 2,
@@ -146,11 +148,11 @@ export default function GetDone() {
     };
 
     const translateX = useSharedValue(0);
-    const horizontalSwipeOffset = useSharedValue(0);
+    const currIndex = useSharedValue(0);
 
     const animatedStyle = useAnimatedStyle(() => ({
         transform: [
-            { translateX: translateX.value + horizontalSwipeOffset.value },
+            { translateX: translateX.value },
         ],
     }));
 
@@ -177,29 +179,34 @@ export default function GetDone() {
     };
 
     const handleDaySelect = (day: Weekday) => {
-        translateX.value = withTiming(-WeekdayStepNumbers[day] * width, { duration: 300 }, () => {
-            runOnJS(setSelectedDay)(day);
-        });
+        setSelectedDay(day);
     };
 
     const daysPanGesture = Gesture.Pan()
-        //   .onBegin(() => {
-        //     if (scrollEnabled) {}
-        //   })
         .onUpdate((event) => {
-            const dampFactor = 0.8;
-            horizontalSwipeOffset.value = event.translationX * dampFactor;
+            translateX.value = event.translationX - currIndex.value * width;
         })
         .onEnd((event) => {
-            horizontalSwipeOffset.value = withTiming(0, { duration: 300 });
-            if (event.translationX > HORIZONTAL_SWIPE_THRESHOLD && Object.keys(WeekdayStepNumbers).findIndex((e) => e === selectedDay) > 0) {
-                runOnJS(goBack)();
-            } else if (event.translationX < -HORIZONTAL_SWIPE_THRESHOLD && Object.keys(WeekdayStepNumbers).findIndex((e) => e === selectedDay) < 6) {
-                runOnJS(goNext)();
+            const swipeThreshold = width / 3;
+
+            if (event.translationX < -swipeThreshold && currIndex.value < 6) {
+                currIndex.value += 1;
+                const newDay = Object.keys(WeekdayStepNumbers).at(currIndex.value)
+                runOnJS(setSelectedDay)(newDay || 'Monday');
+            } else if (event.translationX > swipeThreshold && currIndex.value > 0) {
+                currIndex.value -= 1;
+                const newDay = Object.keys(WeekdayStepNumbers).at(currIndex.value)
+                runOnJS(setSelectedDay)(newDay || 'Monday');
             }
+
+            translateX.value = withSpring(-currIndex.value * width);
         })
-        .minDistance(10)
         .enabled(scrollEnabled);
+
+    const goToSlide = (i: number) => {
+        currIndex.value = i;
+        translateX.value = withSpring(-i * width);
+    };
 
     // Get total tasks and habits
     const totalHabits = useMemo(() =>
@@ -312,7 +319,7 @@ export default function GetDone() {
             theme === 'dark' ? styles.containerDark : styles.containerLight
         ]}>
             <View style={{ maxHeight: 150 }}>
-                <WeeklyCalendarHeader progressData={progressData} selectedDay={selectedDay} setSelectedDay={handleDaySelect} />
+                <WeeklyCalendarHeader progressData={progressData} selectedDay={selectedDay} setSelectedDay={handleDaySelect} goToSlide={goToSlide} />
             </View>
 
             {totalItems <= 0 ? (
